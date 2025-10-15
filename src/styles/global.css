@@ -21,7 +21,7 @@
     --cor-secundaria: #000000;   /* Preto (Usado para fundo) */
     --cor-texto: #e0e0e0;        /* Cinza claro para texto */
     --cor-fundo-claro: #eaeaea;   /* Cinza escuro para seções leves */
-    --cor-fundo-escuro: #0a0a0a;  /* Preto mais profundo para o corpo */
+    --cor-fundo-escuro: #030303;  /* Preto mais profundo para o corpo */
     --cor-destaque: #e0e0e0;     /* Azul iOS (funciona bem em dark mode) */
 
     /* Tipografia */
