@@ -1,0 +1,125 @@
+<section class="instagram">
+    <div class="container">
+        <h2>Siga nosso Instagram</h2>
+        <p>
+            Ofertas exclusivas <span id="dias-semana"></span> no seu feed!
+        </p>
+
+        
+        <a
+            href="https://www.instagram.com/sualoja"
+            target="_blank"
+            class="btn-instagram">
+            @sualoja
+        </a>
+    </div>
+</section>
+
+<style>
+    .instagram {
+        padding: 4rem 1rem;
+    }
+
+    .instagram .container {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .instagram h2 {
+        font-family: "Halenoir", sans-serif;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .instagram p {
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        color: #ccc;
+    }
+
+    #dias-semana {
+        display: inline-block;
+        min-width: 50px;
+        text-align: center;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        position: relative;
+        height: 1.3em;
+        overflow: hidden;
+        vertical-align: bottom;
+    }
+
+    .dia-animado {
+        animation: slideDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes slideDown {
+        0% {
+            transform: translateY(-150%) scale(0.8);
+            opacity: 0;
+        }
+        60% {
+            transform: translateY(5%) scale(1.05);
+        }
+        100% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+    }
+
+    .btn-instagram {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #0a0a0a;
+        background-color: #f2f2f2;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-instagram:hover {
+        background-color: #e0e0e0;
+        transform: translateY(-3px) scale(1.05);
+    }
+
+    .icon-instagram {
+        width: 20px;
+        height: 20px;
+        color: #0a0a0a;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-instagram:hover .icon-instagram {
+        transform: rotate(20deg) scale(1.1);
+    }
+</style>
+
+<script type="text/javascript">
+    const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+    const elemento = document.getElementById('dias-semana');
+    let indice = 0;
+
+    function animarDia() {
+        elemento.classList.remove('dia-animado');
+        
+        setTimeout(() => {
+            elemento.textContent = dias[indice];
+            elemento.classList.add('dia-animado');
+            
+            indice = (indice + 1) % dias.length;
+        }, 50);
+    }
+
+    // Inicia após pequeno delay
+    setTimeout(animarDia, 300);
+
+    // Troca o dia a cada 2.5 segundos
+    setInterval(animarDia, 2500);
+</script>
