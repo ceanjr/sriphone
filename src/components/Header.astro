@@ -1,0 +1,64 @@
+---
+// src/components/Header.astro (Tema Escuro)
+---
+
+<header class="header">
+    <div class="container">
+        <a href="/">
+            <img
+                src="/Logo Fundo Preto.svg"
+                alt="Sr. IPHONE Logo"
+                class="logo"
+            />
+        </a>
+        <nav class="nav">
+            <a href="#servicos">Catálogo</a>
+        </nav>
+    </div>
+</header>
+
+<style>
+    .header {
+        /* Usa o fundo mais escuro */
+        background-color: var(--cor-fundo-escuro);
+        padding: 1rem 0;
+    }
+
+    .container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .logo {
+        height: 34px;
+        width: auto;
+    }
+
+    .nav a {
+        /* Cor de texto claro */
+        color: var(--cor-secundaria);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 1rem;
+        transition: color 0.3s ease;
+        background-color: var(--cor-texto);
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+    }
+
+    .nav a:hover {
+        color: var(--cor-destaque); /* Destaque azul no hover */
+    }
+
+    /* Ajuste para telas maiores */
+    @media (min-width: 768px) {
+        .logo {
+            height: 50px;
+        }
+        .nav a {
+            margin-left: 2rem;
+            font-size: 1rem;
+        }
+    }
+</style>

@@ -1,0 +1,57 @@
+---
+// src/components/Hero.astro (Tema Escuro)
+---
+
+<section class="hero">
+    <img src="/Barbudo.svg" alt="Imagem Barbudo" class="hero-img" />
+    <h1>Seu iPhone, com <strong>Classe e Confiança</strong></h1>
+    <p class="tagline">
+        Revisamos, avaliamos e garantimos. Cada detalhe do processo assegura a
+        entrega do melhor da tecnologia, com segurança e qualidade garantida.
+    </p>
+    <!-- <a href="#contato" class="btn">Solicite um Orçamento Rápido</a> -->
+</section>
+
+<style>
+    .hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 2rem 1rem;
+        margin-top: 16px;
+    }
+
+    .hero h1 {
+        font-family: "Halenoir", sans-serif;
+        font-size: 2.2rem;
+    }
+
+    .hero-img {
+        width: 50px; /* ajuste conforme necessário */
+        max-width: 90vw;
+        margin-bottom: 1.5rem;
+        display: block;
+    }
+
+    .tagline {
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        color: var(--cor-texto);
+    }
+
+    @media (min-width: 768px) {
+        .hero {
+            padding: 8rem 0;
+        }
+
+        .hero h1 {
+            font-size: 3.2rem;
+        }
+
+        .tagline {
+            font-size: 1.3rem;
+            max-width: 600px;
+        }
+    }
+</style>

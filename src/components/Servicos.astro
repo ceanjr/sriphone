@@ -1,0 +1,74 @@
+---
+// src/components/Servicos.astro
+const servicos = [
+    { 
+        titulo: "Troca de Tela", 
+        descricao: "Reparo rápido com peças de qualidade e garantia. Seu display novo em minutos." 
+    },
+    { 
+        titulo: "Reparo de Bateria", 
+        descricao: "Substituição por baterias certificadas, restaurando a autonomia máxima do seu aparelho." 
+    },
+    { 
+        titulo: "Reparo de Placa", 
+        descricao: "Diagnóstico avançado e conserto de problemas complexos na placa lógica." 
+    },
+    { 
+        titulo: "Venda de Acessórios", 
+        descricao: "Capas, películas e carregadores originais e de alta qualidade." 
+    },
+];
+---
+<section id="servicos" class="servicos">
+    <div class="container">
+        <h2>Nossos Serviços Especializados</h2>
+        <div class="grid">
+            {servicos.map((servico) => (
+                <article class="card">
+                    <h3>{servico.titulo}</h3>
+                    <p>{servico.descricao}</p>
+                </article>
+            ))}
+        </div>
+    </div>
+</section>
+
+<style>
+    .servicos {
+        /* Volta para o fundo principal do body (mais escuro) */
+        padding: 3rem 0;
+        background-color: var(--cor-fundo-escuro); 
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .grid {
+        display: grid;
+        gap: 1.5rem; 
+    }
+
+    .card {
+        padding: 1.5rem;
+        /* Borda sutil */
+        border: 1px solid #333; 
+        border-radius: 10px;
+        /* Fundo do card ligeiramente diferente do fundo da seção */
+        background-color: var(--cor-fundo-claro); 
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(255, 255, 255, 0.05); /* Sombra clara */
+    }
+
+    .card h3 {
+        color: var(--cor-destaque);
+        margin-bottom: 0.5rem;
+    }
+    
+    /* ... (Media queries permanecem iguais) */
+</style>

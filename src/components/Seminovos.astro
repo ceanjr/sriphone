@@ -1,0 +1,45 @@
+---
+// src/components/CTA.astro (Tema Escuro)
+---
+<section id="contato" class="seminovos">
+    <div class="container">
+        <h2>Seminovos revisados por especialistas com garantia de até</h2>
+        <strong>
+            1 ANO
+        </strong>
+    </div>
+</section>
+
+<style>
+    .seminovos {
+        /* Fundo de contraste escuro */
+        fontfamily: "Halenoir", sans-serif;
+        background-color: var(--cor-); 
+        color: var(--cor-texto);
+        padding: 2rem 1rem;
+
+    }
+
+    .seminovos h2 {
+        /* Título branco */
+        color: var(--cor-primaria); 
+        margin-bottom: 0;
+        line-height: 1.3;
+    }
+
+    .seminovos strong {
+        display: block;
+        font-size: 4rem;
+        text-align: center;
+    }
+
+    .btn-whatsapp {
+        background-color: #25D366; 
+        color: var(--cor-secundaria); /* Texto preto no botão */
+        border: none;
+    }
+
+    .btn-whatsapp:hover {
+        background-color: #128C7E; 
+    }
+</style>
