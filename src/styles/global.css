@@ -24,6 +24,9 @@
     --cor-fundo-escuro: #030303;  /* Preto mais profundo para o corpo */
     --cor-destaque: #e0e0e0;     /* Azul iOS (funciona bem em dark mode) */
 
+        --cor-texto-claro-on-escuro: var(--cor-primaria); /* #FFFFFF */
+    --cor-texto-escuro-on-claro: var(--cor-secundaria);  /* #000000 */
+
     /* Tipografia */
     --fonte-padrao: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }

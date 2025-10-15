@@ -1,13 +1,13 @@
 ---
 // src/layouts/Layout.astro
-import '../styles/global.css';
+import '../styles/global.css'; //
 
 interface Props {
 	title: string;
     description: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description } = Astro.props; //
 ---
 
 <!doctype html>
@@ -22,9 +22,95 @@ const { title, description } = Astro.props;
 	</head>
 	<body>
 		<slot />
+        
+        <button id="back-to-top" class="back-to-top" aria-label="Voltar ao topo">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
 	</body>
 </html>
 
+<script>
+    const btn = document.getElementById('back-to-top');
+    
+    if (btn) {
+        // Função para mostrar ou esconder o botão
+        const toggleVisibility = () => {
+            if (window.scrollY > 300) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+            }
+        };
+
+        // Função para rolar para o topo
+        const scrollToTop = () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth' // Scroll suave (já definido no global.css, mas bom ter aqui)
+            });
+        };
+
+        // Event Listeners
+        window.addEventListener('scroll', toggleVisibility);
+        btn.addEventListener('click', scrollToTop);
+    }
+</script>
+
 <style is:global>
-/* Estilos globais adicionais se necessário */
+    /* Estilos para o botão flutuante (NOVO) */
+    .back-to-top {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        /* Inicialmente escondido */
+        opacity: 0;
+        visibility: hidden; 
+        transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+        z-index: 1000;
+        
+        /* Estilização */
+        width: 45px;
+        height: 45px;
+        border: none;
+        background-color: var(--cor-fundo-claro); /* Usa o "branco suave" */
+        color: var(--cor-secundaria); /* Texto preto */
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .back-to-top.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .back-to-top svg {
+        width: 20px;
+        height: 20px;
+        color: #000; /* Ícone preto sobre o fundo claro */
+        stroke: #000;
+    }
+
+    /* Regra Mobile-First: Esconder em telas pequenas (mobile) */
+    .back-to-top {
+        display: none; 
+    }
+
+    /* Mostrar apenas em telas maiores (desktop) */
+    @media (min-width: 768px) {
+        .back-to-top {
+            display: flex; /* Garante que o botão apareça no desktop */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+        }
+    }
 </style>
