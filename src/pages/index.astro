@@ -5,6 +5,7 @@ import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import Servicos from '../components/Servicos.astro';
 import Seminovos from '../components/Seminovos.astro';
+import Experiencia from '../components/Experiencia.astro';
 import Instagram from '../components/Instagram.astro';
 import AcessoCatalogo from '../components/AcessoCatalogo.astro';
 import Footer from '../components/Footer.astro';
@@ -19,12 +20,58 @@ import Mapa from '../components/Mapa.astro';
     
     <main>
         <Hero />
-        <!-- <Servicos /> -->
+        
+        <div class="section-divider"></div>
+        
         <Seminovos />
+        
+        <div class="section-divider-dark"></div>
+        
+        
         <AcessoCatalogo />
+        
+        <div class="section-divider"></div>
+        
+        <Experiencia />
+        
+        <div class="section-divider-dark"></div>
+
         <Instagram />
+        
+        <div class="section-divider"></div>
+        
         <Mapa />
     </main>
 
     <Footer />
 </Layout>
+
+<style>
+    /* Separador para fundo escuro */
+    .section-divider {
+        height: 1px;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.1) 20%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0.1) 80%,
+            transparent 100%
+        );
+        margin: 0;
+    }
+
+    /* Separador para fundo claro */
+    .section-divider-dark {
+        height: 1px;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(0, 0, 0, 0.08) 20%,
+            rgba(0, 0, 0, 0.12) 50%,
+            rgba(0, 0, 0, 0.08) 80%,
+            transparent 100%
+        );
+        margin: 0;
+    }
+</style>

@@ -1,0 +1,211 @@
+---
+// src/components/Experiencia.astro
+---
+
+<section class="experiencia">
+    <div class="container">
+        <div class="content-wrapper">
+            <div class="number-display">
+                <span class="plus">+</span>
+                <span id="numero-animado" class="numero-animado">0</span>
+                <span class="asterisco">*</span>
+            </div>
+            
+            <div class="text-content">
+                <p class="anos-label">Anos de Experiência</p>
+                <h2>Transformando tecnologia em confiança desde 2014</h2>
+                <p class="disclaimer">*Experiência acumulada no segmento de smartphones e tecnologia móvel.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .experiencia {
+        background: var(--cor-fundo-claro);
+        padding: 6rem 1rem;
+        position: relative;
+    }
+
+    .experiencia::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e0e0e0, transparent);
+    }
+
+    .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        align-items: center;
+        text-align: center;
+    }
+
+    .number-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .plus {
+        font-size: 3rem;
+        font-weight: 300;
+        color: #999;
+    }
+
+    .numero-animado {
+        font-family: "Halenoir", sans-serif;
+        font-size: 7rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #000;
+        letter-spacing: -0.04em;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .asterisco {
+        font-size: 1.5rem;
+        color: #999;
+        align-self: flex-start;
+        margin-top: 0.5rem;
+    }
+
+    .numero-animado.animando {
+        animation: numeroRoleta 2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes numeroRoleta {
+        0% {
+            transform: translateY(20px) scale(0.95);
+            opacity: 0;
+        }
+        10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        15%, 25%, 35%, 45%, 55%, 65%, 75%, 85%, 95% {
+            transform: translateY(-5px) scale(1.05);
+        }
+        100% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+    }
+
+    .text-content {
+        max-width: 600px;
+    }
+
+    .anos-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: 1rem;
+    }
+
+    .text-content h2 {
+        font-family: "Halenoir", sans-serif;
+        font-size: 2rem;
+        line-height: 1.3;
+        color: #000;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .disclaimer {
+        font-size: 0.7rem;
+        color: #999;
+        margin-top: 1rem;
+        font-style: italic;
+    }
+
+    @media (min-width: 768px) {
+        .experiencia {
+            padding: 8rem 1rem;
+        }
+
+        .content-wrapper {
+            flex-direction: row;
+            gap: 4rem;
+            text-align: left;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .numero-animado {
+            font-size: 10rem;
+            min-width: 140px;
+        }
+
+        .plus {
+            font-size: 4rem;
+        }
+
+        .text-content h2 {
+            font-size: 2.5rem;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .numero-animado {
+            font-size: 12rem;
+            min-width: 180px;
+        }
+
+        .plus {
+            font-size: 5rem;
+        }
+
+        .text-content h2 {
+            font-size: 3rem;
+        }
+    }
+</style>
+
+<script>
+    function animarNumero() {
+        const elemento = document.getElementById('numero-animado');
+        if (!elemento) return;
+
+        let numeroAtual = 0;
+        const numeroFinal = 10;
+        const duracao = 2000;
+        const intervalo = 100;
+        const incremento = numeroFinal / (duracao / intervalo);
+
+        elemento.classList.add('animando');
+
+        const timer = setInterval(() => {
+            numeroAtual += incremento;
+            
+            if (numeroAtual >= numeroFinal) {
+                numeroAtual = numeroFinal;
+                clearInterval(timer);
+            }
+            
+            elemento.textContent = Math.floor(numeroAtual).toString();
+        }, intervalo);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animarNumero();
+                observer.disconnect();
+            }
+        });
+    }, { threshold: 0.3 });
+
+    const secao = document.querySelector('.experiencia');
+    if (secao) {
+        observer.observe(secao);
+    }
+</script>
