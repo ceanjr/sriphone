@@ -1,5 +1,5 @@
 ---
-// src/components/Header.astro (Tema Escuro)
+// src/components/Header.astro
 ---
 
 <header class="header">
@@ -12,48 +12,57 @@
             />
         </a>
         <nav class="nav">
-            <a href="#servicos">Catálogo</a>
+            <a
+                href="/catalogo"
+                style="  pointer-events: none;
+  cursor: default;">Catálogo</a
+            >
         </nav>
     </div>
 </header>
 
 <style>
     .header {
-        /* Usa o fundo mais escuro */
         background-color: var(--cor-fundo-escuro);
         padding: 1rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid #1a1a1a;
     }
 
     .container {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        
     }
 
     .logo {
         height: 34px;
         width: auto;
+        transition: opacity 0.3s ease;
+    }
+
+    .logo:hover {
+        opacity: 0.8;
     }
 
     .nav a {
-        /* Cor de texto claro */
         color: var(--cor-secundaria);
         text-decoration: none;
         font-weight: 500;
         font-size: 1rem;
-        transition: color 0.3s ease;
+        transition: all 0.3s ease;
         background-color: var(--cor-texto);
         padding: 0.5rem 1rem;
-        border-radius: 5px;
+        border-radius: 8px;
     }
 
     .nav a:hover {
         opacity: 0.8;
-        transition: opacity 0.3s ease;
+        transform: translateY(-1px);
     }
 
-    /* Ajuste para telas maiores */
     @media (min-width: 768px) {
         .logo {
             height: 50px;
