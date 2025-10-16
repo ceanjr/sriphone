@@ -36,6 +36,12 @@
                     </div>
                     <div class="image-preview-grid" id="image-preview-grid"></div>
                 </div>
+                <div id="upload-progress" class="upload-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <span class="progress-text">Enviando imagens...</span>
+                </div>
             </div>
 
             <!-- Nome e Código -->
@@ -126,13 +132,20 @@
             <!-- Botões -->
             <div class="form-actions">
                 <button type="button" class="btn-cancel">Cancelar</button>
-                <button type="submit" class="btn-submit">Criar Produto</button>
+                <button type="submit" class="btn-submit">
+                    <span class="btn-text">Criar Produto</span>
+                    <span class="btn-spinner" style="display: none;">
+                        <svg class="spinner-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4" />
+                        </svg>
+                    </span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
-<style>
+<style is:global>
     .modal-form {
         position: fixed;
         inset: 0;
@@ -165,7 +178,17 @@
         overflow-y: auto;
         z-index: 1;
         animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        margin: auto;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 
     .modal-header {
@@ -175,7 +198,7 @@
 
     .modal-header h2 {
         font-family: "Halenoir", sans-serif;
-        font-size: 1.8rem;
+        font-size: 1.5rem;
         color: var(--cor-primaria);
         margin: 0;
     }
@@ -228,45 +251,51 @@
         color: #fff;
     }
 
-    .image-upload-container {
+    .image-upload-area {
         position: relative;
+        border: 2px dashed #2a2a2a;
+        border-radius: 12px;
+        padding: 2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .image-upload-area:hover {
+        border-color: #404040;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .upload-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        color: #666;
+    }
+
+    .upload-placeholder svg {
+        width: 48px;
+        height: 48px;
+    }
+
+    .upload-placeholder span {
+        font-weight: 600;
+    }
+
+    .upload-placeholder small {
+        font-size: 0.85rem;
+        color: #555;
     }
 
     .image-preview-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
         gap: 1rem;
+        margin-top: 1rem;
     }
 
-    .upload-placeholder-card {
-        aspect-ratio: 1;
-        border: 2px dashed #2a2a2a;
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #0f0f0f;
-    }
-
-    .upload-placeholder-card:hover {
-        border-color: #404040;
-        background: #1a1a1a;
-    }
-
-    .upload-placeholder-card svg {
-        width: 32px;
-        height: 32px;
-        color: #666;
-    }
-
-    .upload-placeholder-card span {
-        font-size: 0.75rem;
-        color: #666;
-        font-weight: 600;
+    .image-preview-grid:empty {
+        display: none;
     }
 
     .image-preview-item {
@@ -302,6 +331,40 @@
 
     .image-preview-item .remove-image:hover {
         background: #ef4444;
+    }
+
+    .upload-progress {
+        display: none;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: #0f0f0f;
+        border-radius: 8px;
+    }
+
+    .upload-progress.active {
+        display: flex;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #1a1a1a;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #22c55e, #16a34a);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        font-size: 0.85rem;
+        color: #999;
+        text-align: center;
     }
 
     .form-row {
@@ -386,133 +449,234 @@
         background: #fff;
         border: none;
         color: #000;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    .btn-submit:hover {
+    .btn-submit:hover:not(:disabled) {
         background: #e5e5e5;
         transform: translateY(-2px);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .spinner-icon {
+        width: 20px;
+        height: 20px;
+        animation: rotate 1s linear infinite;
+    }
+
+    @keyframes rotate {
+        to { transform: rotate(360deg); }
+    }
+
+    @media (min-width: 768px) {
+        .modal-header h2 {
+            font-size: 1.8rem;
+        }
     }
 </style>
 
 <script>
-    import { productsStore } from '../lib/productsStore';
+    import { productService, categoryService } from '../lib/supabase'
 
-    const modalForm = document.getElementById('modal-form-produto');
-    const form = document.getElementById('form-produto') as HTMLFormElement;
-    const imageUploadArea = document.getElementById('image-upload-area');
-    const imageInput = document.getElementById('product-images') as HTMLInputElement;
-    const imagePreviewGrid = document.getElementById('image-preview-grid');
-    const btnCancel = modalForm?.querySelector('.btn-cancel');
-    const modalClose = modalForm?.querySelector('.modal-close');
-    const selectCategoria = document.getElementById('produto-categoria') as HTMLSelectElement;
+    const modalForm = document.getElementById('modal-form-produto')
+    const form = document.getElementById('form-produto') as HTMLFormElement
+    const imageUploadArea = document.getElementById('image-upload-area')
+    const imageInput = document.getElementById('product-images') as HTMLInputElement
+    const imagePreviewGrid = document.getElementById('image-preview-grid')
+    const uploadProgress = document.getElementById('upload-progress')
+    const btnCancel = modalForm?.querySelector('.btn-cancel')
+    const modalClose = modalForm?.querySelector('.modal-close')
+    const selectCategoria = document.getElementById('produto-categoria') as HTMLSelectElement
+    const btnSubmit = form?.querySelector('.btn-submit') as HTMLButtonElement
 
-    let imagensCarregadas: string[] = [];
+    let arquivosImagem: File[] = []
 
     // Carregar categorias
-    function carregarCategorias() {
-        if (!selectCategoria) return;
-        const categorias = productsStore.getCategories();
-        selectCategoria.innerHTML = '<option value="">Selecione...</option>';
-        categorias.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat.nome;
-            option.textContent = cat.nome;
-            selectCategoria.appendChild(option);
-        });
+    async function carregarCategorias() {
+        if (!selectCategoria) return
+        try {
+            const categorias = await categoryService.getAll()
+            selectCategoria.innerHTML = '<option value="">Selecione...</option>'
+            categorias.forEach(cat => {
+                const option = document.createElement('option')
+                option.value = cat.id
+                option.textContent = cat.nome
+                selectCategoria.appendChild(option)
+            })
+        } catch (error) {
+            console.error('Erro ao carregar categorias:', error)
+        }
     }
 
     // Upload de imagens
     imageUploadArea?.addEventListener('click', () => {
-        imageInput?.click();
-    });
+        imageInput?.click()
+    })
+
+    imageUploadArea?.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        imageUploadArea.style.borderColor = '#fff'
+    })
+
+    imageUploadArea?.addEventListener('dragleave', () => {
+        imageUploadArea.style.borderColor = '#2a2a2a'
+    })
+
+    imageUploadArea?.addEventListener('drop', (e) => {
+        e.preventDefault()
+        imageUploadArea.style.borderColor = '#2a2a2a'
+        const files = e.dataTransfer?.files
+        if (files) {
+            handleFiles(files)
+        }
+    })
 
     imageInput?.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        const files = target.files;
-        if (!files || !imagePreviewGrid) return;
+        const target = e.target as HTMLInputElement
+        const files = target.files
+        if (files) {
+            handleFiles(files)
+        }
+    })
 
+    function handleFiles(files: FileList) {
         Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                imagensCarregadas.push(result);
-                renderImagePreview(result, imagensCarregadas.length - 1);
-            };
-            reader.readAsDataURL(file);
-        });
-    });
+            if (file.type.startsWith('image/')) {
+                arquivosImagem.push(file)
+                renderPreview(file, arquivosImagem.length - 1)
+            }
+        })
+    }
 
-    function renderImagePreview(src: string, index: number) {
-        if (!imagePreviewGrid) return;
+    function renderPreview(file: File, index: number) {
+        if (!imagePreviewGrid) return
 
-        const item = document.createElement('div');
-        item.className = 'image-preview-item';
-        item.innerHTML = `
-            <img src="${src}" alt="Preview ${index + 1}">
-            <button type="button" class="remove-image" data-index="${index}">×</button>
-        `;
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            const item = document.createElement('div')
+            item.className = 'image-preview-item'
+            item.innerHTML = `
+                <img src="${e.target?.result}" alt="Preview ${index + 1}">
+                <button type="button" class="remove-image" data-index="${index}">×</button>
+            `
 
-        const removeBtn = item.querySelector('.remove-image');
-        removeBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            imagensCarregadas.splice(index, 1);
-            renderAllPreviews();
-        });
+            const removeBtn = item.querySelector('.remove-image')
+            removeBtn?.addEventListener('click', (e) => {
+                e.stopPropagation()
+                arquivosImagem.splice(index, 1)
+                renderAllPreviews()
+            })
 
-        imagePreviewGrid.appendChild(item);
+            imagePreviewGrid.appendChild(item)
+        }
+        reader.readAsDataURL(file)
     }
 
     function renderAllPreviews() {
-        if (!imagePreviewGrid) return;
-        imagePreviewGrid.innerHTML = '';
-        imagensCarregadas.forEach((src, index) => {
-            renderImagePreview(src, index);
-        });
+        if (!imagePreviewGrid) return
+        imagePreviewGrid.innerHTML = ''
+        arquivosImagem.forEach((file, index) => {
+            renderPreview(file, index)
+        })
     }
 
     // Submit do formulário
-    form?.addEventListener('submit', (e) => {
-        e.preventDefault();
+    form?.addEventListener('submit', async (e) => {
+        e.preventDefault()
         
-        const formData = new FormData(form);
-        const produto = {
-            codigo: formData.get('codigo') as string,
-            nome: formData.get('nome') as string,
-            descricao: formData.get('descricao') as string,
-            preco: parseFloat(formData.get('preco') as string),
-            condicao: formData.get('condicao') as string,
-            bateria: parseInt(formData.get('bateria') as string),
-            categoria: formData.get('categoria') as string,
-            imagemPrincipal: imagensCarregadas[0] || '/placeholder.jpg',
-            imagens: imagensCarregadas.length > 0 ? imagensCarregadas : ['/placeholder.jpg']
-        };
+        if (arquivosImagem.length === 0) {
+            alert('Por favor, adicione pelo menos uma imagem do produto')
+            return
+        }
 
-        productsStore.addProduct(produto);
-        fecharModal();
-        window.location.reload(); // Recarregar para mostrar novo produto
-    });
+        try {
+            // Desabilitar botão
+            if (btnSubmit) {
+                btnSubmit.disabled = true
+                btnSubmit.querySelector('.btn-text')!.textContent = 'Criando...'
+                btnSubmit.querySelector('.btn-spinner')!.setAttribute('style', 'display: inline-block')
+            }
+
+            // Upload de imagens
+            const progressBar = uploadProgress?.querySelector('.progress-fill') as HTMLElement
+            uploadProgress?.classList.add('active')
+
+            const urlsImagens: string[] = []
+            for (let i = 0; i < arquivosImagem.length; i++) {
+                const url = await productService.uploadImage(arquivosImagem[i])
+                urlsImagens.push(url)
+                
+                if (progressBar) {
+                    const progresso = ((i + 1) / arquivosImagem.length) * 100
+                    progressBar.style.width = `${progresso}%`
+                }
+            }
+
+            uploadProgress?.classList.remove('active')
+
+            // Criar produto
+            const formData = new FormData(form)
+            const produto = {
+                codigo: formData.get('codigo') as string,
+                nome: formData.get('nome') as string,
+                descricao: formData.get('descricao') as string,
+                preco: parseFloat(formData.get('preco') as string),
+                condicao: formData.get('condicao') as 'Novo' | 'Seminovo',
+                bateria: parseInt(formData.get('bateria') as string),
+                categoria_id: formData.get('categoria') as string,
+                imagens: urlsImagens
+            }
+
+            await productService.create(produto)
+            
+            // Disparar evento para recarregar produtos
+            window.dispatchEvent(new Event('produtos-updated'))
+            
+            fecharModal()
+            alert('Produto criado com sucesso!')
+        } catch (error) {
+            console.error('Erro ao criar produto:', error)
+            alert('Erro ao criar produto. Tente novamente.')
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false
+                btnSubmit.querySelector('.btn-text')!.textContent = 'Criar Produto'
+                btnSubmit.querySelector('.btn-spinner')!.setAttribute('style', 'display: none')
+            }
+            uploadProgress?.classList.remove('active')
+        }
+    })
 
     // Funções de controle do modal
     function abrirModal() {
-        modalForm?.classList.add('active');
-        const body = document.body as HTMLBodyElement;
-        body.style.overflow = 'hidden';
-        carregarCategorias();
+        modalForm?.classList.add('active')
+        document.body.style.overflow = 'hidden'
+        carregarCategorias()
     }
 
     function fecharModal() {
-        modalForm?.classList.remove('active');
-        const body = document.body as HTMLBodyElement;
-        body.style.overflow = '';
-        form?.reset();
-        imagensCarregadas = [];
-        if (imagePreviewGrid) imagePreviewGrid.innerHTML = '';
+        modalForm?.classList.remove('active')
+        document.body.style.overflow = ''
+        form?.reset()
+        arquivosImagem = []
+        if (imagePreviewGrid) imagePreviewGrid.innerHTML = ''
+        if (uploadProgress) {
+            uploadProgress.classList.remove('active')
+            const progressBar = uploadProgress.querySelector('.progress-fill') as HTMLElement
+            if (progressBar) progressBar.style.width = '0%'
+        }
     }
 
-    btnCancel?.addEventListener('click', fecharModal);
-    modalClose?.addEventListener('click', fecharModal);
+    btnCancel?.addEventListener('click', fecharModal)
+    modalClose?.addEventListener('click', fecharModal)
     modalForm?.querySelector('.modal-overlay')?.addEventListener('click', fecharModal);
 
     // Expor função globalmente
-    (window as any).abrirFormProduto = abrirModal;
+    (window as any).abrirFormProduto = abrirModal
 </script>
