@@ -1,417 +1,379 @@
 ---
-// src/components/GerirCategorias.astro
+import { categoryService } from '../lib/supabase';
 ---
 
 <div id="modal-categorias" class="modal-categorias">
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-        <button class="modal-close" aria-label="Fechar">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-        </button>
+  <div class="modal-overlay"></div>
 
-        <div class="modal-header">
-            <h2>Gerenciar Categorias</h2>
-        </div>
+  <div class="modal-content">
+    <button class="modal-close" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
 
-        <div class="modal-body">
-            <form id="form-nova-categoria" class="add-category-form">
-                <input 
-                    type="text" 
-                    id="nova-categoria-nome" 
-                    placeholder="Nome da nova categoria"
-                    required
-                />
-                <button type="submit" class="btn-add">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    Adicionar
-                </button>
-            </form>
-
-            <div class="categories-list" id="categories-list">
-                <!-- Categorias serão inseridas aqui -->
-            </div>
-        </div>
+    <div class="modal-header">
+      <h2>Gerenciar Categorias</h2>
     </div>
+
+    <div class="modal-body">
+      <form id="form-nova-categoria" class="add-category-form">
+        <input 
+          type="text" 
+          id="nova-categoria-nome" 
+          placeholder="Nome da nova categoria"
+          required
+        />
+        <button type="submit" class="btn-add">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Adicionar
+        </button>
+      </form>
+
+      <div class="categories-list" id="categories-list"></div>
+    </div>
+  </div>
 </div>
 
-<style>
-    .modal-categorias {
-        position: fixed;
-        inset: 0;
-        z-index: 2000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-    }
+<style is:global>
+  .modal-categorias {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
 
-    .modal-categorias.active {
-        display: flex;
-    }
+  .modal-categorias.active {
+    display: flex;
+  }
 
-    .modal-categorias .modal-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.95);
-        backdrop-filter: blur(10px);
-    }
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
+  }
 
-    .modal-categorias .modal-content {
-        position: relative;
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
-        border-radius: 24px;
-        max-width: 600px;
-        width: 100%;
-        max-height: 80vh;
-        overflow: hidden;
-        z-index: 1;
-        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+  .modal-content {
+    position: relative;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 24px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+    z-index: 1;
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-    .modal-header {
-        padding: 2rem 2rem 1rem;
-        border-bottom: 1px solid #1a1a1a;
-    }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
 
-    .modal-header h2 {
-        font-family: "Halenoir", sans-serif;
-        font-size: 1.8rem;
-        color: var(--cor-primaria);
-        margin: 0;
-    }
+  .modal-header {
+    padding: 2rem 2rem 1rem;
+    border-bottom: 1px solid #1a1a1a;
+  }
 
-    .modal-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: rgba(0, 0, 0, 0.8);
-        border: 1px solid #2a2a2a;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        z-index: 10;
-    }
+  .modal-header h2 {
+    font-family: "Halenoir", sans-serif;
+    font-size: 1.5rem;
+    color: var(--cor-primaria, #fff);
+    margin: 0;
+  }
 
-    .modal-close:hover {
-        background: #fff;
-        color: #000;
-        transform: rotate(90deg);
-    }
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #2a2a2a;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
 
-    .modal-close svg {
-        width: 20px;
-        height: 20px;
-    }
+  .modal-close:hover {
+    background: #fff;
+    color: #000;
+    transform: rotate(90deg);
+  }
 
-    .modal-body {
-        padding: 2rem;
-        max-height: calc(80vh - 120px);
-        overflow-y: auto;
-    }
+  .modal-close svg {
+    width: 20px;
+    height: 20px;
+  }
 
-    .add-category-form {
-        display: flex;
-        gap: 0.75rem;
-        margin-bottom: 2rem;
-    }
+  .modal-body {
+    padding: 2rem;
+    max-height: calc(80vh - 120px);
+    overflow-y: auto;
+  }
 
-    .add-category-form input {
-        flex: 1;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        color: #fff;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
+  .add-category-form {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+  }
 
-    .add-category-form input:focus {
-        outline: none;
-        border-color: #fff;
-        background: #1a1a1a;
-    }
+  .add-category-form input {
+    flex: 1;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: #fff;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
 
-    .btn-add {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #fff;
-        border: none;
-        color: #000;
-        padding: 0.75rem 1.25rem;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
+  .add-category-form input:focus {
+    outline: none;
+    border-color: #fff;
+    background: #1a1a1a;
+  }
 
-    .btn-add:hover {
-        background: #e5e5e5;
-        transform: translateY(-2px);
-    }
+  .btn-add {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    border: none;
+    color: #000;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
 
-    .btn-add svg {
-        width: 18px;
-        height: 18px;
-    }
+  .btn-add:hover {
+    background: #e5e5e5;
+    transform: translateY(-2px);
+  }
 
-    .categories-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
+  .btn-add svg {
+    width: 18px;
+    height: 18px;
+  }
 
-    .category-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.25rem;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-    }
+  .categories-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 
-    .category-item:hover {
-        border-color: #404040;
-        background: #1a1a1a;
-    }
+  .category-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
 
-    .category-item.editing {
-        border-color: #fff;
-    }
+  .category-item:hover {
+    border-color: #404040;
+    background: #1a1a1a;
+  }
 
-    .category-name {
-        font-size: 1rem;
-        color: #fff;
-        font-weight: 500;
-    }
+  .category-name {
+    color: #fff;
+    font-weight: 500;
+  }
 
-    .category-input {
-        flex: 1;
-        background: transparent;
-        border: none;
-        color: #fff;
-        font-size: 1rem;
-        font-weight: 500;
-        padding: 0;
-    }
+  .category-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
 
-    .category-input:focus {
-        outline: none;
-    }
+  .btn-icon {
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #999;
+  }
 
-    .category-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
+  .btn-icon:hover {
+    border-color: #fff;
+    color: #fff;
+  }
 
-    .btn-icon {
-        background: transparent;
-        border: 1px solid #2a2a2a;
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        color: #999;
-    }
+  .btn-icon.delete:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
 
-    .btn-icon:hover {
-        border-color: #fff;
-        color: #fff;
-    }
+  .btn-icon.save:hover {
+    border-color: #22c55e;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+  }
 
-    .btn-icon.delete:hover {
-        border-color: #ef4444;
-        color: #ef4444;
-        background: rgba(239, 68, 68, 0.1);
-    }
+  .btn-icon svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
 
-    .btn-icon.save:hover {
-        border-color: #22c55e;
-        color: #22c55e;
-        background: rgba(34, 197, 94, 0.1);
-    }
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #666;
+  }
 
-    .btn-icon svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: #666;
-    }
-
-    .empty-state svg {
-        width: 64px;
-        height: 64px;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
+  .empty-state svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
 </style>
 
 <script>
-    import { productsStore } from '../lib/productsStore';
+  import { categoryService } from '../lib/supabase';
 
-    const modal = document.getElementById('modal-categorias');
-    const modalClose = modal?.querySelector('.modal-close');
-    const modalOverlay = modal?.querySelector('.modal-overlay');
-    const form = document.getElementById('form-nova-categoria') as HTMLFormElement;
-    const input = document.getElementById('nova-categoria-nome') as HTMLInputElement;
-    const list = document.getElementById('categories-list');
+  // Adiciona a propriedade ao tipo Window para evitar erro de TypeScript
+  declare global {
+    interface Window {
+      abrirGerirCategorias: () => void;
+    }
+  }
 
-    function renderCategories() {
-        if (!list) return;
-        
-        const categories = productsStore.getCategories();
-        
-        if (categories.length === 0) {
-            list.innerHTML = `
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <p>Nenhuma categoria cadastrada</p>
-                </div>
-            `;
-            return;
-        }
+  const modal = document.getElementById('modal-categorias');
+  const overlay = modal.querySelector('.modal-overlay');
+  const closeBtn = modal.querySelector('.modal-close');
+  const form = modal.querySelector('#form-nova-categoria');
+  const input = modal.querySelector('#nova-categoria-nome');
+  const list = modal.querySelector('#categories-list');
 
-        list.innerHTML = categories.map(cat => `
-            <div class="category-item" data-id="${cat.id}">
-                <span class="category-name">${cat.nome}</span>
-                <div class="category-actions">
-                    <button class="btn-icon edit" data-action="edit" title="Editar">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.43739 22.1213 4.00001C22.1213 4.56263 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon delete" data-action="delete" title="Excluir">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        `).join('');
+  async function renderCategories() {
+    const categories = await categoryService.getAll();
+    list.innerHTML = '';
 
-        // Adicionar event listeners
-        list.querySelectorAll('.btn-icon').forEach(btn => {
-            btn.addEventListener('click', handleCategoryAction);
-        });
+    if (!categories || categories.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <p>Nenhuma categoria cadastrada</p>
+        </div>`;
+      return;
     }
 
-    function handleCategoryAction(e: Event) {
-        const target = e.currentTarget as HTMLElement;
-        const action = target.dataset.action;
-        const item = target.closest('.category-item') as HTMLElement;
-        const id = item?.dataset.id;
-        
-        if (!id) return;
+    categories.forEach(cat => {
+      const item = document.createElement('div');
+      item.classList.add('category-item');
+      item.dataset.id = cat.id;
 
-        if (action === 'delete') {
-            if (confirm('Deseja realmente excluir esta categoria?')) {
-                productsStore.deleteCategory(id);
-                renderCategories();
-            }
-        } else if (action === 'edit') {
-            startEditing(item);
-        }
+      const name = document.createElement('span');
+      name.classList.add('category-name');
+      name.textContent = cat.nome;
+
+      const actions = document.createElement('div');
+      actions.classList.add('category-actions');
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-icon edit';
+      editBtn.innerHTML = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M21 12a1 1 0 0 0-1 1v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 0 0-2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-6a1 1 0 0 0-1-1Zm-15 .76V17a1 1 0 0 0 1 1h4.24a1 1 0 0 0 .71-.29l6.92-6.93L21.71 8a1 1 0 0 0 0-1.42l-4.24-4.29a1 1 0 0 0-1.42 0l-2.82 2.83l-6.94 6.93a1 1 0 0 0-.29.71Zm10.76-8.35l2.83 2.83l-1.42 1.42l-2.83-2.83ZM8 13.17l5.93-5.93l2.83 2.83L10.83 16H8Z"/></svg>`;
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-icon delete';
+      delBtn.innerHTML = `<svg viewBox="0 0 20 20"><path fill="currentColor" d="m6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"/></svg>`;
+
+      actions.append(editBtn, delBtn);
+      item.append(name, actions);
+      list.append(item);
+
+      editBtn.addEventListener('click', () => startEditing(item, cat));
+      delBtn.addEventListener('click', () => deleteCategory(cat.id));
+    });
+  }
+
+  async function deleteCategory(id) {
+    if (confirm('Deseja realmente excluir esta categoria?')) {
+      await categoryService.delete(id);
+      renderCategories();
+      window.dispatchEvent(new Event('produtos-updated'));
     }
+  }
 
-    function startEditing(item: HTMLElement) {
-        const nameSpan = item.querySelector('.category-name');
-        const actionsDiv = item.querySelector('.category-actions');
-        const currentName = nameSpan?.textContent || '';
-        
-        if (!nameSpan || !actionsDiv) return;
+  function startEditing(item, cat) {
+    const nameSpan = item.querySelector('.category-name');
+    const actions = item.querySelector('.category-actions');
+    item.classList.add('editing');
 
-        item.classList.add('editing');
-        
-        nameSpan.innerHTML = `<input type="text" class="category-input" value="${currentName}" />`;
-        actionsDiv.innerHTML = `
-            <button class="btn-icon save" data-action="save" title="Salvar">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-            <button class="btn-icon cancel" data-action="cancel" title="Cancelar">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>
-        `;
+    nameSpan.innerHTML = `<input type="text" class="category-input" value="${cat.nome}" />`;
+    actions.innerHTML = `
+      <button class="btn-icon save"><svg viewBox="0 0 24 24"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="btn-icon cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    `;
 
-        const inputField = item.querySelector('.category-input') as HTMLInputElement;
-        inputField?.focus();
-        inputField?.select();
+    const input = nameSpan.querySelector('input');
+    input.focus();
+    input.select();
 
-        actionsDiv.querySelectorAll('.btn-icon').forEach(btn => {
-            btn.addEventListener('click', (e: Event) => {
-                const target = e.currentTarget as HTMLElement;
-                const action = target.dataset.action;
-                const id = item.dataset.id;
-                
-                if (action === 'save' && id) {
-                    const newName = inputField?.value.trim();
-                    if (newName) {
-                        productsStore.updateCategory(id, newName);
-                    }
-                }
-                renderCategories();
-            });
-        });
-    }
-
-    // Adicionar nova categoria
-    form?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const nome = input?.value.trim();
-        
-        if (nome) {
-            productsStore.addCategory(nome);
-            input.value = '';
-            renderCategories();
-        }
+    actions.querySelector('.save').addEventListener('click', async () => {
+      const newName = input.value.trim();
+      if (newName) {
+        await categoryService.update(cat.id, newName);
+        window.dispatchEvent(new Event('produtos-updated'));
+      }
+      renderCategories();
     });
 
-    // Abrir/Fechar modal
-    function abrirModal() {
-        modal?.classList.add('active');
-        const body = document.body as HTMLBodyElement;
-        body.style.overflow = 'hidden';
-        renderCategories();
+    actions.querySelector('.cancel').addEventListener('click', renderCategories);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = (input as HTMLInputElement).value.trim();
+    if (nome) {
+      await categoryService.create(nome);
+      (input as HTMLInputElement).value = '';
+      renderCategories();
+      window.dispatchEvent(new Event('produtos-updated'));
     }
+  });
 
-    function fecharModal() {
-        modal?.classList.remove('active');
-        const body = document.body as HTMLBodyElement;
-        body.style.overflow = '';
-    }
+  function abrirModal() {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    renderCategories();
+  }
 
-    modalClose?.addEventListener('click', fecharModal);
-    modalOverlay?.addEventListener('click', fecharModal);
+  function fecharModal() {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
 
-    // Expor função globalmente
-    (window as any).abrirGerirCategorias = abrirModal;
+  closeBtn.addEventListener('click', fecharModal);
+  overlay.addEventListener('click', fecharModal);
+
+  window.abrirGerirCategorias = abrirModal;
 </script>

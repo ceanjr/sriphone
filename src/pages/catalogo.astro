@@ -3,13 +3,9 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import ProductCard from '../components/ProductCard.astro';
 import ModalProduto from '../components/ModalProduto.astro';
 import FormularioProduto from '../components/FormularioProduto.astro';
 import GerirCategorias from '../components/GerirCategorias.astro';
-
-// Importar produtos do store (lado servidor)
-const produtos = [];
 ---
 
 <Layout 
@@ -22,47 +18,95 @@ const produtos = [];
         <section class="hero-catalogo">
             <div class="container">
                 <div class="hero-content">
-                    <div class="hero-text">
-                        <span class="eyebrow">NOSSA COLEÇÃO</span>
-                        <h1>Catálogo Exclusivo</h1>
-                        <p>iPhones seminovos selecionados com garantia e qualidade certificada</p>
-                    </div>
-                    <div class="hero-actions">
-                        <button id="btn-login" class="btn-admin">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            Entrar
+                    <span class="eyebrow">NOSSA COLEÇÃO</span>
+                    <h1>Catálogo Exclusivo</h1>
+                    <p>iPhones novos e seminovos selecionados com garantia e qualidade certificada</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="filtros-section">
+            <div class="container">
+                <!-- Busca -->
+                <div class="search-bar">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Buscar produtos..."
+                    />
+                </div>
+
+                <!-- Filtros -->
+                <div class="filtros-container">
+                    <!-- Categorias (Destaque) -->
+                    <div class="categoria-filtros">
+                        <button class="categoria-btn active" data-categoria="todos">
+                            Todos
                         </button>
-                        <div id="admin-menu" class="admin-menu" style="display: none;">
-                            <button id="btn-criar-produto" class="btn-admin-action">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                Criar Produto
-                            </button>
-                            <button id="btn-gerir-categorias" class="btn-admin-action">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                Gerir Categorias
-                            </button>
-                            <button id="btn-logout" class="btn-admin-action logout">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                Sair
-                            </button>
+                        <div id="categorias-lista"></div>
+                    </div>
+
+                    <!-- Outros Filtros -->
+                    <button class="toggle-filtros" id="toggle-filtros">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 4H21M3 12H21M3 20H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Mais Filtros
+                    </button>
+
+                    <div class="filtros-avancados" id="filtros-avancados">
+                        <div class="filtro-group">
+                            <label>Condição</label>
+                            <select id="filtro-condicao">
+                                <option value="">Todas</option>
+                                <option value="Novo">Novo</option>
+                                <option value="Seminovo">Seminovo</option>
+                            </select>
                         </div>
+
+                        <div class="filtro-group">
+                            <label>Bateria Mínima</label>
+                            <select id="filtro-bateria">
+                                <option value="0">Qualquer</option>
+                                <option value="80">80%+</option>
+                                <option value="90">90%+</option>
+                                <option value="95">95%+</option>
+                            </select>
+                        </div>
+
+                        <div class="filtro-group">
+                            <label>Ordenar Por</label>
+                            <select id="filtro-ordenacao">
+                                <option value="recente">Mais Recentes</option>
+                                <option value="preco-asc">Menor Preço</option>
+                                <option value="preco-desc">Maior Preço</option>
+                                <option value="bateria">Melhor Bateria</option>
+                            </select>
+                        </div>
+
+                        <button class="btn-limpar-filtros" id="btn-limpar-filtros">
+                            Limpar Filtros
+                        </button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="produtos-grid">
+        <section class="produtos-section">
             <div class="container">
-                <div id="produtos-container" class="grid">
-                    <!-- Produtos serão carregados aqui via JavaScript -->
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Carregando produtos...</p>
+                </div>
+                <div id="produtos-container"></div>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <p>Nenhum produto encontrado</p>
                 </div>
             </div>
         </section>
@@ -83,6 +127,7 @@ const produtos = [];
                     <label for="login-password">Senha</label>
                     <input type="password" id="login-password" required />
                 </div>
+                <div id="login-error" class="error-message"></div>
                 <button type="submit" class="btn-submit">Entrar</button>
             </form>
         </div>
@@ -94,24 +139,15 @@ const produtos = [];
     <Footer />
 </Layout>
 
-<style>
+<style is:global>
     .catalogo-page {
         background-color: var(--cor-fundo-escuro);
         min-height: 100vh;
     }
 
     .hero-catalogo {
-        padding: 4rem 1rem 3rem;
+        padding: 3rem 1rem 2rem;
         border-bottom: 1px solid #1a1a1a;
-    }
-
-    .hero-content {
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-    }
-
-    .hero-text {
         text-align: center;
     }
 
@@ -121,106 +157,260 @@ const produtos = [];
         letter-spacing: 0.15em;
         font-weight: 600;
         color: #666;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         text-transform: uppercase;
     }
 
     .hero-catalogo h1 {
         font-family: "Halenoir", sans-serif;
-        font-size: 2.5rem;
+        font-size: 2rem;
         color: var(--cor-primaria);
         margin-bottom: 0.5rem;
     }
 
     .hero-catalogo p {
         color: #999;
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 
-    .hero-actions {
+    /* Filtros */
+    .filtros-section {
+        padding: 2rem 1rem;
+        background: #0a0a0a;
+        border-bottom: 1px solid #1a1a1a;
+    }
+
+    .search-bar {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .search-bar svg {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        color: #666;
+    }
+
+    .search-bar input {
+        width: 100%;
+        background: #0f0f0f;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 0.875rem 1rem 0.875rem 3rem;
+        color: #fff;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .search-bar input:focus {
+        outline: none;
+        border-color: #fff;
+        background: #1a1a1a;
+    }
+
+    .filtros-container {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         gap: 1rem;
-        flex-wrap: wrap;
     }
 
-    .btn-admin {
+    .categoria-filtros {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #1a1a1a;
+    }
+
+    .categoria-btn {
+        background: #0f0f0f;
+        border: 2px solid #2a2a2a;
+        color: var(--cor-texto);
+        padding: 0.625rem 1.25rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+
+    .categoria-btn:hover {
+        border-color: var(--cor-fundo-claro);
+        color: var(--cor-fundo-claro);
+    }
+
+    .categoria-btn.active {
+        background: var(--cor-fundo-claro);
+        color: #000;
+        border-color: var(--cor-fundo-claro);
+    }
+
+    #categorias-lista {
+        display: contents;
+    }
+
+    .toggle-filtros {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
         background: transparent;
         border: 1px solid #2a2a2a;
-        color: #fff;
-        padding: 0.75rem 1.5rem;
+        color: #999;
+        padding: 0.625rem 1rem;
         border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        align-self: flex-start;
+    }
+
+    .toggle-filtros:hover {
+        border-color: #fff;
+        color: #fff;
+    }
+
+    .toggle-filtros svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .filtros-avancados {
+        display: none;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem;
+        background: #0f0f0f;
+        border: 1px solid #1a1a1a;
+        border-radius: 12px;
+    }
+
+    .filtros-avancados.active {
+        display: grid;
+    }
+
+    .filtro-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filtro-group label {
+        font-size: 0.85rem;
+        color: #999;
+        font-weight: 500;
+    }
+
+    .filtro-group select {
+        background: #0a0a0a;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        padding: 0.625rem 0.875rem;
+        color: #fff;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .filtro-group select:focus {
+        outline: none;
+        border-color: #fff;
+    }
+
+    .btn-limpar-filtros {
+        background: transparent;
+        border: 1px solid #ef4444;
+        color: #ef4444;
+        padding: 0.625rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.3s ease;
     }
 
-    .btn-admin:hover {
-        background: #fff;
-        color: #000;
-        border-color: #fff;
-    }
-
-    .btn-admin svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .admin-menu {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-
-    .btn-admin-action {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #fff;
-        border: none;
-        color: #000;
-        padding: 0.75rem 1.25rem;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .btn-admin-action:hover {
-        background: #e5e5e5;
-        transform: translateY(-2px);
-    }
-
-    .btn-admin-action.logout {
-        background: transparent;
-        border: 1px solid #ef4444;
-        color: #ef4444;
-    }
-
-    .btn-admin-action.logout:hover {
+    .btn-limpar-filtros:hover {
         background: #ef4444;
         color: #fff;
     }
 
-    .btn-admin-action svg {
-        width: 18px;
-        height: 18px;
+    /* Produtos */
+    .produtos-section {
+        padding: 3rem 1rem;
     }
 
-    .produtos-grid {
+    .loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
         padding: 4rem 1rem;
+        color: #666;
     }
 
-    .grid {
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #1a1a1a;
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    #produtos-container {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 2rem;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.5rem;
     }
 
-    /* Modal de Login */
+    .categoria-section {
+        grid-column: 1/-1;
+        margin-top: 2rem;
+    }
+
+    .categoria-section:first-child {
+        margin-top: 0;
+    }
+
+    .categoria-titulo {
+        font-family: "Halenoir", sans-serif;
+        font-size: 1.5rem;
+        color: var(--cor-primaria);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #1a1a1a;
+    }
+
+    .categoria-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .empty-state {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 4rem 1rem;
+        color: #666;
+    }
+
+    .empty-state svg {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        opacity: 0.3;
+    }
+
+    /* Modal Login */
     .modal-login {
         position: fixed;
         inset: 0;
@@ -302,6 +492,17 @@ const produtos = [];
         border-color: #fff;
     }
 
+    .error-message {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+        display: none;
+    }
+
+    .error-message.show {
+        display: block;
+    }
+
     .modal-login .btn-submit {
         width: 100%;
         background: #fff;
@@ -318,100 +519,254 @@ const produtos = [];
         background: #e5e5e5;
     }
 
+    @media (min-width: 640px) {
+        .filtros-avancados {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .btn-limpar-filtros {
+            grid-column: span 2;
+        }
+    }
+
     @media (min-width: 768px) {
+        .hero-catalogo {
+            padding: 4rem 1rem 3rem;
+        }
+
         .hero-catalogo h1 {
             font-size: 3.5rem;
         }
 
-        .hero-content {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
+        .hero-catalogo p {
+            font-size: 1.2rem;
         }
 
-        .hero-text {
-            text-align: left;
+        .filtros-section {
+            padding: 2.5rem 1rem;
         }
 
-        .hero-actions {
-            justify-content: flex-end;
+        .search-bar {
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .filtros-avancados {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn-limpar-filtros {
+            grid-column: span 3;
+        }
+
+        #produtos-container {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .categoria-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .produtos-section {
+            padding: 4rem 1rem;
         }
     }
 </style>
 
 <script>
-    import { authStore } from '../lib/authStore';
-    import { productsStore } from '../lib/productsStore';
+    import { productService, categoryService, authService, type Product, type Category } from '../lib/supabase'
 
-    const btnLogin = document.getElementById('btn-login');
-    const btnLogout = document.getElementById('btn-logout');
-    const btnCriarProduto = document.getElementById('btn-criar-produto');
-    const btnGerirCategorias = document.getElementById('btn-gerir-categorias');
-    const adminMenu = document.getElementById('admin-menu');
-    const modalLogin = document.getElementById('modal-login');
-    const formLogin = document.getElementById('form-login') as HTMLFormElement;
-    const produtosContainer = document.getElementById('produtos-container');
+    // Estado
+    let produtos: (Product & { categoria: Category })[] = []
+    let categorias: Category[] = []
+    let categoriaAtiva = 'todos'
+    let filtros = {
+        busca: '',
+        condicao: '',
+        bateria: 0,
+        ordenacao: 'recente'
+    }
 
-    // Verificar autenticação
-    function checkAuth() {
-        const isAuth = authStore.isAuthenticated();
-        if (btnLogin && adminMenu) {
-            btnLogin.style.display = isAuth ? 'none' : 'inline-flex';
-            adminMenu.style.display = isAuth ? 'flex' : 'none';
+    // Elementos
+    const modalLogin = document.getElementById('modal-login')
+    const formLogin = document.getElementById('form-login') as HTMLFormElement
+    const loginError = document.getElementById('login-error')
+    const searchInput = document.getElementById('search-input') as HTMLInputElement
+    const toggleFiltros = document.getElementById('toggle-filtros')
+    const filtrosAvancados = document.getElementById('filtros-avancados')
+    const btnLimparFiltros = document.getElementById('btn-limpar-filtros')
+    const produtosContainer = document.getElementById('produtos-container')
+    const loading = document.getElementById('loading')
+    const emptyState = document.getElementById('empty-state')
+    const categoriasLista = document.getElementById('categorias-lista')
+
+    // Carregar dados iniciais
+    async function carregarDados() {
+        try {
+            if (loading) loading.style.display = 'flex'
+            if (emptyState) emptyState.style.display = 'none'
+            if (produtosContainer) produtosContainer.innerHTML = ''
+
+            const [produtosData, categoriasData] = await Promise.all([
+                productService.getAll(),
+                categoryService.getAll()
+            ])
+
+            produtos = produtosData
+            categorias = categoriasData
+
+            renderCategorias()
+            renderProdutos()
+        } catch (error) {
+            console.error('Erro ao carregar dados:', error)
+            alert('Erro ao carregar produtos. Tente novamente.')
+        } finally {
+            if (loading) loading.style.display = 'none'
         }
     }
 
-    // Carregar produtos
-    function carregarProdutos() {
-        const produtos = productsStore.getProducts();
-        if (!produtosContainer) return;
+    // Renderizar categorias
+    function renderCategorias() {
+        if (!categoriasLista) return
 
-        if (produtos.length === 0) {
-            produtosContainer.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 4rem 1rem; color: #666;">
-                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style="margin: 0 auto 1rem; opacity: 0.3;">
-                        <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    <p>Nenhum produto cadastrado ainda</p>
-                </div>
-            `;
-            return;
-        }
+        categoriasLista.innerHTML = categorias
+            .map(cat => `
+                <button class="categoria-btn" data-categoria="${cat.id}">
+                    ${cat.nome}
+                </button>
+            `)
+            .join('');
 
-        produtosContainer.innerHTML = '';
-        produtos.forEach(produto => {
-            const card = document.createElement('div');
-            card.innerHTML = createProductCard(produto);
-            produtosContainer.appendChild(card.firstElementChild!);
-        });
+        // Event listeners para todas as categorias (incluindo "Todos")
+        document.querySelectorAll('.categoria-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget as HTMLElement;
+                const categoriaId = target.dataset.categoria;
 
-        // Adicionar event listeners aos cards
-        produtosContainer.querySelectorAll('.produto-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const element = card as HTMLElement;
-                const produto = {
-                    id: element.dataset.produtoId,
-                    codigo: element.dataset.produtoCodigo,
-                    nome: element.dataset.produtoNome,
-                    descricao: element.dataset.produtoDescricao,
-                    preco: element.dataset.produtoPreco,
-                    condicao: element.dataset.produtoCondicao,
-                    bateria: element.dataset.produtoBateria,
-                    categoria: element.dataset.produtoCategoria,
-                    imagens: JSON.parse(element.dataset.produtoImagens || '[]')
-                };
-                (window as any).abrirModalProduto(produto);
+                // Atualizar UI - remover active de todos
+                document.querySelectorAll('.categoria-btn').forEach(b => b.classList.remove('active'));
+                target.classList.add('active');
+
+                categoriaAtiva = categoriaId || 'todos';
+                renderProdutos();
             });
         });
     }
 
-    function createProductCard(produto: any) {
+    // Renderizar produtos
+    function renderProdutos() {
+        if (!produtosContainer || !emptyState) return
+
+        // Filtrar produtos
+        let produtosFiltrados = produtos.filter(p => {
+            // Categoria
+            if (categoriaAtiva !== 'todos' && p.categoria_id !== categoriaAtiva) return false
+
+            // Busca
+            if (filtros.busca) {
+                const busca = filtros.busca.toLowerCase()
+                const match = 
+                    p.nome.toLowerCase().includes(busca) ||
+                    p.descricao.toLowerCase().includes(busca) ||
+                    p.codigo.toLowerCase().includes(busca) ||
+                    p.categoria?.nome.toLowerCase().includes(busca)
+                if (!match) return false
+            }
+
+            // Condição
+            if (filtros.condicao && p.condicao !== filtros.condicao) return false
+
+            // Bateria
+            if (p.bateria < filtros.bateria) return false
+
+            return true
+        })
+
+        // Ordenar
+        switch (filtros.ordenacao) {
+            case 'preco-asc':
+                produtosFiltrados.sort((a, b) => a.preco - b.preco)
+                break
+            case 'preco-desc':
+                produtosFiltrados.sort((a, b) => b.preco - a.preco)
+                break
+            case 'bateria':
+                produtosFiltrados.sort((a, b) => b.bateria - a.bateria)
+                break
+            default: // recente
+                produtosFiltrados.sort((a, b) => 
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                )
+        }
+
+        // Exibir
+        if (produtosFiltrados.length === 0) {
+            produtosContainer.innerHTML = ''
+            emptyState.style.display = 'block'
+            return
+        }
+
+        emptyState.style.display = 'none'
+
+        // Agrupar por categoria se "Todos" estiver selecionado
+        if (categoriaAtiva === 'todos') {
+            const porCategoria = new Map<string, (Product & { categoria: Category })[]>()
+            
+            produtosFiltrados.forEach(p => {
+                const catNome = p.categoria?.nome || 'Sem Categoria'
+                if (!porCategoria.has(catNome)) {
+                    porCategoria.set(catNome, [])
+                }
+                porCategoria.get(catNome)!.push(p)
+            })
+
+            produtosContainer.innerHTML = Array.from(porCategoria.entries())
+                .map(([catNome, prods]) => `
+                    <div class="categoria-section">
+                        <h2 class="categoria-titulo">${catNome}</h2>
+                        <div class="categoria-grid">
+                            ${prods.map(p => createProductCard(p)).join('')}
+                        </div>
+                    </div>
+                `)
+                .join('')
+        } else {
+            produtosContainer.innerHTML = produtosFiltrados
+                .map(p => createProductCard(p))
+                .join('')
+        }
+
+        // Adicionar event listeners
+        produtosContainer.querySelectorAll('.produto-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const el = card as HTMLElement
+                const produto = {
+                    id: el.dataset.produtoId,
+                    codigo: el.dataset.produtoCodigo,
+                    nome: el.dataset.produtoNome,
+                    descricao: el.dataset.produtoDescricao,
+                    preco: el.dataset.produtoPreco,
+                    condicao: el.dataset.produtoCondicao,
+                    bateria: el.dataset.produtoBateria,
+                    categoria: el.dataset.produtoCategoria,
+                    imagens: JSON.parse(el.dataset.produtoImagens || '[]')
+                };
+                (window as any).abrirModalProduto(produto)
+            })
+        })
+    }
+
+    // Criar card de produto
+    function createProductCard(produto: Product & { categoria: Category }) {
         const precoFormatado = new Intl.NumberFormat('pt-BR', { 
             style: 'currency', 
             currency: 'BRL' 
-        }).format(produto.preco);
+        }).format(produto.preco)
 
-        const bateriaWidth = (produto.bateria / 100) * 14;
+        const bateriaWidth = (produto.bateria / 100) * 14
 
         return `
             <article class="produto-card" 
@@ -422,15 +777,19 @@ const produtos = [];
                 data-produto-preco="${precoFormatado}"
                 data-produto-condicao="${produto.condicao}"
                 data-produto-bateria="${produto.bateria}"
-                data-produto-categoria="${produto.categoria}"
+                data-produto-categoria="${produto.categoria?.nome || ''}"
                 data-produto-imagens='${JSON.stringify(produto.imagens)}'>
                 <div class="produto-image">
-                    <div class="image-placeholder">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                            <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </div>
+                    ${produto.imagens && produto.imagens[0] ? `
+                        <img src="${produto.imagens[0]}" alt="${produto.nome}" loading="lazy" />
+                    ` : `
+                        <div class="image-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+                                <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    `}
                     <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
                     <div class="bateria-indicator">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -442,7 +801,6 @@ const produtos = [];
                     </div>
                 </div>
                 <div class="produto-info">
-                    <span class="categoria-tag">${produto.categoria}</span>
                     <h3>${produto.nome}</h3>
                     <p class="descricao">${produto.descricao}</p>
                     <div class="produto-footer">
@@ -451,59 +809,99 @@ const produtos = [];
                     </div>
                 </div>
             </article>
-        `;
+        `
     }
 
+    // Event Listeners
+    searchInput?.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement
+        filtros.busca = target.value
+        renderProdutos()
+    })
+
+    toggleFiltros?.addEventListener('click', () => {
+        filtrosAvancados?.classList.toggle('active')
+    })
+
+    document.getElementById('filtro-condicao')?.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement
+        filtros.condicao = target.value
+        renderProdutos()
+    })
+
+    document.getElementById('filtro-bateria')?.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement
+        filtros.bateria = parseInt(target.value)
+        renderProdutos()
+    })
+
+    document.getElementById('filtro-ordenacao')?.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement
+        filtros.ordenacao = target.value
+        renderProdutos()
+    })
+
+    btnLimparFiltros?.addEventListener('click', () => {
+        filtros = {
+            busca: '',
+            condicao: '',
+            bateria: 0,
+            ordenacao: 'recente'
+        };
+        if (searchInput) searchInput.value = '';
+        const selects = document.querySelectorAll('.filtro-group select');
+        selects.forEach(s => {
+            const select = s as HTMLSelectElement;
+            select.selectedIndex = 0;
+        });
+        renderProdutos();
+    });
+
     // Login
-    btnLogin?.addEventListener('click', () => {
+    (window as any).abrirModalLogin = () => {
         modalLogin?.classList.add('active');
-    });
+    };
 
-    formLogin?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = (document.getElementById('login-email') as HTMLInputElement).value;
-        const password = (document.getElementById('login-password') as HTMLInputElement).value;
+    formLogin?.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        
+        const email = (document.getElementById('login-email') as HTMLInputElement).value
+        const password = (document.getElementById('login-password') as HTMLInputElement).value
 
-        if (authStore.login(email, password)) {
-            modalLogin?.classList.remove('active');
-            formLogin.reset();
-            checkAuth();
-        } else {
-            alert('Credenciais inválidas!');
+        try {
+            await authService.signIn(email, password)
+            modalLogin?.classList.remove('active')
+            formLogin.reset()
+            if (loginError) {
+                loginError.textContent = ''
+                loginError.classList.remove('show')
+            }
+        } catch (error: any) {
+            if (loginError) {
+                loginError.textContent = error.message || 'Credenciais inválidas'
+                loginError.classList.add('show')
+            }
         }
-    });
+    })
 
-    // Logout
-    btnLogout?.addEventListener('click', () => {
-        authStore.logout();
-        checkAuth();
-    });
-
-    // Abrir formulários
-    btnCriarProduto?.addEventListener('click', () => {
-        (window as any).abrirFormProduto();
-    });
-
-    btnGerirCategorias?.addEventListener('click', () => {
-        (window as any).abrirGerirCategorias();
-    });
-
-    // Fechar modal de login
     modalLogin?.querySelector('.modal-close')?.addEventListener('click', () => {
-        modalLogin.classList.remove('active');
-    });
+        modalLogin.classList.remove('active')
+    })
 
     modalLogin?.querySelector('.modal-overlay')?.addEventListener('click', () => {
-        modalLogin.classList.remove('active');
-    });
+        modalLogin.classList.remove('active')
+    })
 
     // Inicializar
-    checkAuth();
-    carregarProdutos();
+    carregarDados()
+
+    // Recarregar quando produtos/categorias mudarem
+    window.addEventListener('produtos-updated', () => {
+        carregarDados()
+    })
 </script>
 
 <style is:inline>
-    /* Estilos dos cards inline para funcionarem com JS */
     .produto-card {
         background: #0a0a0a;
         border: 1px solid #1a1a1a;
@@ -527,6 +925,13 @@ const produtos = [];
         align-items: center;
         justify-content: center;
         border-bottom: 1px solid #1a1a1a;
+        overflow: hidden;
+    }
+
+    .produto-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .image-placeholder {
@@ -539,22 +944,12 @@ const produtos = [];
         position: absolute;
         top: 1rem;
         right: 1rem;
-        background: rgba(255, 255, 255, 0.95);
+        background: #fff;
         color: #000;
         padding: 0.35rem 0.75rem;
         border-radius: 20px;
         font-size: 0.75rem;
         font-weight: 600;
-    }
-
-    .condicao-badge.novo {
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        color: #fff;
-    }
-
-    .condicao-badge.seminovo {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: #fff;
     }
 
     .bateria-indicator {
@@ -585,18 +980,6 @@ const produtos = [];
 
     .produto-info {
         padding: 1.5rem;
-    }
-
-    .categoria-tag {
-        display: inline-block;
-        font-size: 0.7rem;
-        color: #888;
-        background: #1a1a1a;
-        padding: 0.25rem 0.6rem;
-        border-radius: 12px;
-        margin-bottom: 0.75rem;
-        font-weight: 500;
-        letter-spacing: 0.05em;
     }
 
     .produto-info h3 {
