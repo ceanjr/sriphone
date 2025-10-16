@@ -97,7 +97,7 @@
         background: #0a0a0a;
         border: 1px solid #2a2a2a;
         border-radius: 24px;
-        max-width: 900px;
+        max-width: 1100px;
         width: 100%;
         max-height: 90vh;
         overflow-y: auto;
@@ -249,12 +249,14 @@
 
     .modal-info {
         padding: 2rem;
+        overflow-x: hidden;
     }
 
     .modal-badges {
         display: flex;
         gap: 0.75rem;
         margin-bottom: 1rem;
+        flex-wrap: wrap;
     }
 
     .modal-condicao,
@@ -344,7 +346,8 @@
         display: inline-flex;
         align-items: center;
         gap: 0.75rem;
-        background: #25D366;
+        background: #0a0a0a;
+        border: 1px solid #25D366;
         color: #fff;
         padding: 1rem 2rem;
         border-radius: 12px;
@@ -355,7 +358,7 @@
     }
 
     .btn-whatsapp:hover {
-        background: #22c55e;
+        background: #25D366;
         transform: translateY(-2px);
         box-shadow: 0 10px 30px rgba(37, 211, 102, 0.3);
     }
@@ -363,6 +366,13 @@
     .btn-whatsapp svg {
         width: 24px;
         height: 24px;
+        color: #25D366;
+        flex-shrink: 0;
+        transition: color 0.3s ease;
+    }
+
+    .btn-whatsapp:hover svg {
+        color: #fff;
     }
 
     @media (min-width: 768px) {
