@@ -1,11 +1,14 @@
 ---
-// src/components/FormularioProduto.astro
+import '../styles/components/formulario-produto.css';
+import { categoryService } from '../lib/supabase';
 ---
 
 <div id="modal-form-produto" class="modal-form">
     <div class="modal-overlay"></div>
     <div class="modal-content">
-        <button class="modal-close" aria-label="Fechar">
+        <div class="modal-drag-handle"></div>
+        
+        <button type="button" class="modal-close" aria-label="Fechar">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -13,26 +16,31 @@
 
         <div class="modal-header">
             <h2>Criar Novo Produto</h2>
+            <p class="modal-subtitle">Preencha os dados abaixo</p>
         </div>
 
         <form id="form-produto" class="product-form">
             <!-- Upload de Imagens -->
             <div class="form-section">
-                <label class="section-label">Imagens do Produto</label>
+                <label class="section-label">
+                    Imagens do Produto *
+                    <span class="label-hint">Adicione até 5 fotos</span>
+                </label>
                 <div class="image-upload-area" id="image-upload-area">
                     <input 
                         type="file" 
                         id="product-images" 
                         accept="image/*" 
                         multiple 
+                        capture="environment"
                         hidden
                     />
                     <div class="upload-placeholder" id="upload-placeholder">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>Clique para adicionar imagens</span>
-                        <small>Arraste imagens ou clique para selecionar</small>
+                        <span class="upload-title">Adicionar Fotos</span>
+                        <small>Toque para tirar foto ou escolher da galeria</small>
                     </div>
                     <div class="image-preview-grid" id="image-preview-grid"></div>
                 </div>
@@ -44,35 +52,45 @@
                 </div>
             </div>
 
-            <!-- Nome e Código -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="produto-nome">Nome do Produto *</label>
-                    <input 
-                        type="text" 
-                        id="produto-nome" 
-                        name="nome" 
-                        required 
-                        placeholder="Ex: iPhone 14 Pro Max"
-                    />
-                </div>
+            <!-- Nome -->
+            <div class="form-group">
+                <label for="produto-nome">
+                    Nome do Produto *
+                    <span class="label-required">obrigatório</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="produto-nome" 
+                    name="nome" 
+                    required 
+                    placeholder="Ex: iPhone 14 Pro Max"
+                    autocomplete="off"
+                />
+            </div>
 
-                <div class="form-group">
-                    <label for="produto-codigo">Código *</label>
-                    <input 
-                        type="text" 
-                        id="produto-codigo" 
-                        name="codigo" 
-                        required 
-                        placeholder="Ex: IP14PM256"
-                    />
-                </div>
+            <!-- Código -->
+            <div class="form-group">
+                <label for="produto-codigo">
+                    Código do Produto *
+                    <span class="label-required">obrigatório</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="produto-codigo" 
+                    name="codigo" 
+                    required 
+                    placeholder="Ex: IP14PM256"
+                    autocomplete="off"
+                />
             </div>
 
             <!-- Preço e Bateria -->
-            <div class="form-row">
+            <div class="form-row-mobile">
                 <div class="form-group">
-                    <label for="produto-preco">Preço (R$) *</label>
+                    <label for="produto-preco">
+                        Preço (R$) *
+                        <span class="label-required">obrigatório</span>
+                    </label>
                     <input 
                         type="number" 
                         id="produto-preco" 
@@ -81,11 +99,15 @@
                         step="0.01"
                         min="0"
                         placeholder="5499.00"
+                        inputmode="decimal"
                     />
                 </div>
 
                 <div class="form-group">
-                    <label for="produto-bateria">Bateria (%) *</label>
+                    <label for="produto-bateria">
+                        Bateria (%) *
+                        <span class="label-required">obrigatório</span>
+                    </label>
                     <input 
                         type="number" 
                         id="produto-bateria" 
@@ -94,42 +116,51 @@
                         min="0"
                         max="100"
                         placeholder="95"
+                        inputmode="numeric"
                     />
                 </div>
             </div>
 
-            <!-- Condição e Categoria -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="produto-condicao">Condição *</label>
-                    <select id="produto-condicao" name="condicao" required>
-                        <option value="">Selecione...</option>
-                        <option value="Novo">Novo</option>
-                        <option value="Seminovo">Seminovo</option>
-                    </select>
-                </div>
+            <!-- Condição -->
+            <div class="form-group">
+                <label for="produto-condicao">
+                    Condição *
+                    <span class="label-required">obrigatório</span>
+                </label>
+                <select id="produto-condicao" name="condicao" required>
+                    <option value="">Selecione a condição...</option>
+                    <option value="Novo">Novo</option>
+                    <option value="Seminovo">Seminovo</option>
+                </select>
+            </div>
 
-                <div class="form-group">
-                    <label for="produto-categoria">Categoria *</label>
-                    <select id="produto-categoria" name="categoria" required>
-                        <option value="">Selecione...</option>
-                    </select>
-                </div>
+            <!-- Categoria -->
+            <div class="form-group">
+                <label for="produto-categoria">
+                    Categoria *
+                    <span class="label-required">obrigatório</span>
+                </label>
+                <select id="produto-categoria" name="categoria" required>
+                    <option value="">Selecione a categoria...</option>
+                </select>
             </div>
 
             <!-- Descrição -->
             <div class="form-group">
-                <label for="produto-descricao">Descrição *</label>
+                <label for="produto-descricao">
+                    Descrição *
+                    <span class="label-required">obrigatório</span>
+                </label>
                 <textarea 
                     id="produto-descricao" 
                     name="descricao" 
                     required 
                     rows="4"
-                    placeholder="Descreva os detalhes do produto..."
+                    placeholder="Descreva os detalhes do produto (estado, acessórios inclusos, etc.)"
                 ></textarea>
             </div>
 
-            <!-- Botões -->
+            <!-- Botões Fixos no Mobile -->
             <div class="form-actions">
                 <button type="button" class="btn-cancel">Cancelar</button>
                 <button type="submit" class="btn-submit">
@@ -145,424 +176,6 @@
     </div>
 </div>
 
-<style is:global>
-    .modal-form {
-        position: fixed;
-        inset: 0;
-        z-index: 2000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-    }
-
-    .modal-form.active {
-        display: flex;
-    }
-
-    .modal-form .modal-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.95);
-        backdrop-filter: blur(10px);
-    }
-
-    .modal-form .modal-content {
-        position: relative;
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
-        border-radius: 16px;
-        max-width: 700px;
-        width: 100%;
-        max-height: 95vh;
-        overflow-y: auto;
-        z-index: 1;
-        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        margin: 0.5rem;
-    }
-
-    @media (min-width: 640px) {
-        .modal-form .modal-content {
-            border-radius: 24px;
-            max-height: 90vh;
-            margin: 1rem;
-        }
-    }
-
-    @keyframes slideUp {
-        from {
-            transform: translateY(30px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-
-    .modal-header {
-        padding: 1.5rem 1.5rem 1rem;
-        border-bottom: 1px solid #1a1a1a;
-    }
-
-    .modal-header h2 {
-        font-family: "Halenoir", sans-serif;
-        font-size: 1.25rem;
-        color: var(--cor-primaria);
-        margin: 0;
-        padding-right: 2rem;
-    }
-
-    @media (min-width: 640px) {
-        .modal-header {
-            padding: 2rem 2rem 1rem;
-        }
-
-        .modal-header h2 {
-            font-size: 1.5rem;
-            padding-right: 0;
-        }
-    }
-
-    .modal-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: rgba(0, 0, 0, 0.8);
-        border: 1px solid #2a2a2a;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        z-index: 10;
-    }
-
-    .modal-close:hover {
-        background: #fff;
-        color: #000;
-        transform: rotate(90deg);
-    }
-
-    .modal-close svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .product-form {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    @media (min-width: 640px) {
-        .product-form {
-            padding: 2rem;
-        }
-    }
-
-    .form-section {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .section-label {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #fff;
-    }
-
-    .image-upload-area {
-        position: relative;
-        border: 2px dashed #2a2a2a;
-        border-radius: 12px;
-        padding: 2rem 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        min-height: 120px;
-    }
-
-    @media (min-width: 640px) {
-        .image-upload-area {
-            padding: 2rem;
-        }
-    }
-
-    .image-upload-area:hover {
-        border-color: #404040;
-        background: rgba(255, 255, 255, 0.02);
-    }
-
-    .upload-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        color: #666;
-    }
-
-    .upload-placeholder.hidden {
-        display: none;
-    }
-
-    .upload-placeholder svg {
-        width: 40px;
-        height: 40px;
-    }
-
-    @media (min-width: 640px) {
-        .upload-placeholder svg {
-            width: 48px;
-            height: 48px;
-        }
-    }
-
-    .upload-placeholder span {
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
-
-    @media (min-width: 640px) {
-        .upload-placeholder span {
-            font-size: 1rem;
-        }
-    }
-
-    .upload-placeholder small {
-        font-size: 0.8rem;
-        color: #555;
-        text-align: center;
-    }
-
-    @media (min-width: 640px) {
-        .upload-placeholder small {
-            font-size: 0.85rem;
-        }
-    }
-
-    .image-preview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        gap: 0.75rem;
-    }
-
-    @media (min-width: 640px) {
-        .image-preview-grid {
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 1rem;
-        }
-    }
-
-    .image-preview-grid:empty {
-        display: none;
-    }
-
-    .image-preview-item {
-        position: relative;
-        aspect-ratio: 1;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #1a1a1a;
-    }
-
-    .image-preview-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .image-preview-item .remove-image {
-        position: absolute;
-        top: 0.25rem;
-        right: 0.25rem;
-        background: rgba(0, 0, 0, 0.8);
-        border: none;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .image-preview-item .remove-image:hover {
-        background: #ef4444;
-    }
-
-    .upload-progress {
-        display: none;
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 1rem;
-        background: #0f0f0f;
-        border-radius: 8px;
-    }
-
-    .upload-progress.active {
-        display: flex;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 8px;
-        background: #1a1a1a;
-        border-radius: 4px;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #22c55e, #16a34a);
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-
-    .progress-text {
-        font-size: 0.85rem;
-        color: #999;
-        text-align: center;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    @media (min-width: 640px) {
-        .form-row {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .form-group label {
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: #999;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        color: #fff;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #fff;
-        background: #1a1a1a;
-    }
-
-    .form-group textarea {
-        resize: vertical;
-        min-height: 100px;
-    }
-
-    .form-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #1a1a1a;
-    }
-
-    @media (min-width: 640px) {
-        .form-actions {
-            flex-direction: row;
-            justify-content: flex-end;
-            gap: 1rem;
-        }
-    }
-
-    .btn-cancel,
-    .btn-submit {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-
-    @media (min-width: 640px) {
-        .btn-cancel,
-        .btn-submit {
-            width: auto;
-        }
-    }
-
-    .btn-cancel {
-        background: transparent;
-        border: 1px solid #2a2a2a;
-        color: #999;
-    }
-
-    .btn-cancel:hover {
-        border-color: #fff;
-        color: #fff;
-    }
-
-    .btn-submit {
-        background: #fff;
-        border: none;
-        color: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-
-    .btn-submit:hover:not(:disabled) {
-        background: #e5e5e5;
-        transform: translateY(-2px);
-    }
-
-    .btn-submit:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    .spinner-icon {
-        width: 20px;
-        height: 20px;
-        animation: rotate 1s linear infinite;
-    }
-
-    @keyframes rotate {
-        to { transform: rotate(360deg); }
-    }
-
-    @media (min-width: 768px) {
-        .modal-header h2 {
-            font-size: 1.8rem;
-        }
-    }
-</style>
-
 <script>
     import { productService, categoryService } from '../lib/supabase'
 
@@ -577,6 +190,7 @@
     const selectCategoria = document.getElementById('produto-categoria') as HTMLSelectElement
     const btnSubmit = form?.querySelector('.btn-submit') as HTMLButtonElement
 
+    const MAX_IMAGES = 5
     let arquivosImagem: File[] = []
 
     // Carregar categorias
@@ -584,7 +198,7 @@
         if (!selectCategoria) return
         try {
             const categorias = await categoryService.getAll()
-            selectCategoria.innerHTML = '<option value="">Selecione...</option>'
+            selectCategoria.innerHTML = '<option value="">Selecione a categoria...</option>'
             categorias.forEach(cat => {
                 const option = document.createElement('option')
                 option.value = cat.id
@@ -593,26 +207,32 @@
             })
         } catch (error) {
             console.error('Erro ao carregar categorias:', error)
+            mostrarToast('Erro ao carregar categorias', 'error')
         }
     }
 
     // Upload de imagens
     imageUploadArea?.addEventListener('click', () => {
+        if (arquivosImagem.length >= MAX_IMAGES) {
+            mostrarToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning')
+            return
+        }
         imageInput?.click()
     })
 
+    // Drag and drop (mantido para desktop)
     imageUploadArea?.addEventListener('dragover', (e) => {
         e.preventDefault()
         imageUploadArea.style.borderColor = '#fff'
     })
 
     imageUploadArea?.addEventListener('dragleave', () => {
-        imageUploadArea.style.borderColor = '#2a2a2a'
+        imageUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)'
     })
 
     imageUploadArea?.addEventListener('drop', (e) => {
         e.preventDefault()
-        imageUploadArea.style.borderColor = '#2a2a2a'
+        imageUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)'
         const files = e.dataTransfer?.files
         if (files) {
             handleFiles(files)
@@ -625,20 +245,33 @@
         if (files) {
             handleFiles(files)
         }
+        target.value = '' // Reset para permitir selecionar mesma imagem
     })
 
     function handleFiles(files: FileList) {
         const placeholder = document.getElementById('upload-placeholder')
+        const arquivosRestantes = MAX_IMAGES - arquivosImagem.length
         
+        if (arquivosRestantes <= 0) {
+            mostrarToast(`Máximo de ${MAX_IMAGES} imagens atingido`, 'warning')
+            return
+        }
+        
+        let adicionados = 0
         Array.from(files).forEach(file => {
-            if (file.type.startsWith('image/')) {
+            if (file.type.startsWith('image/') && arquivosImagem.length < MAX_IMAGES) {
                 arquivosImagem.push(file)
+                adicionados++
             }
         })
         
-        renderAllPreviews()
+        if (adicionados > 0) {
+            renderAllPreviews()
+            if (arquivosImagem.length >= MAX_IMAGES) {
+                mostrarToast(`Limite de ${MAX_IMAGES} imagens atingido`, 'info')
+            }
+        }
         
-        // Esconder placeholder se houver imagens
         if (arquivosImagem.length > 0 && placeholder) {
             placeholder.classList.add('hidden')
         }
@@ -652,8 +285,13 @@
             const item = document.createElement('div')
             item.className = 'image-preview-item'
             item.innerHTML = `
-                <img src="${e.target?.result}" alt="Preview ${index + 1}">
-                <button type="button" class="remove-image" data-index="${index}">×</button>
+                <img src="${e.target?.result}" alt="Preview ${index + 1}" loading="lazy">
+                <button type="button" class="remove-image" data-index="${index}" aria-label="Remover imagem">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <span class="image-number">${index + 1}</span>
             `
 
             const removeBtn = item.querySelector('.remove-image')
@@ -661,6 +299,7 @@
                 e.stopPropagation()
                 arquivosImagem.splice(index, 1)
                 renderAllPreviews()
+                mostrarToast('Imagem removida', 'info')
             })
 
             imagePreviewGrid.appendChild(item)
@@ -677,7 +316,6 @@
             renderPreview(file, index)
         })
         
-        // Mostrar/esconder placeholder baseado na quantidade de imagens
         if (arquivosImagem.length > 0 && placeholder) {
             placeholder.classList.add('hidden')
         } else if (placeholder) {
@@ -685,22 +323,59 @@
         }
     }
 
+    // Toast notification
+    function mostrarToast(mensagem: string, tipo: 'success' | 'error' | 'warning' | 'info' = 'info') {
+        const toast = document.createElement('div')
+        toast.className = `toast toast-${tipo}`
+        toast.textContent = mensagem
+        document.body.appendChild(toast)
+        
+        setTimeout(() => toast.classList.add('show'), 10)
+        setTimeout(() => {
+            toast.classList.remove('show')
+            setTimeout(() => toast.remove(), 300)
+        }, 3000)
+    }
+
+    // Validação aprimorada
+    function validarFormulario(): boolean {
+        if (arquivosImagem.length === 0) {
+            mostrarToast('Adicione pelo menos uma imagem do produto', 'warning')
+            imageUploadArea?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            return false
+        }
+
+        const preco = parseFloat((document.getElementById('produto-preco') as HTMLInputElement).value)
+        if (preco <= 0) {
+            mostrarToast('O preço deve ser maior que zero', 'warning')
+            return false
+        }
+
+        const bateria = parseInt((document.getElementById('produto-bateria') as HTMLInputElement).value)
+        if (bateria < 0 || bateria > 100) {
+            mostrarToast('A bateria deve estar entre 0 e 100%', 'warning')
+            return false
+        }
+
+        return true
+    }
+
     // Submit do formulário
     form?.addEventListener('submit', async (e) => {
         e.preventDefault()
         
-        if (arquivosImagem.length === 0) {
-            alert('Por favor, adicione pelo menos uma imagem do produto')
-            return
-        }
+        if (!validarFormulario()) return
 
         try {
-            // Desabilitar botão
+            // Desabilitar botão e scroll
             if (btnSubmit) {
                 btnSubmit.disabled = true
                 btnSubmit.querySelector('.btn-text')!.textContent = 'Criando...'
                 btnSubmit.querySelector('.btn-spinner')!.setAttribute('style', 'display: inline-block')
             }
+
+            // Prevenir scroll durante upload
+            document.body.style.overflow = 'hidden'
 
             // Upload de imagens
             const progressBar = uploadProgress?.querySelector('.progress-fill') as HTMLElement
@@ -734,14 +409,13 @@
 
             await productService.create(produto)
             
-            // Disparar evento para recarregar produtos
             window.dispatchEvent(new Event('produtos-updated'))
             
             fecharModal()
-            alert('Produto criado com sucesso!')
+            mostrarToast('Produto criado com sucesso!', 'success')
         } catch (error) {
             console.error('Erro ao criar produto:', error)
-            alert('Erro ao criar produto. Tente novamente.')
+            mostrarToast('Erro ao criar produto. Tente novamente.', 'error')
         } finally {
             if (btnSubmit) {
                 btnSubmit.disabled = false
@@ -749,6 +423,7 @@
                 btnSubmit.querySelector('.btn-spinner')!.setAttribute('style', 'display: none')
             }
             uploadProgress?.classList.remove('active')
+            document.body.style.overflow = ''
         }
     })
 
@@ -757,6 +432,13 @@
         modalForm?.classList.add('active')
         document.body.style.overflow = 'hidden'
         carregarCategorias()
+        
+        // Focus no primeiro campo em desktop
+        if (window.innerWidth >= 768) {
+            setTimeout(() => {
+                (document.getElementById('produto-nome') as HTMLInputElement)?.focus()
+            }, 300)
+        }
     }
 
     function fecharModal() {
@@ -777,8 +459,15 @@
 
     btnCancel?.addEventListener('click', fecharModal)
     modalClose?.addEventListener('click', fecharModal)
-    modalForm?.querySelector('.modal-overlay')?.addEventListener('click', fecharModal);
+    modalForm?.querySelector('.modal-overlay')?.addEventListener('click', fecharModal)
+
+    // Fechar com ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalForm?.classList.contains('active')) {
+            fecharModal()
+        }
+    });
 
     // Expor função globalmente
-    (window as any).abrirFormProduto = abrirModal
+    (window as any).abrirFormProduto = abrirModal;
 </script>

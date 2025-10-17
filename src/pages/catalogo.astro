@@ -6,6 +6,7 @@ import Footer from '../components/Footer.astro';
 import ModalProduto from '../components/ModalProduto.astro';
 import FormularioProduto from '../components/FormularioProduto.astro';
 import GerirCategorias from '../components/GerirCategorias.astro';
+import '../styles/pages/catalogo.css';
 ---
 
 <Layout 
@@ -139,892 +140,442 @@ import GerirCategorias from '../components/GerirCategorias.astro';
     <Footer />
 </Layout>
 
-<style is:global>
-    .catalogo-page {
-        background-color: var(--cor-fundo-escuro);
-        min-height: 100vh;
-    }
-
-    .hero-catalogo {
-        padding: 3rem 1rem 2rem;
-        border-bottom: 1px solid #1a1a1a;
-        text-align: center;
-    }
-
-    .eyebrow {
-        display: inline-block;
-        font-size: 0.75rem;
-        letter-spacing: 0.15em;
-        font-weight: 600;
-        color: #666;
-        margin-bottom: 0.75rem;
-        text-transform: uppercase;
-    }
-
-    .hero-catalogo h1 {
-        font-family: "Halenoir", sans-serif;
-        font-size: 2rem;
-        color: var(--cor-primaria);
-        margin-bottom: 0.5rem;
-    }
-
-    .hero-catalogo p {
-        color: #999;
-        font-size: 1rem;
-    }
-
-    /* Filtros */
-    .filtros-section {
-        padding: 2rem 1rem;
-        background: #0a0a0a;
-        border-bottom: 1px solid #1a1a1a;
-    }
-
-    .search-bar {
-        position: relative;
-        margin-bottom: 1.5rem;
-    }
-
-    .search-bar svg {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 20px;
-        height: 20px;
-        color: #666;
-    }
-
-    .search-bar input {
-        width: 100%;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        border-radius: 12px;
-        padding: 0.875rem 1rem 0.875rem 3rem;
-        color: #fff;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .search-bar input:focus {
-        outline: none;
-        border-color: #fff;
-        background: #1a1a1a;
-    }
-
-    .filtros-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .categoria-filtros {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #1a1a1a;
-    }
-
-    .categoria-btn {
-        background: #0f0f0f;
-        border: 2px solid #2a2a2a;
-        color: var(--cor-texto);
-        padding: 0.625rem 1.25rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-    }
-
-    .categoria-btn:hover {
-        border-color: var(--cor-fundo-claro);
-        color: var(--cor-fundo-claro);
-    }
-
-    .categoria-btn.active {
-        background: var(--cor-fundo-claro);
-        color: #000;
-        border-color: var(--cor-fundo-claro);
-    }
-
-    #categorias-lista {
-        display: contents;
-    }
-
-    .toggle-filtros {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: transparent;
-        border: 1px solid #2a2a2a;
-        color: #999;
-        padding: 0.625rem 1rem;
-        border-radius: 10px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        align-self: flex-start;
-    }
-
-    .toggle-filtros:hover {
-        border-color: #fff;
-        color: #fff;
-    }
-
-    .toggle-filtros svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .filtros-avancados {
-        display: none;
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        padding: 1rem;
-        background: #0f0f0f;
-        border: 1px solid #1a1a1a;
-        border-radius: 12px;
-    }
-
-    .filtros-avancados.active {
-        display: grid;
-    }
-
-    .filtro-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .filtro-group label {
-        font-size: 0.85rem;
-        color: #999;
-        font-weight: 500;
-    }
-
-    .filtro-group select {
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
-        border-radius: 8px;
-        padding: 0.625rem 0.875rem;
-        color: #fff;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .filtro-group select:focus {
-        outline: none;
-        border-color: #fff;
-    }
-
-    .btn-limpar-filtros {
-        background: transparent;
-        border: 1px solid #ef4444;
-        color: #ef4444;
-        padding: 0.625rem 1rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .btn-limpar-filtros:hover {
-        background: #ef4444;
-        color: #fff;
-    }
-
-    /* Produtos */
-    .produtos-section {
-        padding: 3rem 1rem;
-    }
-
-    .loading {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-        padding: 4rem 1rem;
-        color: #666;
-    }
-
-    .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #1a1a1a;
-        border-top-color: #fff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-
-    #produtos-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .categoria-section {
-        grid-column: 1/-1;
-        margin-top: 2rem;
-    }
-
-    .categoria-section:first-child {
-        margin-top: 0;
-    }
-
-    .categoria-titulo {
-        font-family: "Halenoir", sans-serif;
-        font-size: 1.5rem;
-        color: var(--cor-primaria);
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid #1a1a1a;
-    }
-
-    .categoria-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .empty-state {
-        grid-column: 1/-1;
-        text-align: center;
-        padding: 4rem 1rem;
-        color: #666;
-    }
-
-    .empty-state svg {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 1rem;
-        opacity: 0.3;
-    }
-
-    /* Modal Login */
-    .modal-login {
-        position: fixed;
-        inset: 0;
-        z-index: 2000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-    }
-
-    .modal-login.active {
-        display: flex;
-    }
-
-    .modal-login .modal-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.95);
-        backdrop-filter: blur(10px);
-    }
-
-    .modal-login .modal-content {
-        position: relative;
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
-        border-radius: 24px;
-        padding: 2rem;
-        max-width: 400px;
-        width: 100%;
-        z-index: 1;
-    }
-
-    .modal-login h2 {
-        font-family: "Halenoir", sans-serif;
-        color: var(--cor-primaria);
-        margin-bottom: 1.5rem;
-        text-align: center;
-    }
-
-    .modal-login .modal-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: transparent;
-        border: none;
-        color: #666;
-        font-size: 1.5rem;
-        cursor: pointer;
-        transition: color 0.3s ease;
-    }
-
-    .modal-login .modal-close:hover {
-        color: #fff;
-    }
-
-    .modal-login .form-group {
-        margin-bottom: 1.5rem;
-    }
-
-    .modal-login label {
-        display: block;
-        color: #999;
-        font-size: 0.9rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .modal-login input {
-        width: 100%;
-        background: #0f0f0f;
-        border: 1px solid #2a2a2a;
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-        color: #fff;
-        font-size: 1rem;
-    }
-
-    .modal-login input:focus {
-        outline: none;
-        border-color: #fff;
-    }
-
-    .error-message {
-        color: #ef4444;
-        font-size: 0.875rem;
-        margin-bottom: 1rem;
-        display: none;
-    }
-
-    .error-message.show {
-        display: block;
-    }
-
-    .modal-login .btn-submit {
-        width: 100%;
-        background: #fff;
-        border: none;
-        color: #000;
-        padding: 0.875rem;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .modal-login .btn-submit:hover {
-        background: #e5e5e5;
-    }
-
-    @media (min-width: 640px) {
-        .filtros-avancados {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .btn-limpar-filtros {
-            grid-column: span 2;
-        }
-    }
-
-    @media (min-width: 768px) {
-        .hero-catalogo {
-            padding: 4rem 1rem 3rem;
-        }
-
-        .hero-catalogo h1 {
-            font-size: 3.5rem;
-        }
-
-        .hero-catalogo p {
-            font-size: 1.2rem;
-        }
-
-        .filtros-section {
-            padding: 2.5rem 1rem;
-        }
-
-        .search-bar {
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .filtros-avancados {
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        .btn-limpar-filtros {
-            grid-column: span 3;
-        }
-
-        #produtos-container {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2rem;
-        }
-
-        .categoria-grid {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 2rem;
-        }
-
-        .produtos-section {
-            padding: 4rem 1rem;
-        }
-    }
-</style>
-
 <script>
-    import { productService, categoryService, authService, type Product, type Category } from '../lib/supabase'
+    import { 
+        productService, 
+        categoryService, 
+        authService, 
+        type Product, 
+        type Category 
+    } from '../lib/supabase';
 
-    // Estado
-    let produtos: (Product & { categoria: Category })[] = []
-    let categorias: Category[] = []
-    let categoriaAtiva = 'todos'
-    let filtros = {
-        busca: '',
-        condicao: '',
-        bateria: 0,
-        ordenacao: 'recente'
+    // ==================== Estado ====================
+    interface AppState {
+        produtos: (Product & { categoria: Category })[];
+        categorias: Category[];
+        categoriaAtiva: string;
+        filtros: {
+            busca: string;
+            condicao: string;
+            bateria: number;
+            ordenacao: string;
+        };
     }
 
-    // Elementos
-    const modalLogin = document.getElementById('modal-login')
-    const formLogin = document.getElementById('form-login') as HTMLFormElement
-    const loginError = document.getElementById('login-error')
-    const searchInput = document.getElementById('search-input') as HTMLInputElement
-    const toggleFiltros = document.getElementById('toggle-filtros')
-    const filtrosAvancados = document.getElementById('filtros-avancados')
-    const btnLimparFiltros = document.getElementById('btn-limpar-filtros')
-    const produtosContainer = document.getElementById('produtos-container')
-    const loading = document.getElementById('loading')
-    const emptyState = document.getElementById('empty-state')
-    const categoriasLista = document.getElementById('categorias-lista')
-
-    // Carregar dados iniciais
-    async function carregarDados() {
-        try {
-            if (loading) loading.style.display = 'flex'
-            if (emptyState) emptyState.style.display = 'none'
-            if (produtosContainer) produtosContainer.innerHTML = ''
-
-            const [produtosData, categoriasData] = await Promise.all([
-                productService.getAll(),
-                categoryService.getAll()
-            ])
-
-            produtos = produtosData
-            categorias = categoriasData
-
-            renderCategorias()
-            renderProdutos()
-        } catch (error) {
-            console.error('Erro ao carregar dados:', error)
-            alert('Erro ao carregar produtos. Tente novamente.')
-        } finally {
-            if (loading) loading.style.display = 'none'
-        }
-    }
-
-    // Renderizar categorias
-    function renderCategorias() {
-        if (!categoriasLista) return
-
-        categoriasLista.innerHTML = categorias
-            .map(cat => `
-                <button class="categoria-btn" data-categoria="${cat.id}">
-                    ${cat.nome}
-                </button>
-            `)
-            .join('');
-
-        // Event listeners para todas as categorias (incluindo "Todos")
-        document.querySelectorAll('.categoria-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const target = e.currentTarget as HTMLElement;
-                const categoriaId = target.dataset.categoria;
-
-                // Atualizar UI - remover active de todos
-                document.querySelectorAll('.categoria-btn').forEach(b => b.classList.remove('active'));
-                target.classList.add('active');
-
-                categoriaAtiva = categoriaId || 'todos';
-                renderProdutos();
-            });
-        });
-    }
-
-    // Renderizar produtos
-    function renderProdutos() {
-        if (!produtosContainer || !emptyState) return
-
-        // Filtrar produtos
-        let produtosFiltrados = produtos.filter(p => {
-            // Categoria
-            if (categoriaAtiva !== 'todos' && p.categoria_id !== categoriaAtiva) return false
-
-            // Busca
-            if (filtros.busca) {
-                const busca = filtros.busca.toLowerCase()
-                const match = 
-                    p.nome.toLowerCase().includes(busca) ||
-                    p.descricao.toLowerCase().includes(busca) ||
-                    p.codigo.toLowerCase().includes(busca) ||
-                    p.categoria?.nome.toLowerCase().includes(busca)
-                if (!match) return false
-            }
-
-            // Condição
-            if (filtros.condicao && p.condicao !== filtros.condicao) return false
-
-            // Bateria
-            if (p.bateria < filtros.bateria) return false
-
-            return true
-        })
-
-        // Ordenar
-        switch (filtros.ordenacao) {
-            case 'preco-asc':
-                produtosFiltrados.sort((a, b) => a.preco - b.preco)
-                break
-            case 'preco-desc':
-                produtosFiltrados.sort((a, b) => b.preco - a.preco)
-                break
-            case 'bateria':
-                produtosFiltrados.sort((a, b) => b.bateria - a.bateria)
-                break
-            default: // recente
-                produtosFiltrados.sort((a, b) => 
-                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                )
-        }
-
-        // Exibir
-        if (produtosFiltrados.length === 0) {
-            produtosContainer.innerHTML = ''
-            emptyState.style.display = 'block'
-            return
-        }
-
-        emptyState.style.display = 'none'
-
-        // Agrupar por categoria se "Todos" estiver selecionado
-        if (categoriaAtiva === 'todos') {
-            const porCategoria = new Map<string, (Product & { categoria: Category })[]>()
-            
-            produtosFiltrados.forEach(p => {
-                const catNome = p.categoria?.nome || 'Sem Categoria'
-                if (!porCategoria.has(catNome)) {
-                    porCategoria.set(catNome, [])
-                }
-                porCategoria.get(catNome)!.push(p)
-            })
-
-            produtosContainer.innerHTML = Array.from(porCategoria.entries())
-                .map(([catNome, prods]) => `
-                    <div class="categoria-section">
-                        <h2 class="categoria-titulo">${catNome}</h2>
-                        <div class="categoria-grid">
-                            ${prods.map(p => createProductCard(p)).join('')}
-                        </div>
-                    </div>
-                `)
-                .join('')
-        } else {
-            produtosContainer.innerHTML = produtosFiltrados
-                .map(p => createProductCard(p))
-                .join('')
-        }
-
-        // Adicionar event listeners
-        produtosContainer.querySelectorAll('.produto-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const el = card as HTMLElement
-                const produto = {
-                    id: el.dataset.produtoId,
-                    codigo: el.dataset.produtoCodigo,
-                    nome: el.dataset.produtoNome,
-                    descricao: el.dataset.produtoDescricao,
-                    preco: el.dataset.produtoPreco,
-                    condicao: el.dataset.produtoCondicao,
-                    bateria: el.dataset.produtoBateria,
-                    categoria: el.dataset.produtoCategoria,
-                    imagens: JSON.parse(el.dataset.produtoImagens || '[]')
-                };
-                (window as any).abrirModalProduto(produto)
-            })
-        })
-    }
-
-    // Criar card de produto
-    function createProductCard(produto: Product & { categoria: Category }) {
-        const precoFormatado = new Intl.NumberFormat('pt-BR', { 
-            style: 'currency', 
-            currency: 'BRL' 
-        }).format(produto.preco)
-
-        const bateriaWidth = (produto.bateria / 100) * 14
-
-        return `
-            <article class="produto-card" 
-                data-produto-id="${produto.id}"
-                data-produto-codigo="${produto.codigo}"
-                data-produto-nome="${produto.nome}"
-                data-produto-descricao="${produto.descricao}"
-                data-produto-preco="${precoFormatado}"
-                data-produto-condicao="${produto.condicao}"
-                data-produto-bateria="${produto.bateria}"
-                data-produto-categoria="${produto.categoria?.nome || ''}"
-                data-produto-imagens='${JSON.stringify(produto.imagens)}'>
-                <div class="produto-image">
-                    ${produto.imagens && produto.imagens[0] ? `
-                        <img src="${produto.imagens[0]}" alt="${produto.nome}" loading="lazy" />
-                    ` : `
-                        <div class="image-placeholder">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                                <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                    `}
-                    <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
-                    <div class="bateria-indicator">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-                            <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
-                            <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor"/>
-                        </svg>
-                        <span>${produto.bateria}%</span>
-                    </div>
-                </div>
-                <div class="produto-info">
-                    <h3>${produto.nome}</h3>
-                    <p class="descricao">${produto.descricao}</p>
-                    <div class="produto-footer">
-                        <span class="preco">${precoFormatado}</span>
-                        <button class="btn-detalhes">Ver detalhes</button>
-                    </div>
-                </div>
-            </article>
-        `
-    }
-
-    // Event Listeners
-    searchInput?.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement
-        filtros.busca = target.value
-        renderProdutos()
-    })
-
-    toggleFiltros?.addEventListener('click', () => {
-        filtrosAvancados?.classList.toggle('active')
-    })
-
-    document.getElementById('filtro-condicao')?.addEventListener('change', (e) => {
-        const target = e.target as HTMLSelectElement
-        filtros.condicao = target.value
-        renderProdutos()
-    })
-
-    document.getElementById('filtro-bateria')?.addEventListener('change', (e) => {
-        const target = e.target as HTMLSelectElement
-        filtros.bateria = parseInt(target.value)
-        renderProdutos()
-    })
-
-    document.getElementById('filtro-ordenacao')?.addEventListener('change', (e) => {
-        const target = e.target as HTMLSelectElement
-        filtros.ordenacao = target.value
-        renderProdutos()
-    })
-
-    btnLimparFiltros?.addEventListener('click', () => {
-        filtros = {
+    const state: AppState = {
+        produtos: [],
+        categorias: [],
+        categoriaAtiva: 'todos',
+        filtros: {
             busca: '',
             condicao: '',
             bateria: 0,
             ordenacao: 'recente'
-        };
-        if (searchInput) searchInput.value = '';
-        const selects = document.querySelectorAll('.filtro-group select');
-        selects.forEach(s => {
-            const select = s as HTMLSelectElement;
-            select.selectedIndex = 0;
-        });
-        renderProdutos();
-    });
-
-    // Login
-    (window as any).abrirModalLogin = () => {
-        modalLogin?.classList.add('active');
+        }
     };
 
-    formLogin?.addEventListener('submit', async (e) => {
-        e.preventDefault()
-        
-        const email = (document.getElementById('login-email') as HTMLInputElement).value
-        const password = (document.getElementById('login-password') as HTMLInputElement).value
+    // ==================== Elementos DOM ====================
+    const elementos = {
+        modalLogin: document.getElementById('modal-login'),
+        formLogin: document.getElementById('form-login') as HTMLFormElement,
+        loginError: document.getElementById('login-error'),
+        searchInput: document.getElementById('search-input') as HTMLInputElement,
+        toggleFiltros: document.getElementById('toggle-filtros'),
+        filtrosAvancados: document.getElementById('filtros-avancados'),
+        btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
+        produtosContainer: document.getElementById('produtos-container'),
+        loading: document.getElementById('loading'),
+        emptyState: document.getElementById('empty-state'),
+        categoriasLista: document.getElementById('categorias-lista'),
+        filtroCondicao: document.getElementById('filtro-condicao') as HTMLSelectElement,
+        filtroBateria: document.getElementById('filtro-bateria') as HTMLSelectElement,
+        filtroOrdenacao: document.getElementById('filtro-ordenacao') as HTMLSelectElement
+    };
 
-        try {
-            await authService.signIn(email, password)
-            modalLogin?.classList.remove('active')
-            formLogin.reset()
-            if (loginError) {
-                loginError.textContent = ''
-                loginError.classList.remove('show')
+    // ==================== Utilitários ====================
+    const utils = {
+        formatarPreco(valor: number): string {
+            return new Intl.NumberFormat('pt-BR', { 
+                style: 'currency', 
+                currency: 'BRL' 
+            }).format(valor);
+        },
+
+        calcularLarguraBateria(bateria: number): number {
+            return (bateria / 100) * 14;
+        },
+
+        escapeHtml(text: string): string {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    };
+
+    // ==================== Templates ====================
+    const templates = {
+        produtoCard(produto: Product & { categoria: Category }): string {
+            const precoFormatado = utils.formatarPreco(produto.preco);
+            const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
+            const imagemPrincipal = produto.imagens?.[0];
+
+            return `
+                <article class="produto-card" 
+                    data-produto-id="${produto.id}"
+                    data-produto='${JSON.stringify({
+                        id: produto.id,
+                        codigo: produto.codigo,
+                        nome: produto.nome,
+                        descricao: produto.descricao,
+                        preco: precoFormatado,
+                        condicao: produto.condicao,
+                        bateria: produto.bateria,
+                        categoria: produto.categoria?.nome || '',
+                        imagens: produto.imagens || []
+                    })}'>
+                    <div class="produto-image">
+                        ${imagemPrincipal ? `
+                            <img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />
+                        ` : `
+                            <div class="image-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                        `}
+                        <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
+                        <div class="bateria-indicator">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
+                                <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor"/>
+                            </svg>
+                            <span>${produto.bateria}%</span>
+                        </div>
+                    </div>
+                    <div class="produto-info">
+                        <h3>${utils.escapeHtml(produto.nome)}</h3>
+                        <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
+                        <div class="produto-footer">
+                            <span class="preco">${precoFormatado}</span>
+                            <button class="btn-detalhes">Ver detalhes</button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        },
+
+        categoriaSecao(nomeCategoria: string, produtos: (Product & { categoria: Category })[]): string {
+            return `
+                <div class="categoria-section">
+                    <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
+                    <div class="categoria-grid">
+                        ${produtos.map(p => templates.produtoCard(p)).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    };
+
+    // ==================== Lógica de Negócio ====================
+    const business = {
+        filtrarProdutos(): (Product & { categoria: Category })[] {
+            return state.produtos.filter(p => {
+                // Filtro de categoria
+                if (state.categoriaAtiva !== 'todos' && p.categoria_id !== state.categoriaAtiva) {
+                    return false;
+                }
+
+                // Filtro de busca
+                if (state.filtros.busca) {
+                    const busca = state.filtros.busca.toLowerCase();
+                    const match = 
+                        p.nome.toLowerCase().includes(busca) ||
+                        p.descricao.toLowerCase().includes(busca) ||
+                        p.codigo.toLowerCase().includes(busca) ||
+                        p.categoria?.nome.toLowerCase().includes(busca);
+                    if (!match) return false;
+                }
+
+                // Filtro de condição
+                if (state.filtros.condicao && p.condicao !== state.filtros.condicao) {
+                    return false;
+                }
+
+                // Filtro de bateria
+                if (p.bateria < state.filtros.bateria) {
+                    return false;
+                }
+
+                return true;
+            });
+        },
+
+        ordenarProdutos(produtos: (Product & { categoria: Category })[]): (Product & { categoria: Category })[] {
+            const copia = [...produtos];
+            
+            switch (state.filtros.ordenacao) {
+                case 'preco-asc':
+                    return copia.sort((a, b) => a.preco - b.preco);
+                case 'preco-desc':
+                    return copia.sort((a, b) => b.preco - a.preco);
+                case 'bateria':
+                    return copia.sort((a, b) => b.bateria - a.bateria);
+                default: // recente
+                    return copia.sort((a, b) => 
+                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    );
             }
-        } catch (error: any) {
-            if (loginError) {
-                loginError.textContent = error.message || 'Credenciais inválidas'
-                loginError.classList.add('show')
+        },
+
+        agruparPorCategoria(produtos: (Product & { categoria: Category })[]): Map<string, (Product & { categoria: Category })[]> {
+            const grupos = new Map<string, (Product & { categoria: Category })[]>();
+            
+            produtos.forEach(p => {
+                const catNome = p.categoria?.nome || 'Sem Categoria';
+                if (!grupos.has(catNome)) {
+                    grupos.set(catNome, []);
+                }
+                grupos.get(catNome)!.push(p);
+            });
+
+            return grupos;
+        }
+    };
+
+    // ==================== Renderização ====================
+    const render = {
+        categorias(): void {
+            if (!elementos.categoriasLista) return;
+
+            elementos.categoriasLista.innerHTML = state.categorias
+                .map(cat => `
+                    <button class="categoria-btn" data-categoria="${cat.id}">
+                        ${utils.escapeHtml(cat.nome)}
+                    </button>
+                `)
+                .join('');
+
+            // Adicionar event listeners
+            document.querySelectorAll('.categoria-btn').forEach(btn => {
+                btn.addEventListener('click', handlers.categoriaClick);
+            });
+        },
+
+        produtos(): void {
+            if (!elementos.produtosContainer || !elementos.emptyState) return;
+
+            // Filtrar e ordenar
+            let produtosFiltrados = business.filtrarProdutos();
+            produtosFiltrados = business.ordenarProdutos(produtosFiltrados);
+
+            // Verificar se há produtos
+            if (produtosFiltrados.length === 0) {
+                elementos.produtosContainer.innerHTML = '';
+                elementos.emptyState.style.display = 'block';
+                return;
+            }
+
+            elementos.emptyState.style.display = 'none';
+
+            // Renderizar agrupado ou não
+            if (state.categoriaAtiva === 'todos') {
+                const grupos = business.agruparPorCategoria(produtosFiltrados);
+                elementos.produtosContainer.innerHTML = Array.from(grupos.entries())
+                    .map(([catNome, prods]) => templates.categoriaSecao(catNome, prods))
+                    .join('');
+            } else {
+                elementos.produtosContainer.innerHTML = produtosFiltrados
+                    .map(p => templates.produtoCard(p))
+                    .join('');
+            }
+
+            // Adicionar event listeners aos cards
+            elementos.produtosContainer.querySelectorAll('.produto-card').forEach(card => {
+                card.addEventListener('click', handlers.produtoClick);
+            });
+        },
+
+        loading(mostrar: boolean): void {
+            if (elementos.loading) {
+                elementos.loading.style.display = mostrar ? 'flex' : 'none';
             }
         }
-    })
+    };
 
-    modalLogin?.querySelector('.modal-close')?.addEventListener('click', () => {
-        modalLogin.classList.remove('active')
-    })
+    // ==================== Handlers ====================
+    const handlers = {
+        categoriaClick(e: Event): void {
+            const target = e.currentTarget as HTMLElement;
+            const categoriaId = target.dataset.categoria;
 
-    modalLogin?.querySelector('.modal-overlay')?.addEventListener('click', () => {
-        modalLogin.classList.remove('active')
-    })
+            // Atualizar UI
+            document.querySelectorAll('.categoria-btn').forEach(b => 
+                b.classList.remove('active')
+            );
+            target.classList.add('active');
 
-    // Inicializar
-    carregarDados()
+            // Atualizar estado e re-renderizar
+            state.categoriaAtiva = categoriaId || 'todos';
+            render.produtos();
+        },
 
-    // Recarregar quando produtos/categorias mudarem
-    window.addEventListener('produtos-updated', () => {
-        carregarDados()
-    })
+        produtoClick(e: Event): void {
+            const card = e.currentTarget as HTMLElement;
+            const produtoData = card.dataset.produto;
+            
+            if (produtoData) {
+                try {
+                    const produto = JSON.parse(produtoData);
+                    (window as any).abrirModalProduto(produto);
+                } catch (error) {
+                    console.error('Erro ao abrir produto:', error);
+                }
+            }
+        },
+
+        searchInput(e: Event): void {
+            const target = e.target as HTMLInputElement;
+            state.filtros.busca = target.value;
+            render.produtos();
+        },
+
+        toggleFiltros(): void {
+            elementos.filtrosAvancados?.classList.toggle('active');
+        },
+
+        filtroCondicao(e: Event): void {
+            const target = e.target as HTMLSelectElement;
+            state.filtros.condicao = target.value;
+            render.produtos();
+        },
+
+        filtroBateria(e: Event): void {
+            const target = e.target as HTMLSelectElement;
+            state.filtros.bateria = parseInt(target.value);
+            render.produtos();
+        },
+
+        filtroOrdenacao(e: Event): void {
+            const target = e.target as HTMLSelectElement;
+            state.filtros.ordenacao = target.value;
+            render.produtos();
+        },
+
+        limparFiltros(): void {
+            // Resetar estado
+            state.filtros = {
+                busca: '',
+                condicao: '',
+                bateria: 0,
+                ordenacao: 'recente'
+            };
+
+            // Resetar inputs
+            if (elementos.searchInput) elementos.searchInput.value = '';
+            if (elementos.filtroCondicao) elementos.filtroCondicao.selectedIndex = 0;
+            if (elementos.filtroBateria) elementos.filtroBateria.selectedIndex = 0;
+            if (elementos.filtroOrdenacao) elementos.filtroOrdenacao.selectedIndex = 0;
+
+            // Re-renderizar
+            render.produtos();
+        },
+
+        async loginSubmit(e: Event): Promise<void> {
+            e.preventDefault();
+            
+            const emailInput = document.getElementById('login-email') as HTMLInputElement;
+            const passwordInput = document.getElementById('login-password') as HTMLInputElement;
+
+            try {
+                await authService.signIn(emailInput.value, passwordInput.value);
+                
+                elementos.modalLogin?.classList.remove('active');
+                elementos.formLogin?.reset();
+                
+                if (elementos.loginError) {
+                    elementos.loginError.textContent = '';
+                    elementos.loginError.classList.remove('show');
+                }
+            } catch (error: any) {
+                if (elementos.loginError) {
+                    elementos.loginError.textContent = error.message || 'Credenciais inválidas';
+                    elementos.loginError.classList.add('show');
+                }
+            }
+        },
+
+        closeModalLogin(): void {
+            elementos.modalLogin?.classList.remove('active');
+        }
+    };
+
+    // ==================== API ====================
+    const api = {
+        async carregarDados(): Promise<void> {
+            try {
+                render.loading(true);
+                if (elementos.emptyState) elementos.emptyState.style.display = 'none';
+                if (elementos.produtosContainer) elementos.produtosContainer.innerHTML = '';
+
+                const [produtosData, categoriasData] = await Promise.all([
+                    productService.getAll(),
+                    categoryService.getAll()
+                ]);
+
+                state.produtos = produtosData;
+                state.categorias = categoriasData;
+
+                render.categorias();
+                render.produtos();
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                alert('Erro ao carregar produtos. Tente novamente.');
+            } finally {
+                render.loading(false);
+            }
+        }
+    };
+
+    // ==================== Event Listeners ====================
+    function setupEventListeners(): void {
+        // Busca
+        elementos.searchInput?.addEventListener('input', handlers.searchInput);
+
+        // Toggle filtros avançados
+        elementos.toggleFiltros?.addEventListener('click', handlers.toggleFiltros);
+
+        // Filtros
+        elementos.filtroCondicao?.addEventListener('change', handlers.filtroCondicao);
+        elementos.filtroBateria?.addEventListener('change', handlers.filtroBateria);
+        elementos.filtroOrdenacao?.addEventListener('change', handlers.filtroOrdenacao);
+
+        // Limpar filtros
+        elementos.btnLimparFiltros?.addEventListener('click', handlers.limparFiltros);
+
+        // Login
+        elementos.formLogin?.addEventListener('submit', handlers.loginSubmit);
+        elementos.modalLogin?.querySelector('.modal-close')?.addEventListener('click', handlers.closeModalLogin);
+        elementos.modalLogin?.querySelector('.modal-overlay')?.addEventListener('click', handlers.closeModalLogin);
+
+        // Evento customizado para recarregar produtos
+        window.addEventListener('produtos-updated', () => {
+            api.carregarDados();
+        });
+    }
+
+    // ==================== Funções Globais ====================
+    (window as any).abrirModalLogin = () => {
+        elementos.modalLogin?.classList.add('active');
+    };
+
+    // ==================== Inicialização ====================
+    function init(): void {
+        setupEventListeners();
+        api.carregarDados();
+    }
+
+    // Iniciar aplicação
+    init();
 </script>
-
-<style is:inline>
-    .produto-card {
-        background: #0a0a0a;
-        border: 1px solid #1a1a1a;
-        border-radius: 16px;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .produto-card:hover {
-        transform: translateY(-4px);
-        border-color: #2a2a2a;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    }
-
-    .produto-image {
-        position: relative;
-        aspect-ratio: 1;
-        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-bottom: 1px solid #1a1a1a;
-        overflow: hidden;
-    }
-
-    .produto-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .image-placeholder {
-        width: 80px;
-        height: 80px;
-        color: #333;
-    }
-
-    .condicao-badge {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        background: #fff;
-        color: #000;
-        padding: 0.35rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .bateria-indicator {
-        position: absolute;
-        bottom: 1rem;
-        right: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(10px);
-        padding: 0.4rem 0.7rem;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .bateria-indicator svg {
-        width: 20px;
-        height: 20px;
-        color: #22c55e;
-    }
-
-    .bateria-indicator span {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #fff;
-    }
-
-    .produto-info {
-        padding: 1.5rem;
-    }
-
-    .produto-info h3 {
-        font-size: 1.1rem;
-        color: var(--cor-primaria);
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-    }
-
-    .descricao {
-        font-size: 0.9rem;
-        color: #777;
-        margin-bottom: 1rem;
-        line-height: 1.4;
-    }
-
-    .produto-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .preco {
-        font-family: "Halenoir", sans-serif;
-        font-size: 1.3rem;
-        color: var(--cor-primaria);
-        font-weight: 700;
-    }
-
-    .btn-detalhes {
-        background: transparent;
-        border: 1px solid #2a2a2a;
-        color: #fff;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .btn-detalhes:hover {
-        background: #fff;
-        color: #000;
-        border-color: #fff;
-    }
-</style>

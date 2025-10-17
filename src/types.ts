@@ -14,8 +14,9 @@ export interface Product {
 }
 
 export interface Category {
-  id: string;
-  nome: string;
+    id: string;
+    nome: string;
+    created_at?: string;
 }
 
 export interface AuthCredentials {
