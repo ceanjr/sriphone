@@ -16,6 +16,12 @@
     padding: 0;
 }
 
+/* CRITICAL: Resetar conflitos do modal-produto */
+.modal-form .modal-content {
+    min-width: unset !important;
+    max-width: unset !important;
+}
+
 .modal-form.active {
     display: flex;
 }

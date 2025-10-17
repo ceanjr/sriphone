@@ -6,6 +6,8 @@ import { categoryService } from '../lib/supabase';
 <div id="modal-categorias" class="gc-modal">
     <div class="gc-modal-overlay"></div>
     <div class="gc-modal-content">
+        <div class="gc-modal-drag-handle"></div>
+        
         <button type="button" class="gc-modal-close" aria-label="Fechar">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -14,31 +16,34 @@ import { categoryService } from '../lib/supabase';
 
         <div class="gc-modal-header">
             <h2>Gerenciar Categorias</h2>
+            <p class="gc-modal-subtitle">Organize suas categorias de produtos</p>
         </div>
 
         <div class="gc-modal-body">
             <!-- Formulário com validação -->
             <form id="form-nova-categoria" class="gc-add-form">
-                <div class="gc-input-group">
-                    <input 
-                        type="text" 
-                        id="nova-categoria-nome" 
-                        name="categoria"
-                        placeholder="Digite o nome da categoria"
-                        minlength="2"
-                        maxlength="50"
-                        pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+"
-                        required
-                        autocomplete="off"
-                    />
-                    <span class="gc-error-message"></span>
+                <div class="gc-input-wrapper">
+                    <div class="gc-input-group">
+                        <input 
+                            type="text" 
+                            id="nova-categoria-nome" 
+                            name="categoria"
+                            placeholder="Digite o nome da categoria"
+                            minlength="2"
+                            maxlength="50"
+                            pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+"
+                            required
+                            autocomplete="off"
+                        />
+                        <span class="gc-error-message"></span>
+                    </div>
+                    <button type="submit" class="gc-btn-add" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span class="gc-btn-text">Adicionar</span>
+                    </button>
                 </div>
-                <button type="submit" class="gc-btn-add" disabled>
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    Adicionar
-                </button>
             </form>
 
             <!-- Loading State -->
@@ -77,6 +82,20 @@ const errorMessage = form?.querySelector('.gc-error-message') as HTMLSpanElement
 // Estado
 let isLoading = false;
 let categories: Category[] = [];
+
+// Toast notification
+function mostrarToast(mensagem: string, tipo: 'success' | 'error' | 'warning' | 'info' = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `gc-toast gc-toast-${tipo}`;
+    toast.textContent = mensagem;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
 // Validação do Input
 function validateInput(value: string): boolean {
@@ -137,6 +156,7 @@ async function renderCategories() {
                         <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                     <p>Nenhuma categoria cadastrada</p>
+                    <small>Adicione sua primeira categoria acima</small>
                 </div>`;
             return;
         }
@@ -162,6 +182,7 @@ async function renderCategories() {
                     Tentar novamente
                 </button>
             </div>`;
+        mostrarToast('Erro ao carregar categorias', 'error');
     } finally {
         isLoading = false;
         loading.classList.remove('active');
@@ -218,18 +239,18 @@ async function deleteCategory(id: string) {
         item.classList.add('gc-deleting');
         await categoryService.delete(id);
         
-        // Atualiza lista local e UI
         categories = categories.filter(c => c.id !== id);
         item.addEventListener('transitionend', () => {
             item.remove();
             if (categories.length === 0) renderCategories();
-        });
+        }, { once: true });
         
         window.dispatchEvent(new Event('produtos-updated'));
+        mostrarToast('Categoria excluída com sucesso!', 'success');
     } catch (error) {
         console.error('Erro ao excluir categoria:', error);
         item.classList.remove('gc-deleting');
-        alert('Erro ao excluir categoria. Tente novamente.');
+        mostrarToast('Erro ao excluir categoria. Tente novamente.', 'error');
     }
 }
 
@@ -265,25 +286,24 @@ function startEditing(item: HTMLDivElement, cat: Category) {
         </button>
     `;
 
-    const input = nameSpan.querySelector('input');
+    const editInput = nameSpan.querySelector('input') as HTMLInputElement;
     const saveBtn = actions.querySelector('.save');
     const cancelBtn = actions.querySelector('.cancel');
 
-    if (input) {
-        input.focus();
-        input.select();
+    if (editInput) {
+        editInput.focus();
+        editInput.select();
     }
 
     const handleSave = async () => {
-        const newName = input?.value.trim();
+        const newName = editInput?.value.trim();
         if (!newName || newName === cat.nome) {
             handleCancel();
             return;
         }
 
-        // Validação
         if (!validateInput(newName)) {
-            input?.focus();
+            editInput?.focus();
             return;
         }
 
@@ -291,28 +311,33 @@ function startEditing(item: HTMLDivElement, cat: Category) {
             item.classList.add('gc-saving');
             await categoryService.update(cat.id, newName);
             
-            // Atualiza lista local
             const index = categories.findIndex(c => c.id === cat.id);
             if (index !== -1) categories[index].nome = newName;
             
             window.dispatchEvent(new Event('produtos-updated'));
             renderCategories();
+            mostrarToast('Categoria atualizada!', 'success');
         } catch (error) {
             console.error('Erro ao atualizar categoria:', error);
             item.classList.remove('gc-saving');
             item.innerHTML = originalContent;
-            alert('Erro ao atualizar categoria. Tente novamente.');
+            mostrarToast('Erro ao atualizar categoria. Tente novamente.', 'error');
         }
     };
 
     const handleCancel = () => {
         item.innerHTML = originalContent;
+        // Re-adicionar event listeners
+        const newEditBtn = item.querySelector('.edit');
+        const newDelBtn = item.querySelector('.delete');
+        newEditBtn?.addEventListener('click', () => startEditing(item, cat));
+        newDelBtn?.addEventListener('click', () => deleteCategory(cat.id));
     };
 
     saveBtn?.addEventListener('click', handleSave);
     cancelBtn?.addEventListener('click', handleCancel);
 
-    input?.addEventListener('keydown', (e) => {
+    editInput?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleSave();
@@ -344,12 +369,13 @@ form?.addEventListener('submit', async (e) => {
         
         renderCategories();
         window.dispatchEvent(new Event('produtos-updated'));
+        mostrarToast('Categoria criada com sucesso!', 'success');
     } catch (error) {
         console.error('Erro ao criar categoria:', error);
         input.disabled = false;
         addButton.disabled = false;
         form.classList.remove('gc-submitting');
-        alert('Erro ao criar categoria. Tente novamente.');
+        mostrarToast('Erro ao criar categoria. Tente novamente.', 'error');
     }
 });
 
@@ -357,15 +383,34 @@ form?.addEventListener('submit', async (e) => {
 function abrirModal() {
     if (!modal) return;
     modal.classList.add('active');
+    
+    // PREVENIR SCROLL DO BODY
     document.body.style.overflow = 'hidden';
-    input?.focus();
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = `-${window.scrollY}px`;
+    
+    // Focus no input em desktop
+    if (window.innerWidth >= 768) {
+        setTimeout(() => input?.focus(), 300);
+    }
+    
     renderCategories();
 }
 
 function fecharModal() {
     if (!modal || isLoading) return;
-    modal.classList.remove('active');
+    
+    // RESTAURAR SCROLL DO BODY
+    const scrollY = document.body.style.top;
     document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.top = '';
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+    
+    modal.classList.remove('active');
+    
     if (input) {
         input.value = '';
         input.disabled = false;
@@ -385,5 +430,5 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Expose to window
-window.abrirGerirCategorias = abrirModal;
+(window as any).abrirGerirCategorias = abrirModal;
 </script>

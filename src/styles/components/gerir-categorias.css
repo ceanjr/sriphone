@@ -1,12 +1,19 @@
-/* Container Modal */
+/* Reset e Base */
+.gc-modal * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Container Modal - Mobile First */
 .gc-modal {
     position: fixed;
     inset: 0;
     z-index: 2000;
     display: none;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
-    padding: 1rem;
+    padding: 0;
 }
 
 .gc-modal.active {
@@ -25,13 +32,41 @@
     position: relative;
     background: #0a0a0a;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    width: min(600px, 95%);
-    max-height: 85vh;
-    overflow: hidden;
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
     z-index: 1;
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: slideUpMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.5);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Drag Handle para Mobile */
+.gc-modal-drag-handle {
+    position: sticky;
+    top: 0;
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin: 12px auto 0;
+    z-index: 20;
+}
+
+/* Scrollbar personalizada */
+.gc-modal-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.gc-modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.gc-modal-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
 }
 
 /* Animações */
@@ -40,10 +75,10 @@
     to { opacity: 1; }
 }
 
-@keyframes slideUp {
+@keyframes slideUpMobile {
     from { 
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(100%);
     }
     to { 
         opacity: 1;
@@ -51,42 +86,56 @@
     }
 }
 
-/* Header */
+/* Header Mobile */
 .gc-modal-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 1rem 1.25rem 1.25rem;
+    background: linear-gradient(to bottom, #0a0a0a, rgba(10, 10, 10, 0.95));
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .gc-modal-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-family: "Halenoir", sans-serif;
+    font-size: 1.375rem;
     color: #fff;
+    margin: 0 0 0.25rem 0;
+    padding-right: 3rem;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+.gc-modal-subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.5);
     margin: 0;
 }
 
-/* Close Button */
+/* Close Button Mobile */
 .gc-modal-close {
     position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
-    background: rgba(255, 255, 255, 0.05);
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
     cursor: pointer;
     transition: all 0.3s ease;
+    z-index: 15;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.gc-modal-close:hover {
-    background: #fff;
-    color: #000;
-    transform: rotate(90deg);
+.gc-modal-close:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.95);
 }
 
 .gc-modal-close svg {
@@ -94,52 +143,65 @@
     height: 20px;
 }
 
-/* Body Content */
+/* Body Content Mobile */
 .gc-modal-body {
-    padding: 1.5rem;
-    overflow-y: auto;
-}
-
-/* Form Add Category */
-.gc-add-form {
+    padding: 1.25rem;
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
+    gap: 1.5rem;
+}
+
+/* Form Add Category Mobile */
+.gc-add-form {
     background: rgba(255, 255, 255, 0.02);
-    padding: 1.25rem;
+    padding: 1rem;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.gc-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 .gc-input-group {
-    flex: 1;
     position: relative;
+    flex: 1;
 }
 
 .gc-error-message {
     position: absolute;
     left: 0;
-    bottom: -20px;
-    font-size: 0.8rem;
+    bottom: -22px;
+    font-size: 0.75rem;
     color: #ef4444;
+    font-weight: 500;
 }
 
 .gc-add-form input {
     width: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 0.875rem 1.25rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 1rem 1.125rem;
     color: #fff;
-    font-size: 0.95rem;
+    font-size: 1rem;
     transition: all 0.3s ease;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .gc-add-form input:focus {
     outline: none;
     border-color: #fff;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.gc-add-form input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .gc-btn-add {
@@ -150,12 +212,15 @@
     background: #fff;
     border: none;
     color: #000;
-    padding: 0.875rem 1.5rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.95rem;
+    padding: 1rem 1.25rem;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.9375rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .gc-btn-add:disabled {
@@ -164,9 +229,9 @@
     transform: none;
 }
 
-.gc-btn-add:not(:disabled):hover {
+.gc-btn-add:not(:disabled):active {
     background: #f0f0f0;
-    transform: translateY(-2px);
+    transform: scale(0.98);
 }
 
 .gc-btn-add svg {
@@ -180,7 +245,8 @@
     flex-direction: column;
     align-items: center;
     gap: 1rem;
-    padding: 2rem;
+    padding: 2rem 1rem;
+    color: #666;
 }
 
 .gc-loading.active {
@@ -200,7 +266,11 @@
     to { transform: rotate(360deg); }
 }
 
-/* Categories List */
+.gc-loading span {
+    font-size: 0.9rem;
+}
+
+/* Categories List Mobile */
 .gc-categories-list {
     display: grid;
     gap: 0.75rem;
@@ -210,58 +280,91 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.25rem;
+    padding: 1rem;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.gc-category-item:hover {
+.gc-category-item:active {
     background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-1px);
+    transform: scale(0.99);
 }
 
 .gc-category-name {
     color: #fff;
     font-weight: 500;
+    font-size: 0.95rem;
+    flex: 1;
+    padding-right: 1rem;
+}
+
+.gc-category-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.gc-category-input:focus {
+    outline: none;
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .gc-category-actions {
     display: flex;
     gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 .gc-btn-icon {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     color: #999;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.gc-btn-icon:hover {
-    border-color: #fff;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.05);
+.gc-btn-icon:active {
+    transform: scale(0.95);
 }
 
-.gc-btn-icon.delete:hover {
+.gc-btn-icon.edit:active {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.gc-btn-icon.delete:active {
     border-color: #ef4444;
     color: #ef4444;
     background: rgba(239, 68, 68, 0.1);
 }
 
-.gc-btn-icon.save:hover {
+.gc-btn-icon.save:active {
     border-color: #22c55e;
     color: #22c55e;
     background: rgba(34, 197, 94, 0.1);
+}
+
+.gc-btn-icon.cancel:active {
+    border-color: #999;
+    color: #999;
+    background: rgba(153, 153, 153, 0.1);
 }
 
 .gc-btn-icon svg {
@@ -279,12 +382,27 @@
 .gc-empty-state svg {
     width: 64px;
     height: 64px;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+    margin: 0 auto 1rem;
+    opacity: 0.3;
+}
+
+.gc-empty-state p {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.gc-empty-state small {
+    font-size: 0.85rem;
+    color: #555;
 }
 
 .gc-empty-state.gc-error {
     color: #ef4444;
+}
+
+.gc-empty-state.gc-error svg {
+    opacity: 0.5;
 }
 
 .gc-btn-retry {
@@ -296,14 +414,16 @@
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
+    font-weight: 500;
 }
 
-.gc-btn-retry:hover {
+.gc-btn-retry:active {
     background: rgba(255, 255, 255, 0.05);
     border-color: #fff;
+    transform: scale(0.98);
 }
 
-/* Estados */
+/* Estados de Loading */
 .gc-category-item.gc-deleting {
     opacity: 0;
     transform: translateX(30px);
@@ -319,35 +439,279 @@
     pointer-events: none;
 }
 
-/* Mobile */
-@media (min-width: 640px) {
+/* Toast Notifications */
+.gc-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(0, 0, 0, 0.95);
+    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    z-index: 3000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: calc(100vw - 2rem);
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gc-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.gc-toast-success {
+    background: rgba(34, 197, 94, 0.95);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.gc-toast-error {
+    background: rgba(239, 68, 68, 0.95);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.gc-toast-warning {
+    background: rgba(251, 191, 36, 0.95);
+    border-color: rgba(251, 191, 36, 0.3);
+    color: #000;
+}
+
+.gc-toast-info {
+    background: rgba(59, 130, 246, 0.95);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* ========================================
+   TABLET (768px+)
+   ======================================== */
+@media (min-width: 768px) {
+    .gc-modal {
+        align-items: center;
+        padding: 1rem;
+    }
+
+    .gc-modal-content {
+        border-radius: 24px;
+        width: min(600px, 90vw);
+        max-height: 85vh;
+        animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideUp {
+        from { 
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .gc-modal-drag-handle {
+        display: none;
+    }
+
+    .gc-modal-header {
+        padding: 1.5rem 1.75rem;
+    }
+
+    .gc-modal-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .gc-modal-body {
+        padding: 1.75rem;
+    }
+
+    .gc-modal-close {
+        width: 44px;
+        height: 44px;
+        top: 1.25rem;
+        right: 1.25rem;
+    }
+
+    .gc-modal-close:hover {
+        background: #fff;
+        color: #000;
+        transform: rotate(90deg);
+    }
+
+    .gc-modal-close:active {
+        transform: rotate(90deg) scale(0.95);
+    }
+
     .gc-add-form {
+        padding: 1.25rem;
+    }
+
+    .gc-input-wrapper {
         flex-direction: row;
+        align-items: flex-start;
+        gap: 0.75rem;
     }
 
     .gc-btn-add {
         width: auto;
+        min-width: 140px;
+    }
+
+    .gc-btn-add:hover:not(:disabled) {
+        background: #f0f0f0;
+        transform: translateY(-2px);
+    }
+
+    .gc-category-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateY(-1px);
+    }
+
+    .gc-btn-icon:hover {
+        border-color: #fff;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .gc-btn-icon.edit:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+        background: rgba(59, 130, 246, 0.1);
+    }
+
+    .gc-btn-icon.delete:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .gc-btn-icon.save:hover {
+        border-color: #22c55e;
+        color: #22c55e;
+        background: rgba(34, 197, 94, 0.1);
+    }
+
+    .gc-btn-icon.cancel:hover {
+        border-color: #999;
+        color: #999;
+        background: rgba(153, 153, 153, 0.1);
     }
 }
 
-@media (max-width: 639px) {
+/* ========================================
+   DESKTOP (1024px+)
+   ======================================== */
+@media (min-width: 1024px) {
     .gc-modal-content {
-        border-radius: 16px;
-    }
-
-    .gc-modal-header {
-        padding: 1.25rem;
+        width: min(650px, 85vw);
     }
 
     .gc-modal-body {
-        padding: 1.25rem;
+        padding: 2rem;
+    }
+}
+
+/* ========================================
+   LANDSCAPE MOBILE
+   ======================================== */
+@media (max-height: 600px) and (orientation: landscape) {
+    .gc-modal-content {
+        max-height: 95vh;
+        border-radius: 0;
     }
 
-    .gc-add-form {
+    .gc-modal-drag-handle {
+        display: none;
+    }
+
+    .gc-modal-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .gc-modal-header h2 {
+        font-size: 1.125rem;
+    }
+
+    .gc-modal-body {
         padding: 1rem;
     }
 
-    .gc-category-item {
-        padding: 0.875rem 1rem;
+    .gc-add-form {
+        padding: 0.875rem;
     }
+
+    .gc-category-item {
+        padding: 0.75rem;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+    .gc-modal-overlay,
+    .gc-modal-content,
+    .gc-modal *,
+    .gc-toast {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Focus visível para navegação por teclado */
+.gc-modal *:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* ========================================
+   SAFE AREAS (iOS)
+   ======================================== */
+@supports (padding: env(safe-area-inset-bottom)) {
+    .gc-modal-body {
+        padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    }
+
+    .gc-toast {
+        bottom: calc(2rem + env(safe-area-inset-bottom));
+    }
+}
+
+/* ========================================
+   PREVENÇÃO DE SCROLL NO FUNDO
+   ======================================== */
+body.gc-modal-open {
+    overflow: hidden !important;
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+}
+
+/* Remove tap highlight no mobile */
+.gc-modal * {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Melhora performance de animações */
+.gc-modal-overlay,
+.gc-modal-content {
+    will-change: opacity, transform;
+}
+
+/* Remove número spinner dos inputs */
+.gc-add-form input[type="text"]::-webkit-inner-spin-button,
+.gc-add-form input[type="text"]::-webkit-outer-spin-button,
+.gc-category-input::-webkit-inner-spin-button,
+.gc-category-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.gc-add-form input[type="text"],
+.gc-category-input {
+    -moz-appearance: textfield;
 }
