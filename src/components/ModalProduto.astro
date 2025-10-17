@@ -15,25 +15,24 @@ import '../styles/components/modal-produto.css';
         </button>
 
         <div class="modal-body">
-            <!-- Galeria - Hero em Mobile -->
+            <!-- Galeria Principal -->
             <div class="modal-gallery">
-                <div class="carousel">
-                    <button class="carousel-btn prev" aria-label="Anterior">
+                <div class="main-image-container">
+                    <img id="main-image" src="" alt="Produto" class="main-image" />
+                    <button class="expand-btn" aria-label="Expandir imagem">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                    <div class="carousel-track"></div>
-                    <button class="carousel-btn next" aria-label="Próximo">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M15 3H21V9M9 21H3V15M21 3L14 10M3 21L10 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
                 </div>
-                <div class="carousel-dots"></div>
+
+                <!-- Thumbnails -->
+                <div class="thumbnails-container">
+                    <div class="thumbnails-track" id="thumbnails-track"></div>
+                </div>
             </div>
 
-            <!-- Informações - Compactas e Elegantes -->
+            <!-- Informações -->
             <div class="modal-info">
                 <div class="info-header">
                     <div class="modal-badges">
@@ -85,11 +84,7 @@ import '../styles/components/modal-produto.css';
     <!-- Modal de Imagem Expandida -->
     <div id="modal-imagem-expandida" class="modal-imagem-expandida">
         <button class="modal-close-expandido" aria-label="Fechar">×</button>
-        <div class="imagem-expandida-container">
-            <button class="nav-btn prev-expandido" aria-label="Anterior">‹</button>
-            <img id="imagem-expandida" src="" alt="Imagem expandida" />
-            <button class="nav-btn next-expandido" aria-label="Próximo">›</button>
-        </div>
+        <img id="imagem-expandida" src="" alt="Imagem expandida" />
         <div class="contador-imagens"></div>
     </div>
 </div>
@@ -100,26 +95,18 @@ import '../styles/components/modal-produto.css';
     const modal = document.getElementById('modal-produto');
     const modalOverlay = modal?.querySelector('.modal-overlay');
     const modalClose = modal?.querySelector('.modal-close');
-    const carouselTrack = modal?.querySelector('.carousel-track');
-    const carouselDots = modal?.querySelector('.carousel-dots');
-    const btnPrev = modal?.querySelector('.carousel-btn.prev');
-    const btnNext = modal?.querySelector('.carousel-btn.next');
+    const mainImage = document.getElementById('main-image') as HTMLImageElement;
+    const thumbnailsTrack = document.getElementById('thumbnails-track');
+    const expandBtn = modal?.querySelector('.expand-btn');
     
     const modalImagemExpandida = document.getElementById('modal-imagem-expandida') as HTMLElement | null;
     const imagemExpandida = document.getElementById('imagem-expandida') as HTMLImageElement | null;
     const btnCloseExpandido = modalImagemExpandida?.querySelector('.modal-close-expandido') as HTMLButtonElement | null;
-    const btnPrevExpandido = modalImagemExpandida?.querySelector('.prev-expandido') as HTMLButtonElement | null;
-    const btnNextExpandido = modalImagemExpandida?.querySelector('.next-expandido') as HTMLButtonElement | null;
     const contadorImagens = modalImagemExpandida?.querySelector('.contador-imagens');
     
-    let currentSlide = 0;
-    let totalSlides = 0;
-    let produtoAtual: Product | null = null;
-    let startX = 0;
-    let endX = 0;
-    let currentX = 0;
-    let isDragging = false;
+    let currentIndex = 0;
     let imagensAtuais: string[] = [];
+    let produtoAtual: Product | null = null;
 
     (window as any).abrirModalProduto = (produto: any) => {
         produtoAtual = produto;
@@ -142,191 +129,101 @@ import '../styles/components/modal-produto.css';
             if (modalCodigo) modalCodigo.textContent = produto.codigo;
             
             imagensAtuais = produto.imagens || [];
-            createCarousel(imagensAtuais);
+            renderGallery(imagensAtuais);
             
             modal.classList.add('active');
             document.body.classList.add('modal-open');
-            
-            // Prevenir scroll do body
-            const scrollY = window.scrollY;
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
         }
     };
 
+    function renderGallery(imagens: string[]) {
+        if (!mainImage || !thumbnailsTrack) return;
+
+        currentIndex = 0;
+
+        if (imagens.length === 0) {
+            mainImage.src = '';
+            mainImage.style.display = 'none';
+            thumbnailsTrack.innerHTML = '<div class="no-images">Sem imagens disponíveis</div>';
+            return;
+        }
+
+        mainImage.style.display = 'block';
+        mainImage.src = imagens[0];
+
+        // Render thumbnails
+        thumbnailsTrack.innerHTML = '';
+        imagens.forEach((img, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+            thumb.innerHTML = `
+                <img src="${img}" alt="Thumbnail ${index + 1}" loading="lazy" />
+                <div class="thumb-overlay"></div>
+            `;
+            thumb.addEventListener('click', () => selectImage(index));
+            thumbnailsTrack.appendChild(thumb);
+        });
+    }
+
+    function selectImage(index: number) {
+        if (!mainImage || !thumbnailsTrack) return;
+
+        currentIndex = index;
+        mainImage.src = imagensAtuais[index];
+
+        // Animação suave na troca
+        mainImage.style.opacity = '0';
+        setTimeout(() => {
+            mainImage.style.opacity = '1';
+        }, 50);
+
+        // Atualizar thumbnails
+        const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
+        thumbs.forEach((thumb, i) => {
+            thumb.classList.toggle('active', i === index);
+        });
+
+        // Scroll automático para thumbnail ativa
+        const activeThumb = thumbs[index] as HTMLElement;
+        if (activeThumb) {
+            activeThumb.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest',
+                inline: 'center'
+            });
+        }
+    }
+
     function fecharModal() {
         modal?.classList.remove('active');
-        
-        // Restaurar scroll do body
-        const scrollY = document.body.style.top;
         document.body.classList.remove('modal-open');
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-        
-        currentSlide = 0;
+        currentIndex = 0;
     }
 
     modalOverlay?.addEventListener('click', fecharModal);
     modalClose?.addEventListener('click', fecharModal);
 
-    function createCarousel(imagens: string[]) {
-        if (!carouselTrack || !carouselDots) return;
-
-        carouselTrack.innerHTML = '';
-        carouselDots.innerHTML = '';
-        totalSlides = imagens.length;
-
-        if (totalSlides === 0) {
-            carouselTrack.innerHTML = `
-                <div class="carousel-slide">
-                    <svg class="carousel-placeholder" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                        <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </div>
-            `;
-            return;
+    // Expandir imagem
+    expandBtn?.addEventListener('click', () => {
+        if (imagensAtuais.length > 0) {
+            abrirImagemExpandida(currentIndex);
         }
+    });
 
-        imagens.forEach((img, index) => {
-            const slide = document.createElement('div');
-            slide.className = 'carousel-slide';
-            slide.innerHTML = `<img src="${img}" alt="Produto ${index + 1}" loading="lazy" draggable="false">`;
-            slide.addEventListener('click', () => abrirImagemExpandida(index));
-            carouselTrack.appendChild(slide);
-
-            const dot = document.createElement('div');
-            dot.className = `dot ${index === 0 ? 'active' : ''}`;
-            dot.addEventListener('click', () => goToSlide(index));
-            carouselDots.appendChild(dot);
-        });
-
-        setupSwipeHandlers();
-    }
-
-    function setupSwipeHandlers() {
-        if (!carouselTrack) return;
-
-        carouselTrack.addEventListener('touchstart', handleTouchStart, { passive: true });
-        carouselTrack.addEventListener('touchmove', handleTouchMove, { passive: false });
-        carouselTrack.addEventListener('touchend', handleTouchEnd, { passive: true });
-    }
-
-    function handleTouchStart(e: TouchEvent) {
-        startX = e.touches[0].clientX;
-        currentX = startX;
-        isDragging = true;
-        carouselTrack?.classList.add('swiping');
-    }
-
-    function handleTouchMove(e: TouchEvent) {
-        if (!isDragging || !carouselTrack) return;
-        
-        e.preventDefault();
-        currentX = e.touches[0].clientX;
-        const diff = currentX - startX;
-        const currentOffset = -currentSlide * 100;
-        const dragPercentage = (diff / window.innerWidth) * 100;
-        
-        // Aplicar movimento em tempo real com limite de arrasto
-        const maxDrag = 30; // Limite de 30% de arrasto além das bordas
-        let newOffset = currentOffset + dragPercentage;
-        
-        // Limitar arrasto nas bordas
-        if (currentSlide === 0 && diff > 0) {
-            newOffset = Math.min(newOffset, maxDrag);
-        } else if (currentSlide === totalSlides - 1 && diff < 0) {
-            newOffset = Math.max(newOffset, currentOffset - maxDrag);
+    mainImage?.addEventListener('click', () => {
+        if (imagensAtuais.length > 0) {
+            abrirImagemExpandida(currentIndex);
         }
-        
-        (carouselTrack as HTMLElement).style.transform = `translateX(${newOffset}%)`;
-    }
-
-function handleTouchEnd() {
-        if (!isDragging || !carouselTrack) return;
-        
-        carouselTrack.classList.remove('swiping');
-        isDragging = false;
-        
-        const diffX = startX - currentX;
-        const threshold = window.innerWidth * 0.15; // 15% da largura da tela
-        const velocity = Math.abs(diffX);
-
-        // Swipe com velocidade ou distância suficiente
-        if (Math.abs(diffX) > threshold || velocity > 50) {
-            if (diffX > 0 && currentSlide < totalSlides - 1) {
-                // Swipe para esquerda - próxima imagem
-                nextSlide();
-            } else if (diffX < 0 && currentSlide > 0) {
-                // Swipe para direita - imagem anterior
-                prevSlide();
-            } else {
-                // Voltar para posição atual
-                goToSlide(currentSlide);
-            }
-        } else {
-            // Voltar para posição atual se não passou do threshold
-            goToSlide(currentSlide);
-        }
-        
-        // Resetar valores para o próximo swipe
-        startX = 0;
-        currentX = 0;
-        endX = 0;
-    }
-
-    function goToSlide(index: number) {
-        if (!carouselTrack) return;
-        currentSlide = index;
-        const track = carouselTrack as HTMLElement;
-        track.style.transform = `translateX(-${currentSlide * 100}%)`;
-        
-        document.querySelectorAll('.dot').forEach((dot, i) => {
-            dot.classList.toggle('active', i === currentSlide);
-        });
-    }
-
-    function nextSlide() {
-        if (currentSlide < totalSlides - 1) {
-            goToSlide(currentSlide + 1);
-        }
-    }
-
-    function prevSlide() {
-        if (currentSlide > 0) {
-            goToSlide(currentSlide - 1);
-        }
-    }
-
-    btnPrev?.addEventListener('click', prevSlide);
-    btnNext?.addEventListener('click', nextSlide);
+    });
 
     function abrirImagemExpandida(index: number) {
         if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
 
-        currentSlide = index;
-        imagemExpandida.src = imagensAtuais[currentSlide];
-        if (contadorImagens) {
-            contadorImagens.textContent = `${currentSlide + 1} / ${imagensAtuais.length}`;
-        }
+        currentIndex = index;
+        imagemExpandida.src = imagensAtuais[currentIndex];
+        contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
         
         modalImagemExpandida.classList.add('active');
-
-        imagemExpandida.addEventListener('touchstart', handleTouchStart, { passive: true });
-        imagemExpandida.addEventListener('touchmove', handleTouchMove, { passive: true });
-        imagemExpandida.addEventListener('touchend', () => {
-            handleTouchEnd();
-            atualizarImagemExpandida();
-        });
-    }
-
-    function atualizarImagemExpandida() {
-        if (!imagemExpandida || !contadorImagens) return;
-        imagemExpandida.src = imagensAtuais[currentSlide];
-        contadorImagens.textContent = `${currentSlide + 1} / ${imagensAtuais.length}`;
     }
 
     function fecharImagemExpandida() {
@@ -340,14 +237,27 @@ function handleTouchEnd() {
         }
     });
 
-    btnPrevExpandido?.addEventListener('click', () => {
-        prevSlide();
-        atualizarImagemExpandida();
-    });
-
-    btnNextExpandido?.addEventListener('click', () => {
-        nextSlide();
-        atualizarImagemExpandida();
+    // Navegação por teclado na imagem expandida
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (modalImagemExpandida?.classList.contains('active')) {
+            if (e.key === 'Escape') {
+                fecharImagemExpandida();
+            } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                selectImage(currentIndex - 1);
+                abrirImagemExpandida(currentIndex);
+            } else if (e.key === 'ArrowRight' && currentIndex < imagensAtuais.length - 1) {
+                selectImage(currentIndex + 1);
+                abrirImagemExpandida(currentIndex);
+            }
+        } else if (modal?.classList.contains('active')) {
+            if (e.key === 'Escape') {
+                fecharModal();
+            } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                selectImage(currentIndex - 1);
+            } else if (e.key === 'ArrowRight' && currentIndex < imagensAtuais.length - 1) {
+                selectImage(currentIndex + 1);
+            }
+        }
     });
 
     const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
@@ -358,30 +268,6 @@ function handleTouchEnd() {
             const mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*\n${produtoAtual.descricao}\n${produtoAtual.preco}`;
             const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
             window.open(url, '_blank');
-        }
-    });
-
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (modal?.classList.contains('active')) {
-            if (e.key === 'Escape') {
-                fecharModal();
-            } else if (e.key === 'ArrowLeft') {
-                prevSlide();
-            } else if (e.key === 'ArrowRight') {
-                nextSlide();
-            }
-        }
-        
-        if (modalImagemExpandida?.classList.contains('active')) {
-            if (e.key === 'Escape') {
-                fecharImagemExpandida();
-            } else if (e.key === 'ArrowLeft') {
-                prevSlide();
-                atualizarImagemExpandida();
-            } else if (e.key === 'ArrowRight') {
-                nextSlide();
-                atualizarImagemExpandida();
-            }
         }
     });
 </script>

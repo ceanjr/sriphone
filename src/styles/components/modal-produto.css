@@ -1,6 +1,8 @@
 /* ========================================
-   RESET E BASE
+   MODAL PRODUTO - DESIGN COM THUMBNAILS
    ======================================== */
+
+/* Reset */
 .modal,
 .modal *,
 .modal *::before,
@@ -10,9 +12,7 @@
     padding: 0;
 }
 
-/* ========================================
-   MODAL CONTAINER - MOBILE FIRST
-   ======================================== */
+/* Modal Container */
 .modal {
     position: fixed;
     inset: 0;
@@ -40,9 +40,7 @@
     to { opacity: 1; }
 }
 
-/* ========================================
-   MODAL CONTENT - MOBILE
-   ======================================== */
+/* Modal Content */
 .modal-content {
     position: relative;
     background: #0a0a0a;
@@ -69,9 +67,7 @@
     }
 }
 
-/* ========================================
-   DRAG HANDLE - MOBILE
-   ======================================== */
+/* Drag Handle */
 .modal-drag-handle {
     position: sticky;
     top: 0;
@@ -83,9 +79,7 @@
     z-index: 20;
 }
 
-/* ========================================
-   CLOSE BUTTON - MOBILE
-   ======================================== */
+/* Close Button */
 .modal-close {
     position: absolute;
     top: 1rem;
@@ -103,7 +97,6 @@
     cursor: pointer;
     transition: all 0.3s ease;
     z-index: 100;
-    -webkit-tap-highlight-color: transparent;
 }
 
 .modal-close:active {
@@ -116,9 +109,7 @@
     height: 20px;
 }
 
-/* ========================================
-   MODAL BODY - MOBILE
-   ======================================== */
+/* Modal Body */
 .modal-body {
     display: flex;
     flex-direction: column;
@@ -127,8 +118,6 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 .modal-body::-webkit-scrollbar {
@@ -145,122 +134,147 @@
 }
 
 /* ========================================
-   GALERIA - MOBILE HERO
+   GALERIA COM THUMBNAILS
    ======================================== */
 .modal-gallery {
     position: relative;
     background: #000;
     flex: none;
-    height: 50vh;
     display: flex;
     flex-direction: column;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.carousel {
+.main-image-container {
     position: relative;
-    flex: 1;
-    overflow: hidden;
+    height: 45vh;
     display: flex;
     align-items: center;
     justify-content: center;
     background: radial-gradient(circle at center, #0f0f0f 0%, #000 100%);
-    touch-action: pan-x;
-    user-select: none;
-}
-
-.carousel-track {
-    display: flex;
-    width: 100%;
-    height: 100%;
-    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    touch-action: pan-x;
-}
-
-.carousel-track.swiping {
-    transition: none;
-}
-
-.carousel-slide {
-    min-width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 2rem 1.5rem;
-    position: relative;
 }
 
-.carousel-slide img {
+.main-image {
     max-width: 100%;
     max-height: 100%;
     width: 100%;
     height: 100%;
     object-fit: contain;
     object-position: center;
-    user-select: none;
-    display: block;
     filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
     border-radius: 8px;
-    pointer-events: none;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
 }
 
-.carousel-placeholder {
-    width: 80px;
-    height: 80px;
-    color: #222;
-    opacity: 0.3;
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 0.3;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* Carousel Dots - Mobile */
-.carousel-dots {
+.expand-btn {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 0.5rem;
-    padding: 1rem 1rem 1.25rem;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.expand-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.95);
+}
+
+.expand-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Thumbnails Container */
+.thumbnails-container {
+    position: relative;
+    padding: 1rem 1.25rem 1.5rem;
     background: linear-gradient(to top, #000 50%, transparent 100%);
 }
 
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.thumbnails-track {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.5rem;
 }
 
-.dot.active {
-    background: #fff;
-    width: 24px;
-    border-radius: 4px;
-    border-color: #fff;
-}
-
-/* Carousel Buttons - Hidden on Mobile */
-.carousel-btn {
+.thumbnails-track::-webkit-scrollbar {
     display: none;
 }
 
+.thumbnail {
+    position: relative;
+    flex: 0 0 70px;
+    height: 70px;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.thumbnail:active {
+    transform: scale(0.95);
+}
+
+.thumbnail.active {
+    border-color: #fff;
+    transform: scale(1.05);
+}
+
+.thumbnail.active .thumb-overlay {
+    background: transparent;
+}
+
+.thumbnail.active img {
+    transform: scale(1.05);
+}
+
+.no-images {
+    text-align: center;
+    color: #666;
+    padding: 2rem;
+    font-size: 0.9rem;
+}
+
 /* ========================================
-   INFORMAÇÕES - MOBILE COMPACTAS
+   INFORMAÇÕES
    ======================================== */
 .modal-info {
     display: flex;
     flex-direction: column;
     background: #0a0a0a;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
     padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -373,7 +387,7 @@
     font-size: 0.9rem;
 }
 
-/* Footer - Sticky em Mobile */
+/* Footer */
 .info-footer {
     padding: 1.25rem 1.5rem;
     padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
@@ -411,8 +425,6 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     box-shadow: 0 4px 16px rgba(37, 211, 102, 0.15);
-    -webkit-tap-highlight-color: transparent;
-    position: relative;
 }
 
 .btn-whatsapp:active {
@@ -428,7 +440,7 @@
 }
 
 /* ========================================
-   MODAL IMAGEM EXPANDIDA - MOBILE
+   MODAL IMAGEM EXPANDIDA
    ======================================== */
 .modal-imagem-expandida {
     position: fixed;
@@ -438,6 +450,7 @@
     display: none;
     align-items: center;
     justify-content: center;
+    padding: 2rem 1rem;
 }
 
 .modal-imagem-expandida.active {
@@ -462,7 +475,6 @@
     cursor: pointer;
     transition: all 0.3s ease;
     z-index: 10;
-    -webkit-tap-highlight-color: transparent;
 }
 
 .modal-close-expandido:active {
@@ -470,21 +482,10 @@
     transform: scale(0.95);
 }
 
-.imagem-expandida-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-}
-
 #imagem-expandida {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    user-select: none;
     filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.8));
     border-radius: 12px;
     animation: fadeInImage 0.3s ease;
@@ -499,39 +500,6 @@
         opacity: 1;
         transform: scale(1);
     }
-}
-
-.nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    font-size: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.nav-btn:active {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-50%) scale(0.95);
-}
-
-.prev-expandido {
-    left: 1rem;
-}
-
-.next-expandido {
-    right: 1rem;
 }
 
 .contador-imagens {
@@ -596,32 +564,46 @@
         border-color: #fff;
     }
 
-    .modal-gallery {
-        min-height: 55vh;
-        height: 55vh;
-    }
-
-    .carousel-slide {
+    .main-image-container {
+        height: 50vh;
         padding: 2.5rem 2rem;
     }
 
-    .carousel-dots {
-        gap: 0.625rem;
+    .main-image:hover {
+        transform: scale(1.02);
+        transition: transform 0.3s ease;
+    }
+
+    .expand-btn {
+        width: 48px;
+        height: 48px;
+    }
+
+    .expand-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: scale(1.05);
+    }
+
+    .thumbnails-container {
         padding: 1.25rem 1.5rem;
     }
 
-    .dot {
-        width: 10px;
-        height: 10px;
+    .thumbnails-track {
+        gap: 1rem;
     }
 
-    .dot:hover {
-        background: rgba(255, 255, 255, 0.5);
-        transform: scale(1.2);
+    .thumbnail {
+        flex: 0 0 80px;
+        height: 80px;
     }
 
-    .dot.active {
-        width: 32px;
+    .thumbnail:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    .thumbnail:hover .thumb-overlay {
+        background: rgba(0, 0, 0, 0.2);
     }
 
     .info-header {
@@ -661,11 +643,6 @@
         border-color: #25D366;
     }
 
-    .btn-whatsapp svg {
-        position: relative;
-        z-index: 1;
-    }
-
     .modal-close-expandido {
         width: 56px;
         height: 56px;
@@ -678,29 +655,6 @@
     .modal-close-expandido:hover {
         background: rgba(255, 255, 255, 0.2);
         transform: scale(1.05);
-    }
-
-    .imagem-expandida-container {
-        padding: 3rem 2rem;
-    }
-
-    .nav-btn {
-        width: 64px;
-        height: 64px;
-        font-size: 2rem;
-    }
-
-    .nav-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-        transform: translateY(-50%) scale(1.1);
-    }
-
-    .prev-expandido {
-        left: 2rem;
-    }
-
-    .next-expandido {
-        right: 2rem;
     }
 
     .contador-imagens {
@@ -731,75 +685,41 @@
         max-height: none;
         min-height: 100%;
         border-right: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: none;
     }
 
-    .carousel {
+    .main-image-container {
+        height: calc(100% - 140px);
+        padding: 3rem 2.5rem;
         background: radial-gradient(ellipse at center, #141414 0%, #000 100%);
     }
 
-    .carousel-slide {
-        padding: 3rem 2.5rem;
-        cursor: pointer;
-    }
-
-    .carousel-slide:hover img {
-        transform: scale(1.02);
-    }
-
-    .carousel-slide img {
+    .main-image {
         filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.5));
-        transition: transform 0.3s ease;
     }
 
-    .carousel-btn {
-        display: flex;
+    .thumbnails-container {
         position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 5;
-        color: #fff;
-    }
-
-    .carousel-btn:hover {
-        background: rgba(255, 255, 255, 0.95);
-        color: #000;
-        transform: translateY(-50%) scale(1.1);
-        border-color: #fff;
-    }
-
-    .carousel-btn.prev {
-        left: 2rem;
-    }
-
-    .carousel-btn.next {
-        right: 2rem;
-    }
-
-    .carousel-btn svg {
-        width: 26px;
-        height: 26px;
-    }
-
-    .carousel-dots {
+        bottom: 0;
+        left: 0;
+        right: 0;
         padding: 1.5rem;
-        gap: 0.75rem;
+    }
+
+    .thumbnails-track {
+        justify-content: center;
+        gap: 1.25rem;
+    }
+
+    .thumbnail {
+        flex: 0 0 90px;
+        height: 90px;
     }
 
     .modal-info {
         flex: 0 0 38%;
         max-width: 500px;
         overflow-y: auto;
-        border-top: none;
         display: flex;
         flex-direction: column;
     }
@@ -895,8 +815,18 @@
         flex: 0 0 32%;
     }
 
-    .carousel-slide {
+    .main-image-container {
+        height: calc(100% - 150px);
         padding: 4rem 3rem;
+    }
+
+    .thumbnails-container {
+        padding: 1.75rem;
+    }
+
+    .thumbnail {
+        flex: 0 0 100px;
+        height: 100px;
     }
 
     .info-header {
@@ -937,17 +867,18 @@
         display: none;
     }
 
-    .modal-gallery {
-        min-height: 40vh;
-        max-height: 45vh;
-    }
-
-    .carousel-slide {
+    .main-image-container {
+        height: 35vh;
         padding: 1rem 0.75rem;
     }
 
-    .carousel-dots {
-        padding: 0.75rem;
+    .thumbnails-container {
+        padding: 0.75rem 1rem;
+    }
+
+    .thumbnail {
+        flex: 0 0 60px;
+        height: 60px;
     }
 
     .info-header {
@@ -994,8 +925,7 @@
     .modal-overlay,
     .modal-content,
     .modal *,
-    .carousel-track,
-    .carousel-slide img,
+    .main-image,
     .btn-whatsapp {
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
@@ -1008,23 +938,10 @@
 }
 
 /* ========================================
-   SAFE AREAS (iOS)
-   ======================================== */
-@supports (padding: env(safe-area-inset-bottom)) {
-    .info-footer {
-        padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
-    }
-
-    .contador-imagens {
-        bottom: calc(2rem + env(safe-area-inset-bottom));
-    }
-}
-
-/* ========================================
    UTILITIES
    ======================================== */
 body.modal-open {
-    overflow: hidden !important;
+    overflow: hidden;
 }
 
 .modal * {
@@ -1032,7 +949,6 @@ body.modal-open {
 }
 
 .modal-overlay,
-.modal-content,
-.carousel-track {
+.modal-content {
     will-change: opacity, transform;
 }
