@@ -12,6 +12,7 @@
         </button>
 
         <div class="modal-body">
+            <!-- Galeria - Agora com MUITO mais destaque -->
             <div class="modal-gallery">
                 <div class="carousel">
                     <button class="carousel-btn prev" aria-label="Anterior">
@@ -29,40 +30,52 @@
                 <div class="carousel-dots"></div>
             </div>
 
+            <!-- Informações - Compactas e elegantes -->
             <div class="modal-info">
-                <div class="modal-badges">
-                    <span class="modal-condicao"></span>
-                    <span class="modal-categoria"></span>
+                <div class="info-header">
+                    <div class="modal-badges">
+                        <span class="modal-condicao"></span>
+                        <span class="modal-categoria"></span>
+                    </div>
+                    <h2 class="modal-nome"></h2>
                 </div>
-                <h2 class="modal-nome"></h2>
-                <p class="modal-descricao"></p>
-                <div class="modal-specs">
-                    <div class="spec-item">
-                        <span class="spec-label">Bateria</span>
-                        <div class="spec-bateria">
+
+                <div class="info-body">
+                    <p class="modal-descricao"></p>
+                    
+                    <div class="modal-specs">
+                        <div class="spec-item">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
                                 <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
                             </svg>
-                            <span class="modal-bateria"></span>
+                            <div>
+                                <span class="spec-label">Bateria</span>
+                                <span class="spec-value modal-bateria"></span>
+                            </div>
+                        </div>
+                        <div class="spec-item">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7 7H17M7 12H17M7 17H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            <div>
+                                <span class="spec-label">Código</span>
+                                <span class="spec-value modal-codigo"></span>
+                            </div>
                         </div>
                     </div>
-                    <div class="spec-item">
-                        <span class="spec-label">Código</span>
-                        <span class="modal-codigo"></span>
-                    </div>
                 </div>
-                <div class="modal-preco"></div>
-            </div>
-        </div>
 
-        <div class="modal-footer">
-            <a href="#" class="btn-whatsapp" target="_blank" rel="noopener noreferrer">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582" fill="currentColor"/>
-                </svg>
-                Consultar no WhatsApp
-            </a>
+                <div class="info-footer">
+                    <div class="modal-preco"></div>
+                    <a href="#" class="btn-whatsapp" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582" fill="currentColor"/>
+                        </svg>
+                        Consultar
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -79,6 +92,11 @@
 </div>
 
 <style is:global>
+/* ADIÇÃO: garantir box-sizing e evitar overflow horizontal */
+.modal, .modal * , .modal *::before, .modal *::after {
+    box-sizing: border-box;
+}
+
     .modal {
         position: fixed;
         inset: 0;
@@ -96,8 +114,8 @@
     .modal-overlay {
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, 0.95);
-        backdrop-filter: blur(10px);
+        background: rgba(0, 0, 0, 0.98);
+        backdrop-filter: blur(20px);
         animation: fadeIn 0.3s ease;
     }
 
@@ -106,40 +124,69 @@
         to { opacity: 1; }
     }
 
+    /* Ajuste o modal principal */
     .modal-content {
         position: relative;
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
-        width: 100%;
-        height: 100%;
-        overflow-y: auto;
-        animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #000;
+        width: 95vw !important; /* Força a largura */
+        min-width: 534px; /* Remove o limite mínimo fixo */
+        max-width: 1400px !important; /* Força a largura máxima */
+        height: 85vh !important; /* Reduzido de 90vh para 85vh */
+        margin: 1rem auto; /* Reduzido de 2rem para 1rem */
+        overflow: hidden;
+        animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         z-index: 1;
         display: flex;
         flex-direction: column;
+        border-radius: 16px;
     }
 
-    @media (min-width: 768px) {
-        .modal {
-            padding: 1rem;
-        }
+    /* Ajuste o corpo do modal */
+    .modal-body {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        height: 100%; /* Garante que ocupe todo o espaço */
+        gap: 0; /* Remove espaço entre galeria e info */
+    }
 
+    @media (min-width: 1024px) {
         .modal-content {
-            border-radius: 24px;
-            max-width: 1100px;
-            max-height: 90vh;
-            height: auto;
+            width: 90vw !important;
+            height: 80vh !important; /* Reduzido de 85vh */
+            border-radius: 32px;
+        }
+
+        .modal-body {
+            flex-direction: row;
+        }
+
+        .modal-gallery {
+            flex: 0 0 65%;
+            min-width: 0; /* Permite que o flex shrink funcione */
+        }
+
+        .modal-info {
+            flex: 0 0 35%;
+            min-width: 0; /* Permite que o flex shrink funcione */
         }
     }
 
-    @keyframes slideUp {
-        from {
-            transform: translateY(30px);
-            opacity: 0;
+    /* Ajuste para telas muito grandes */
+    @media (min-width: 1400px) {
+        .modal-content {
+            width: 85vw !important;
+            max-width: 1800px !important;
         }
-        to {
-            transform: translateY(0);
-            opacity: 1;
+
+        .modal-gallery {
+            flex: 0 0 70%;
+        }
+
+        .modal-info {
+            flex: 0 0 30%;
         }
     }
 
@@ -147,24 +194,26 @@
         position: absolute;
         top: 1rem;
         right: 1rem;
-        background: rgba(0, 0, 0, 0.9);
-        border: 1px solid #2a2a2a;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
+        width: 48px;
+        height: 48px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #fff;
         cursor: pointer;
-        transition: all 0.3s ease;
-        z-index: 10;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 100;
     }
 
     .modal-close:hover {
         background: #fff;
         color: #000;
-        transform: rotate(90deg);
+        transform: rotate(90deg) scale(1.05);
+        border-color: #fff;
     }
 
     .modal-close svg {
@@ -172,30 +221,28 @@
         height: 20px;
     }
 
-    .modal-body {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        overflow: hidden;
-    }
-
-    @media (min-width: 768px) {
-        .modal-body {
-            flex-direction: row;
-        }
-    }
-
+    /* GALERIA - AGORA COM DESTAQUE MÁXIMO */
     .modal-gallery {
         position: relative;
         background: #000;
         flex: 1;
         display: flex;
         flex-direction: column;
+        min-height: 60vh;
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
         .modal-gallery {
-            border-radius: 24px 0 0 0;
+            flex: 0 0 65%;
+            min-height: 600px;
+            border-radius: 32px 0 0 32px;
+        }
+    }
+
+    @media (min-width: 1400px) {
+        .modal-gallery {
+            flex: 0 0 70%;
+            min-height: 700px;
         }
     }
 
@@ -206,20 +253,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 300px;
-    }
-
-    @media (min-width: 768px) {
-        .carousel {
-            min-height: 500px;
-        }
+        background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
     }
 
     .carousel-track {
         display: flex;
         width: 100%;
         height: 100%;
-        transition: transform 0.4s ease;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         touch-action: pan-y pinch-zoom;
     }
 
@@ -229,9 +270,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #0a0a0a;
         cursor: pointer;
-        padding: 2rem;
+        /* incluir padding na largura (evita overflow horizontal causado por padding) */
+        box-sizing: border-box;
+        padding: 2rem 1.5rem; /* Reduzido de 3rem 2rem */
+    }
+
+    @media (min-width: 1024px) {
+        .carousel-slide {
+            padding: 3rem 2rem; /* Reduzido de 4rem 3rem */
+        }
     }
 
     .carousel-slide img {
@@ -242,237 +290,322 @@
         object-fit: contain;
         user-select: none;
         display: block;
+        filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.5));
+        transition: transform 0.3s ease;
+    }
+
+    .carousel-slide:hover img {
+        transform: scale(1.02);
     }
 
     .carousel-placeholder {
         width: 120px;
         height: 120px;
-        color: #333;
+        color: #222;
+        opacity: 0.3;
     }
 
     .carousel-btn {
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
-        background: rgba(255, 255, 255, 0.95);
-        border: none;
-        width: 40px;
-        height: 40px;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 5;
+        color: #fff;
     }
 
-    @media (max-width: 767px) {
+    @media (max-width: 1023px) {
         .carousel-btn {
             display: none;
         }
     }
 
     .carousel-btn:hover {
-        background: #fff;
+        background: rgba(255, 255, 255, 0.95);
+        color: #000;
         transform: translateY(-50%) scale(1.1);
+        border-color: #fff;
     }
 
     .carousel-btn.prev {
-        left: 1rem;
+        left: 2rem;
     }
 
     .carousel-btn.next {
-        right: 1rem;
+        right: 2rem;
     }
 
     .carousel-btn svg {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
     }
 
     .carousel-dots {
         display: flex;
         justify-content: center;
-        gap: 0.5rem;
-        padding: 1rem;
-        background: #000;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.5rem;
+        background: linear-gradient(to top, #000 0%, transparent 100%);
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
     }
 
     .dot {
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
-        background: #333;
+        background: rgba(255, 255, 255, 0.25);
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dot:hover {
+        background: rgba(255, 255, 255, 0.5);
+        transform: scale(1.2);
     }
 
     .dot.active {
         background: #fff;
-        width: 24px;
-        border-radius: 4px;
+        width: 32px;
+        border-radius: 5px;
+        border-color: #fff;
     }
 
+    /* INFORMAÇÕES - COMPACTAS E ELEGANTES */
     .modal-info {
-        padding: 1.5rem;
-        display: none;
+        display: flex;
         flex-direction: column;
+        background: #0a0a0a;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        overflow-y: hidden; /* Remove scroll */
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
         .modal-info {
-            display: flex;
-            flex: 1;
-            max-width: 450px;
-            overflow-y: auto;
+            flex: 0 0 35%;
+            max-width: 480px;
+            overflow-y: hidden; /* Remove scroll */
+            border-top: none;
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0 32px 32px 0;
         }
+    }
+
+    @media (min-width: 1400px) {
+        .modal-info {
+            flex: 0 0 30%;
+        }
+    }
+
+    .info-header {
+        padding: 1.25rem 1.5rem 0.75rem; /* Reduzido de 2rem 2rem 1rem */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .modal-badges {
         display: flex;
         gap: 0.75rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem; /* Reduzido de 1.25rem */
+        flex-wrap: wrap;
     }
 
     .modal-condicao,
     .modal-categoria {
-        display: inline-block;
-        padding: 0.4rem 0.9rem;
-        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 24px;
         font-size: 0.8rem;
         font-weight: 600;
+        letter-spacing: 0.02em;
     }
 
     .modal-condicao {
-        background: #1a1a1a;
-        color: #fff;
+        background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+        color: #000;
+        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
     }
 
     .modal-categoria {
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         color: #999;
     }
 
     .modal-nome {
         font-family: "Halenoir", sans-serif;
-        font-size: 1.5rem;
+        font-size: 1.5rem; /* Reduzido de 1.75rem */
         color: var(--cor-primaria);
-        margin-bottom: 0.5rem;
+        margin: 0;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
         .modal-nome {
-            font-size: 2rem;
+            font-size: 1.75rem; /* Reduzido de 2rem */
         }
+    }
+
+    .info-body {
+        padding: 1rem 1.5rem; /* Reduzido de 1.5rem 2rem */
+        flex: 1;
     }
 
     .modal-descricao {
         color: #999;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-        line-height: 1.6;
-    }
-
-    @media (min-width: 768px) {
-        .modal-descricao {
-            font-size: 1.1rem;
-        }
+        font-size: 0.9rem; /* Reduzido de 1rem */
+        line-height: 1.5; /* Reduzido de 1.7 */
+        margin-bottom: 1rem; /* Reduzido de 2rem */
     }
 
     .modal-specs {
-        display: flex;
-        gap: 2rem;
-        margin-bottom: 1.5rem;
-        padding: 1rem;
-        background: #0a0a0a;
-        border: 1px solid #1a1a1a;
-        border-radius: 12px;
-        flex-wrap: wrap;
+        display: grid;
+        gap: 0.75rem; /* Reduzido de 1.25rem */
+        padding: 1rem; /* Reduzido de 1.5rem */
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
     }
 
     .spec-item {
         display: flex;
+        align-items: center;
+        gap: 0.75rem; /* Reduzido de 1rem */
+    }
+
+    .spec-item svg {
+        width: 24px; /* Reduzido de 28px */
+        height: 24px;
+        color: rgba(255, 255, 255, 0.4);
+        flex-shrink: 0;
+    }
+
+    .spec-item > div {
+        display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        flex: 1;
-        min-width: 120px;
+        gap: 0.25rem;
     }
 
     .spec-label {
         font-size: 0.75rem;
         color: #666;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .spec-bateria {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #22c55e;
+        letter-spacing: 0.08em;
         font-weight: 600;
     }
 
-    .spec-bateria svg {
-        width: 24px;
-        height: 24px;
+    .spec-value {
+        font-size: 1rem;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .modal-bateria {
+        color: #22c55e;
     }
 
     .modal-codigo {
         font-family: 'Courier New', monospace;
-        color: #fff;
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+    }
+
+    .info-footer {
+        padding: 1rem 1.5rem; /* Reduzido de 1.5rem 2rem 2rem */
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    @media (min-width: 1024px) {
+        .info-footer {
+            border-radius: 0 0 32px 0;
+        }
     }
 
     .modal-preco {
         font-family: "Halenoir", sans-serif;
-        font-size: 2rem;
+        font-size: 2rem; /* Reduzido de 2.5rem */
         color: var(--cor-primaria);
         font-weight: 900;
-        margin-bottom: 1rem;
+        margin-bottom: 1rem; /* Reduzido de 1.25rem */
+        letter-spacing: -0.03em;
+        line-height: 1;
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
         .modal-preco {
-            font-size: 2.5rem;
+            font-size: 2.25rem; /* Reduzido de 2.75rem */
         }
-    }
-
-    .modal-footer {
-        padding: 1.5rem;
-        border-top: 1px solid #1a1a1a;
-        background: #0a0a0a;
     }
 
     .btn-whatsapp {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.75rem;
+        gap: 0.875rem;
         background: transparent;
-        border: 2px solid #2a2a2a;
+        border: 2px solid rgba(255, 255, 255, 0.15);
         color: #fff;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
+        padding: 0.875rem 1.5rem; /* Reduzido de 1.125rem 1.75rem */
+        border-radius: 16px;
         text-decoration: none;
         font-weight: 600;
         font-size: 1rem;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-whatsapp::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
 
     .btn-whatsapp:hover {
         border-color: #25D366;
-        background: rgba(37, 211, 102, 0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3);
+    }
+
+    .btn-whatsapp:hover::before {
+        opacity: 1;
     }
 
     .btn-whatsapp svg {
         width: 24px;
         height: 24px;
         fill: #25D366;
+        position: relative;
+        z-index: 1;
+        transition: fill 0.3s ease;
+    }
+
+    .btn-whatsapp:hover svg {
+        fill: #fff;
+    }
+
+    .btn-whatsapp > *:not(svg) {
+        position: relative;
+        z-index: 1;
     }
 
     /* Modal de Imagem Expandida */
@@ -492,13 +625,14 @@
 
     .modal-close-expandido {
         position: absolute;
-        top: 1rem;
-        right: 1rem;
+        top: 1.5rem;
+        right: 1.5rem;
         background: rgba(255, 255, 255, 0.1);
-        border: none;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         color: #fff;
-        width: 48px;
-        height: 48px;
+        width: 56px;
+        height: 56px;
         border-radius: 50%;
         font-size: 2rem;
         display: flex;
@@ -511,6 +645,7 @@
 
     .modal-close-expandido:hover {
         background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
     }
 
     .imagem-expandida-container {
@@ -520,7 +655,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 2rem;
+        padding: 3rem;
     }
 
     #imagem-expandida {
@@ -528,6 +663,7 @@
         max-height: 100%;
         object-fit: contain;
         user-select: none;
+        filter: drop-shadow(0 20px 80px rgba(0, 0, 0, 0.8));
     }
 
     .nav-btn {
@@ -535,10 +671,11 @@
         top: 50%;
         transform: translateY(-50%);
         background: rgba(255, 255, 255, 0.1);
-        border: none;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         color: #fff;
-        width: 56px;
-        height: 56px;
+        width: 64px;
+        height: 64px;
         border-radius: 50%;
         font-size: 2rem;
         display: flex;
@@ -550,6 +687,7 @@
 
     .nav-btn:hover {
         background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-50%) scale(1.1);
     }
 
     .prev-expandido {
@@ -562,14 +700,36 @@
 
     .contador-imagens {
         position: absolute;
-        bottom: 2rem;
+        bottom: 2.5rem;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         color: #fff;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-size: 0.9rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 24px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    /* Scrollbar personalizada para info */
+    .modal-info::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .modal-info::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .modal-info::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+
+    .modal-info::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
     }
 </style>
 
@@ -598,7 +758,6 @@
     let endX = 0;
     let imagensAtuais: string[] = [];
 
-    // Função para abrir modal (será chamada de fora)
     (window as any).abrirModalProduto = (produto: any) => {
         produtoAtual = produto;
         
@@ -670,7 +829,6 @@
             carouselDots.appendChild(dot);
         });
 
-        // Touch events para mobile
         carouselTrack.addEventListener('touchstart', handleTouchStart, { passive: true });
         carouselTrack.addEventListener('touchmove', handleTouchMove, { passive: true });
         carouselTrack.addEventListener('touchend', handleTouchEnd);
@@ -721,7 +879,6 @@
     btnPrev?.addEventListener('click', prevSlide);
     btnNext?.addEventListener('click', nextSlide);
 
-    // Modal de imagem expandida
     function abrirImagemExpandida(index: number) {
         if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
 
