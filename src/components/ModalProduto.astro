@@ -53,14 +53,28 @@
                     </div>
                 </div>
                 <div class="modal-preco"></div>
-                <a href="#" class="btn-whatsapp" target="_blank" rel="noopener noreferrer">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582" fill="currentColor"/>
-                    </svg>
-                    Consultar no WhatsApp
-                </a>
             </div>
         </div>
+
+        <div class="modal-footer">
+            <a href="#" class="btn-whatsapp" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582" fill="currentColor"/>
+                </svg>
+                Consultar no WhatsApp
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal de Imagem Expandida -->
+    <div id="modal-imagem-expandida" class="modal-imagem-expandida">
+        <button class="modal-close-expandido" aria-label="Fechar">×</button>
+        <div class="imagem-expandida-container">
+            <button class="nav-btn prev-expandido" aria-label="Anterior">‹</button>
+            <img id="imagem-expandida" src="" alt="Imagem expandida" />
+            <button class="nav-btn next-expandido" aria-label="Próximo">›</button>
+        </div>
+        <div class="contador-imagens"></div>
     </div>
 </div>
 
@@ -72,7 +86,7 @@
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 1rem;
+        padding: 0;
     }
 
     .modal.active {
@@ -82,7 +96,7 @@
     .modal-overlay {
         position: absolute;
         inset: 0;
-        background: rgba(0, 0, 0, 0.9);
+        background: rgba(0, 0, 0, 0.95);
         backdrop-filter: blur(10px);
         animation: fadeIn 0.3s ease;
     }
@@ -96,13 +110,26 @@
         position: relative;
         background: #0a0a0a;
         border: 1px solid #2a2a2a;
-        border-radius: 24px;
-        max-width: 900px;
         width: 100%;
-        max-height: 90vh;
+        height: 100%;
         overflow-y: auto;
         animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @media (min-width: 768px) {
+        .modal {
+            padding: 1rem;
+        }
+
+        .modal-content {
+            border-radius: 24px;
+            max-width: 1100px;
+            max-height: 90vh;
+            height: auto;
+        }
     }
 
     @keyframes slideUp {
@@ -120,7 +147,7 @@
         position: absolute;
         top: 1rem;
         right: 1rem;
-        background: rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.9);
         border: 1px solid #2a2a2a;
         border-radius: 50%;
         width: 40px;
@@ -148,24 +175,45 @@
     .modal-body {
         display: flex;
         flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+        .modal-body {
+            flex-direction: row;
+        }
     }
 
     .modal-gallery {
         position: relative;
         background: #000;
-        border-radius: 24px 24px 0 0;
+        flex: 1;
+    }
+
+    @media (min-width: 768px) {
+        .modal-gallery {
+            border-radius: 24px 0 0 0;
+        }
     }
 
     .carousel {
         position: relative;
-        aspect-ratio: 4/3;
+        aspect-ratio: 1;
         overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+        .carousel {
+            aspect-ratio: 4/3;
+        }
     }
 
     .carousel-track {
         display: flex;
         height: 100%;
         transition: transform 0.4s ease;
+        touch-action: pan-y pinch-zoom;
     }
 
     .carousel-slide {
@@ -175,12 +223,15 @@
         align-items: center;
         justify-content: center;
         background: #0a0a0a;
+        cursor: pointer;
     }
 
     .carousel-slide img {
-        max-width: 100%;
-        max-height: 100%;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
+        user-select: none;
+        padding: 1rem;
     }
 
     .carousel-placeholder {
@@ -204,6 +255,12 @@
         cursor: pointer;
         transition: all 0.3s ease;
         z-index: 5;
+    }
+
+    @media (max-width: 767px) {
+        .carousel-btn {
+            display: none;
+        }
     }
 
     .carousel-btn:hover {
@@ -248,7 +305,18 @@
     }
 
     .modal-info {
-        padding: 2rem;
+        padding: 1.5rem;
+        display: none;
+        flex-direction: column;
+    }
+
+    @media (min-width: 768px) {
+        .modal-info {
+            display: flex;
+            flex: 1;
+            max-width: 450px;
+            overflow-y: auto;
+        }
     }
 
     .modal-badges {
@@ -279,15 +347,28 @@
 
     .modal-nome {
         font-family: "Halenoir", sans-serif;
-        font-size: 2rem;
+        font-size: 1.5rem;
         color: var(--cor-primaria);
         margin-bottom: 0.5rem;
     }
 
+    @media (min-width: 768px) {
+        .modal-nome {
+            font-size: 2rem;
+        }
+    }
+
     .modal-descricao {
         color: #999;
-        font-size: 1.1rem;
+        font-size: 1rem;
         margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    @media (min-width: 768px) {
+        .modal-descricao {
+            font-size: 1.1rem;
+        }
     }
 
     .modal-specs {
@@ -298,12 +379,15 @@
         background: #0a0a0a;
         border: 1px solid #1a1a1a;
         border-radius: 12px;
+        flex-wrap: wrap;
     }
 
     .spec-item {
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        flex: 1;
+        min-width: 120px;
     }
 
     .spec-label {
@@ -330,55 +414,152 @@
         font-family: 'Courier New', monospace;
         color: #fff;
         font-weight: 600;
+        font-size: 0.9rem;
     }
 
     .modal-preco {
         font-family: "Halenoir", sans-serif;
-        font-size: 2.5rem;
+        font-size: 2rem;
         color: var(--cor-primaria);
         font-weight: 900;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    @media (min-width: 768px) {
+        .modal-preco {
+            font-size: 2.5rem;
+        }
+    }
+
+    .modal-footer {
+        padding: 1.5rem;
+        border-top: 1px solid #1a1a1a;
+        background: #0a0a0a;
     }
 
     .btn-whatsapp {
-        display: inline-flex;
+        display: flex;
         align-items: center;
+        justify-content: center;
         gap: 0.75rem;
-        background: #25D366;
+        background: transparent;
+        border: 2px solid #2a2a2a;
         color: #fff;
-        padding: 1rem 2rem;
+        padding: 1rem 1.5rem;
         border-radius: 12px;
         text-decoration: none;
         font-weight: 600;
         font-size: 1rem;
         transition: all 0.3s ease;
+        width: 100%;
     }
 
     .btn-whatsapp:hover {
-        background: #22c55e;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(37, 211, 102, 0.3);
+        border-color: #25D366;
+        background: rgba(37, 211, 102, 0.1);
     }
 
     .btn-whatsapp svg {
         width: 24px;
         height: 24px;
+        fill: #25D366;
     }
 
-    @media (min-width: 768px) {
-        .modal-body {
-            flex-direction: row;
-        }
+    /* Modal de Imagem Expandida */
+    .modal-imagem-expandida {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.98);
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
 
-        .modal-gallery {
-            flex: 1;
-            border-radius: 0;
-        }
+    .modal-imagem-expandida.active {
+        display: flex;
+    }
 
-        .modal-info {
-            flex: 1;
-            max-width: 400px;
-        }
+    .modal-close-expandido {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 10;
+    }
+
+    .modal-close-expandido:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .imagem-expandida-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    #imagem-expandida {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        user-select: none;
+    }
+
+    .nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .prev-expandido {
+        left: 2rem;
+    }
+
+    .next-expandido {
+        right: 2rem;
+    }
+
+    .contador-imagens {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
     }
 </style>
 
@@ -393,9 +574,19 @@
     const btnPrev = modal?.querySelector('.carousel-btn.prev');
     const btnNext = modal?.querySelector('.carousel-btn.next');
     
+    const modalImagemExpandida = document.getElementById('modal-imagem-expandida') as HTMLElement | null;
+    const imagemExpandida = document.getElementById('imagem-expandida') as HTMLImageElement | null;
+    const btnCloseExpandido = modalImagemExpandida?.querySelector('.modal-close-expandido') as HTMLButtonElement | null;
+    const btnPrevExpandido = modalImagemExpandida?.querySelector('.prev-expandido') as HTMLButtonElement | null;
+    const btnNextExpandido = modalImagemExpandida?.querySelector('.next-expandido') as HTMLButtonElement | null;
+    const contadorImagens = modalImagemExpandida?.querySelector('.contador-imagens');
+    
     let currentSlide = 0;
     let totalSlides = 0;
     let produtoAtual: Product | null = null;
+    let startX = 0;
+    let endX = 0;
+    let imagensAtuais: string[] = [];
 
     // Função para abrir modal (será chamada de fora)
     (window as any).abrirModalProduto = (produto: any) => {
@@ -418,7 +609,8 @@
             if (modalBateria) modalBateria.textContent = `${produto.bateria}%`;
             if (modalCodigo) modalCodigo.textContent = produto.codigo;
             
-            createCarousel(produto.imagens || []);
+            imagensAtuais = produto.imagens || [];
+            createCarousel(imagensAtuais);
             
             modal.classList.add('active');
             const body = document.body as HTMLBodyElement;
@@ -459,6 +651,7 @@
             const slide = document.createElement('div');
             slide.className = 'carousel-slide';
             slide.innerHTML = `<img src="${img}" alt="Produto ${index + 1}" loading="lazy">`;
+            slide.addEventListener('click', () => abrirImagemExpandida(index));
             carouselTrack.appendChild(slide);
 
             const dot = document.createElement('div');
@@ -466,6 +659,34 @@
             dot.addEventListener('click', () => goToSlide(index));
             carouselDots.appendChild(dot);
         });
+
+        // Touch events para mobile
+        carouselTrack.addEventListener('touchstart', handleTouchStart, { passive: true });
+        carouselTrack.addEventListener('touchmove', handleTouchMove, { passive: true });
+        carouselTrack.addEventListener('touchend', handleTouchEnd);
+    }
+
+    function handleTouchStart(e: TouchEvent) {
+        startX = e.touches[0].clientX;
+    }
+
+    function handleTouchMove(e: TouchEvent) {
+        endX = e.touches[0].clientX;
+    }
+
+    function handleTouchEnd() {
+        const diff = startX - endX;
+        const threshold = 50;
+
+        if (Math.abs(diff) > threshold) {
+            if (diff > 0) {
+                // Swipe left - próxima imagem
+                nextSlide();
+            } else {
+                // Swipe right - imagem anterior
+                prevSlide();
+            }
+        }
     }
 
     function goToSlide(index: number) {
@@ -479,21 +700,72 @@
         });
     }
 
-    btnPrev?.addEventListener('click', () => {
-        currentSlide = currentSlide > 0 ? currentSlide - 1 : totalSlides - 1;
-        goToSlide(currentSlide);
-    });
-
-    btnNext?.addEventListener('click', () => {
+    function nextSlide() {
         currentSlide = currentSlide < totalSlides - 1 ? currentSlide + 1 : 0;
         goToSlide(currentSlide);
+    }
+
+    function prevSlide() {
+        currentSlide = currentSlide > 0 ? currentSlide - 1 : totalSlides - 1;
+        goToSlide(currentSlide);
+    }
+
+    btnPrev?.addEventListener('click', prevSlide);
+    btnNext?.addEventListener('click', nextSlide);
+
+    // Modal de imagem expandida
+    function abrirImagemExpandida(index: number) {
+        if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
+
+        currentSlide = index;
+        imagemExpandida.src = imagensAtuais[currentSlide];
+        if (contadorImagens) {
+            contadorImagens.textContent = `${currentSlide + 1} / ${imagensAtuais.length}`;
+        }
+        
+        modalImagemExpandida.classList.add('active');
+
+        // Touch events para swipe no modal expandido
+        imagemExpandida.addEventListener('touchstart', handleTouchStart, { passive: true });
+        imagemExpandida.addEventListener('touchmove', handleTouchMove, { passive: true });
+        imagemExpandida.addEventListener('touchend', () => {
+            handleTouchEnd();
+            atualizarImagemExpandida();
+        });
+    }
+
+    function atualizarImagemExpandida() {
+        if (!imagemExpandida || !contadorImagens) return;
+        imagemExpandida.src = imagensAtuais[currentSlide];
+        contadorImagens.textContent = `${currentSlide + 1} / ${imagensAtuais.length}`;
+    }
+
+    function fecharImagemExpandida() {
+        modalImagemExpandida?.classList.remove('active');
+    }
+
+    btnCloseExpandido?.addEventListener('click', fecharImagemExpandida);
+    modalImagemExpandida?.addEventListener('click', (e) => {
+        if (e.target === modalImagemExpandida) {
+            fecharImagemExpandida();
+        }
+    });
+
+    btnPrevExpandido?.addEventListener('click', () => {
+        prevSlide();
+        atualizarImagemExpandida();
+    });
+
+    btnNextExpandido?.addEventListener('click', () => {
+        nextSlide();
+        atualizarImagemExpandida();
     });
 
     const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
     btnWhatsapp?.addEventListener('click', (e) => {
         e.preventDefault();
         if (produtoAtual) {
-            const telefone = '5577999999999';
+            const telefone = '5577981022246';
             const mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*\n${produtoAtual.descricao}\n${produtoAtual.preco}`;
             const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
             window.open(url, '_blank');
@@ -501,8 +773,26 @@
     });
 
     document.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Escape' && modal?.classList.contains('active')) {
-            fecharModal();
+        if (modal?.classList.contains('active')) {
+            if (e.key === 'Escape') {
+                fecharModal();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'ArrowRight') {
+                nextSlide();
+            }
+        }
+        
+        if (modalImagemExpandida?.classList.contains('active')) {
+            if (e.key === 'Escape') {
+                fecharImagemExpandida();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+                atualizarImagemExpandida();
+            } else if (e.key === 'ArrowRight') {
+                nextSlide();
+                atualizarImagemExpandida();
+            }
         }
     });
 </script>

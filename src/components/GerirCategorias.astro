@@ -126,8 +126,15 @@ import { categoryService } from '../lib/supabase';
 
   .add-category-form {
     display: flex;
+    flex-direction: column;
     gap: 0.75rem;
     margin-bottom: 2rem;
+  }
+
+  @media (min-width: 640px) {
+    .add-category-form {
+      flex-direction: row;
+    }
   }
 
   .add-category-form input {
@@ -150,6 +157,7 @@ import { categoryService } from '../lib/supabase';
   .btn-add {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     background: #fff;
     border: none;
@@ -159,6 +167,13 @@ import { categoryService } from '../lib/supabase';
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .btn-add {
+      width: auto;
+    }
   }
 
   .btn-add:hover {
@@ -240,6 +255,21 @@ import { categoryService } from '../lib/supabase';
     display: block;
   }
 
+  .category-input {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    color: #fff;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .category-input:focus {
+    outline: none;
+    border-color: #fff;
+  }
+
   .empty-state {
     text-align: center;
     padding: 3rem 1rem;
@@ -265,13 +295,15 @@ import { categoryService } from '../lib/supabase';
   }
 
   const modal = document.getElementById('modal-categorias');
-  const overlay = modal.querySelector('.modal-overlay');
-  const closeBtn = modal.querySelector('.modal-close');
-  const form = modal.querySelector('#form-nova-categoria');
-  const input = modal.querySelector('#nova-categoria-nome');
-  const list = modal.querySelector('#categories-list');
+  const overlay = modal?.querySelector('.modal-overlay');
+  const closeBtn = modal?.querySelector('.modal-close');
+  const form = modal?.querySelector('#form-nova-categoria');
+  const input = modal?.querySelector('#nova-categoria-nome');
+  const list = modal?.querySelector('#categories-list');
 
   async function renderCategories() {
+    if (!list) return;
+    
     const categories = await categoryService.getAll();
     list.innerHTML = '';
 
@@ -315,7 +347,7 @@ import { categoryService } from '../lib/supabase';
     });
   }
 
-  async function deleteCategory(id) {
+  async function deleteCategory(id: string) {
     if (confirm('Deseja realmente excluir esta categoria?')) {
       await categoryService.delete(id);
       renderCategories();
@@ -323,9 +355,11 @@ import { categoryService } from '../lib/supabase';
     }
   }
 
-  function startEditing(item, cat) {
+  function startEditing(item: HTMLElement, cat: any) {
     const nameSpan = item.querySelector('.category-name');
     const actions = item.querySelector('.category-actions');
+    if (!nameSpan || !actions) return;
+
     item.classList.add('editing');
 
     nameSpan.innerHTML = `<input type="text" class="category-input" value="${cat.nome}" />`;
@@ -334,12 +368,17 @@ import { categoryService } from '../lib/supabase';
       <button class="btn-icon cancel"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
     `;
 
-    const input = nameSpan.querySelector('input');
-    input.focus();
-    input.select();
+    const input = nameSpan.querySelector('input') as HTMLInputElement;
+    if (input) {
+      input.focus();
+      input.select();
+    }
 
-    actions.querySelector('.save').addEventListener('click', async () => {
-      const newName = input.value.trim();
+    const saveBtn = actions.querySelector('.save');
+    const cancelBtn = actions.querySelector('.cancel');
+
+    saveBtn?.addEventListener('click', async () => {
+      const newName = input?.value.trim();
       if (newName) {
         await categoryService.update(cat.id, newName);
         window.dispatchEvent(new Event('produtos-updated'));
@@ -347,12 +386,12 @@ import { categoryService } from '../lib/supabase';
       renderCategories();
     });
 
-    actions.querySelector('.cancel').addEventListener('click', renderCategories);
+    cancelBtn?.addEventListener('click', renderCategories);
   }
 
-  form.addEventListener('submit', async (e) => {
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const nome = (input as HTMLInputElement).value.trim();
+    const nome = (input as HTMLInputElement)?.value.trim();
     if (nome) {
       await categoryService.create(nome);
       (input as HTMLInputElement).value = '';
@@ -362,18 +401,18 @@ import { categoryService } from '../lib/supabase';
   });
 
   function abrirModal() {
-    modal.classList.add('active');
+    modal?.classList.add('active');
     document.body.style.overflow = 'hidden';
     renderCategories();
   }
 
   function fecharModal() {
-    modal.classList.remove('active');
+    modal?.classList.remove('active');
     document.body.style.overflow = '';
   }
 
-  closeBtn.addEventListener('click', fecharModal);
-  overlay.addEventListener('click', fecharModal);
+  closeBtn?.addEventListener('click', fecharModal);
+  overlay?.addEventListener('click', fecharModal);
 
   window.abrirGerirCategorias = abrirModal;
 </script>

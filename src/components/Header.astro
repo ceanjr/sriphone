@@ -15,28 +15,60 @@ const isCatalogPage = currentPath === '/catalogo'
         </a>
         <nav class="nav">
             {!isCatalogPage && (
-                <a href="/catalogo"  style="display: none">Catálogo</a>
+                <a href="/catalogo" style="display: none">Catálogo</a>
             )}
             {isCatalogPage && (
                 <>
-                    <button id="btn-auth" class="btn-auth">
+                    <!-- Botão Auth Desktop -->
+                    <button id="btn-auth-desktop" class="btn-auth btn-auth-desktop">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>Entrar</span>
                     </button>
-                    <div id="admin-actions" class="admin-actions" style="display: none;">
-                        <button id="btn-criar-produto" class="btn-admin-action">
+                    
+                    <!-- Menu Desktop -->
+                    <div id="admin-actions-desktop" class="admin-actions-desktop" style="display: none;">
+                        <button id="btn-criar-produto-desktop" class="btn-admin-action">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             </svg>
                             Novo Produto
                         </button>
-                        <button id="btn-gerir-categorias" class="btn-admin-action">
+                        <button id="btn-gerir-categorias-desktop" class="btn-admin-action">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             </svg>
                             Categorias
+                        </button>
+                    </div>
+
+                    <!-- Menu Hamburguer Mobile -->
+                    <button id="btn-menu-mobile" class="btn-menu-mobile" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown Mobile -->
+                    <div id="dropdown-mobile" class="dropdown-mobile">
+                        <button id="btn-criar-produto-mobile" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            Novo Produto
+                        </button>
+                        <button id="btn-gerir-categorias-mobile" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            Categorias
+                        </button>
+                        <button id="btn-sair-mobile" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Sair
                         </button>
                     </div>
                 </>
@@ -75,6 +107,7 @@ const isCatalogPage = currentPath === '/catalogo'
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        position: relative;
     }
 
     .nav a {
@@ -106,6 +139,7 @@ const isCatalogPage = currentPath === '/catalogo'
         font-weight: 500;
         cursor: pointer;
         transition: all 0.3s ease;
+        white-space: nowrap;
     }
 
     .btn-auth:hover {
@@ -119,9 +153,27 @@ const isCatalogPage = currentPath === '/catalogo'
         height: 18px;
     }
 
-    .admin-actions {
-        display: flex;
+    /* Esconder botão auth no mobile quando logado */
+    .btn-auth-desktop {
+        display: inline-flex;
+    }
+
+    @media (max-width: 767px) {
+        .btn-auth-desktop.hide-mobile {
+            display: none;
+        }
+    }
+
+    /* Menu Desktop */
+    .admin-actions-desktop {
+        display: none;
         gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .admin-actions-desktop {
+            display: flex;
+        }
     }
 
     .btn-admin-action {
@@ -150,6 +202,91 @@ const isCatalogPage = currentPath === '/catalogo'
         height: 16px;
     }
 
+    @media (max-width: 767px) {
+        .btn-admin-action {
+            display: none;
+        }
+    }
+
+    /* Menu Hamburguer Mobile */
+    .btn-menu-mobile {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid #2a2a2a;
+        color: #fff;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    @media (min-width: 768px) {
+        .btn-menu-mobile {
+            display: none !important;
+        }
+    }
+
+    .btn-menu-mobile:hover {
+        background: #1a1a1a;
+        border-color: #fff;
+    }
+
+    .btn-menu-mobile svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Dropdown Mobile */
+    .dropdown-mobile {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        right: 0;
+        background: #0a0a0a;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        min-width: 200px;
+        display: none;
+        flex-direction: column;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .dropdown-mobile.active {
+        display: flex;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: transparent;
+        border: none;
+        color: #fff;
+        padding: 1rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        border-bottom: 1px solid #1a1a1a;
+    }
+
+    .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .dropdown-item:hover {
+        background: #1a1a1a;
+    }
+
+    .dropdown-item svg {
+        width: 18px;
+        height: 18px;
+    }
+
     @media (min-width: 768px) {
         .logo {
             height: 50px;
@@ -170,10 +307,6 @@ const isCatalogPage = currentPath === '/catalogo'
             height: 20px;
         }
 
-        .admin-actions {
-            gap: 0.75rem;
-        }
-
         .btn-admin-action {
             font-size: 0.9rem;
             padding: 0.625rem 1.25rem;
@@ -190,41 +323,73 @@ const isCatalogPage = currentPath === '/catalogo'
     <script>
         import { authService } from '../lib/supabase'
 
-        const btnAuth = document.getElementById('btn-auth')
-        const adminActions = document.getElementById('admin-actions')
+        const btnAuthDesktop = document.getElementById('btn-auth-desktop')
+        const adminActionsDesktop = document.getElementById('admin-actions-desktop')
+        const btnMenuMobile = document.getElementById('btn-menu-mobile')
+        const dropdownMobile = document.getElementById('dropdown-mobile')
+        const btnSairMobile = document.getElementById('btn-sair-mobile')
 
         async function checkAuth() {
             const session = await authService.getSession()
             
-            if (btnAuth && adminActions) {
+            if (btnAuthDesktop && adminActionsDesktop && btnMenuMobile) {
                 if (session) {
-                    btnAuth.innerHTML = `
+                    // Usuário autenticado
+                    
+                    // Desktop: Mostrar botão Sair
+                    btnAuthDesktop.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>Sair</span>
                     `
-                    adminActions.style.display = 'flex'
                     
-                    btnAuth.onclick = async () => {
+                    // Desktop: Mostrar ações admin
+                    adminActionsDesktop.style.display = 'flex'
+                    
+                    // Mobile: Esconder botão auth e mostrar hamburguer
+                    btnAuthDesktop.classList.add('hide-mobile')
+                    btnMenuMobile.style.display = 'inline-flex'
+                    
+                    btnAuthDesktop.onclick = async () => {
                         await authService.signOut()
                         window.location.reload()
                     }
                 } else {
-                    btnAuth.innerHTML = `
+                    // Usuário não autenticado
+                    
+                    btnAuthDesktop.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>Entrar</span>
                     `
-                    adminActions.style.display = 'none'
                     
-                    btnAuth.onclick = () => {
+                    adminActionsDesktop.style.display = 'none'
+                    btnAuthDesktop.classList.remove('hide-mobile')
+                    btnMenuMobile.style.display = 'none'
+                    
+                    btnAuthDesktop.onclick = () => {
                         (window as any).abrirModalLogin()
                     }
                 }
             }
         }
+
+        // Toggle dropdown mobile
+        btnMenuMobile?.addEventListener('click', (e) => {
+            e.stopPropagation()
+            dropdownMobile?.classList.toggle('active')
+        })
+
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', () => {
+            dropdownMobile?.classList.remove('active')
+        })
+
+        dropdownMobile?.addEventListener('click', (e) => {
+            e.stopPropagation()
+        })
 
         // Inicializar
         checkAuth()
@@ -234,16 +399,37 @@ const isCatalogPage = currentPath === '/catalogo'
             checkAuth()
         })
 
-        // Expor funções para os botões de admin
-        const btnCriarProduto = document.getElementById('btn-criar-produto')
-        const btnGerirCategorias = document.getElementById('btn-gerir-categorias')
+        // Botões Desktop
+        const btnCriarProdutoDesktop = document.getElementById('btn-criar-produto-desktop')
+        const btnGerirCategoriasDesktop = document.getElementById('btn-gerir-categorias-desktop')
 
-        btnCriarProduto?.addEventListener('click', () => {
+        btnCriarProdutoDesktop?.addEventListener('click', () => {
             (window as any).abrirFormProduto()
         })
 
-        btnGerirCategorias?.addEventListener('click', () => {
+        btnGerirCategoriasDesktop?.addEventListener('click', () => {
             (window as any).abrirGerirCategorias()
+        })
+
+        // Botões Mobile
+        const btnCriarProdutoMobile = document.getElementById('btn-criar-produto-mobile')
+        const btnGerirCategoriasMobile = document.getElementById('btn-gerir-categorias-mobile')
+
+        btnCriarProdutoMobile?.addEventListener('click', () => {
+            dropdownMobile?.classList.remove('active')
+            ;(window as any).abrirFormProduto()
+        })
+
+        btnGerirCategoriasMobile?.addEventListener('click', () => {
+            dropdownMobile?.classList.remove('active')
+            ;(window as any).abrirGerirCategorias()
+        })
+
+        // Botão Sair Mobile
+        btnSairMobile?.addEventListener('click', async () => {
+            dropdownMobile?.classList.remove('active')
+            await authService.signOut()
+            window.location.reload()
         })
     </script>
 )}
