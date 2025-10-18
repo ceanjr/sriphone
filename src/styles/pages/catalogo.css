@@ -260,8 +260,19 @@
 /* Visualização Container */
 .visualizacao-container {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   align-self: flex-start;
+}
+
+.visualizacao-container span {
+  font-size: 0.9rem;
+  color: #999;
+}
+
+.visualizacao-btns {
+  display: flex;
+  gap: 0.4rem;
 }
 
 .visualizacao-btn {
@@ -1258,44 +1269,57 @@
 }
 
 /* ========================================
-   BOTÃO DE EDITAR PRODUTO
+   BOTÃO DE EDITAR PRODUTO - REFATORADO
    ======================================== */
-/* Botão de Editar Produto */
 .btn-editar-produto {
-  position: absolute;
+  /* Reset completo */
+  all: unset;
+
+  /* Posicionamento */
+  position: absolute !important;
   top: 0.5rem;
   left: 0.5rem;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  width: 36px;
-  height: 36px;
-  display: none; /* Padrão oculto */
+  z-index: 50;
+
+  /* Visual */
+  display: none;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
   color: #fff;
+
+  /* Interação */
   cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
+  transition: all 0.2s ease;
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
+/* Sempre visível quando autenticado */
 .btn-editar-produto.visible {
-  display: flex; /* Sempre visível quando autenticado */
+  display: flex !important;
 }
 
-.btn-editar-produto:active {
-  background: rgba(255, 255, 255, 0.15);
-  transform: scale(0.95);
-}
-
+/* SVG dentro do botão */
 .btn-editar-produto svg {
   width: 16px;
   height: 16px;
+  pointer-events: none;
+  flex-shrink: 0;
 }
 
-/* Estilização opcional no hover, mas sem controle de visibilidade */
+/* Efeitos de interação */
+.btn-editar-produto:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
+}
+
+/* Desktop: Hover e tamanho maior */
 @media (min-width: 768px) {
   .btn-editar-produto {
     width: 40px;
@@ -1309,7 +1333,7 @@
     height: 18px;
   }
 
-  .btn-editar-produto.visible:hover {
+  .btn-editar-produto:hover {
     background: #fff;
     color: #000;
     border-color: #fff;
@@ -1317,55 +1341,81 @@
   }
 }
 
-/* Modo Lista */
-#produtos-container.lista .btn-editar-produto,
-.categoria-grid.lista .btn-editar-produto {
-  position: absolute;
-  top: 50%;
-  left: 0.75rem;
-  transform: translateY(-50%);
+/* ========================================
+   MODO LISTA - POSICIONAMENTO ESPECIAL
+   ======================================== */
+.categoria-grid.lista .btn-editar-produto,
+#produtos-container.lista .btn-editar-produto {
+  top: 50% !important;
+  left: 0.75rem !important;
+  transform: translateY(-50%) !important;
   width: 34px;
   height: 34px;
 }
 
+.categoria-grid.lista .btn-editar-produto.visible,
+#produtos-container.lista .btn-editar-produto.visible {
+  display: flex !important;
+}
+
 @media (min-width: 768px) {
-  #produtos-container.lista .btn-editar-produto,
-  .categoria-grid.lista .btn-editar-produto {
+  .categoria-grid.lista .btn-editar-produto,
+  #produtos-container.lista .btn-editar-produto {
     width: 38px;
     height: 38px;
   }
 }
 
-/* Ajustar padding do conteúdo quando botão visível */
-#produtos-container.lista .produto-info.com-editar,
-.categoria-grid.lista .produto-info.com-editar {
-  padding-left: 3rem;
+/* Ajustar padding do conteúdo no modo lista */
+.categoria-grid.lista .produto-info.com-editar,
+#produtos-container.lista .produto-info.com-editar {
+  padding-left: 3rem !important;
 }
 
 @media (min-width: 768px) {
-  #produtos-container.lista .produto-info.com-editar,
-  .categoria-grid.lista .produto-info.com-editar {
-    padding-left: 3.5rem;
+  .categoria-grid.lista .produto-info.com-editar,
+  #produtos-container.lista .produto-info.com-editar {
+    padding-left: 3.5rem !important;
   }
 }
 
-/* Modo Grade e Coluna */
-#produtos-container.grade .btn-editar-produto,
-#produtos-container.coluna .btn-editar-produto,
+/* ========================================
+   MODO GRADE E COLUNA - PADRÃO
+   ======================================== */
 .categoria-grid.grade .btn-editar-produto,
-.categoria-grid.coluna .btn-editar-produto {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  transform: none;
+.categoria-grid.coluna .btn-editar-produto,
+#produtos-container.grade .btn-editar-produto,
+#produtos-container.coluna .btn-editar-produto {
+  top: 0.5rem !important;
+  left: 0.5rem !important;
+  transform: none !important;
+}
+
+.categoria-grid.grade .btn-editar-produto.visible,
+.categoria-grid.coluna .btn-editar-produto.visible,
+#produtos-container.grade .btn-editar-produto.visible,
+#produtos-container.coluna .btn-editar-produto.visible {
+  display: flex !important;
 }
 
 @media (min-width: 768px) {
-  #produtos-container.grade .btn-editar-produto,
-  #produtos-container.coluna .btn-editar-produto,
   .categoria-grid.grade .btn-editar-produto,
-  .categoria-grid.coluna .btn-editar-produto {
-    top: 0.75rem;
-    left: 0.75rem;
+  .categoria-grid.coluna .btn-editar-produto,
+  #produtos-container.grade .btn-editar-produto,
+  #produtos-container.coluna .btn-editar-produto {
+    top: 0.75rem !important;
+    left: 0.75rem !important;
   }
+}
+
+/* ========================================
+   GARANTIR QUE O CARD SEJA RELATIVO
+   ======================================== */
+.produto-card {
+  position: relative;
+}
+
+/* Garantir que a imagem também seja relativa */
+.produto-image {
+  position: relative;
 }
