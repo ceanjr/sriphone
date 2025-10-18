@@ -1256,3 +1256,116 @@
     height: 60px;
   }
 }
+
+/* ========================================
+   BOTÃO DE EDITAR PRODUTO
+   ======================================== */
+/* Botão de Editar Produto */
+.btn-editar-produto {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  display: none; /* Padrão oculto */
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-editar-produto.visible {
+  display: flex; /* Sempre visível quando autenticado */
+}
+
+.btn-editar-produto:active {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(0.95);
+}
+
+.btn-editar-produto svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Estilização opcional no hover, mas sem controle de visibilidade */
+@media (min-width: 768px) {
+  .btn-editar-produto {
+    width: 40px;
+    height: 40px;
+    top: 0.75rem;
+    left: 0.75rem;
+  }
+
+  .btn-editar-produto svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .btn-editar-produto.visible:hover {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+    transform: scale(1.05);
+  }
+}
+
+/* Modo Lista */
+#produtos-container.lista .btn-editar-produto,
+.categoria-grid.lista .btn-editar-produto {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+}
+
+@media (min-width: 768px) {
+  #produtos-container.lista .btn-editar-produto,
+  .categoria-grid.lista .btn-editar-produto {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* Ajustar padding do conteúdo quando botão visível */
+#produtos-container.lista .produto-info.com-editar,
+.categoria-grid.lista .produto-info.com-editar {
+  padding-left: 3rem;
+}
+
+@media (min-width: 768px) {
+  #produtos-container.lista .produto-info.com-editar,
+  .categoria-grid.lista .produto-info.com-editar {
+    padding-left: 3.5rem;
+  }
+}
+
+/* Modo Grade e Coluna */
+#produtos-container.grade .btn-editar-produto,
+#produtos-container.coluna .btn-editar-produto,
+.categoria-grid.grade .btn-editar-produto,
+.categoria-grid.coluna .btn-editar-produto {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  transform: none;
+}
+
+@media (min-width: 768px) {
+  #produtos-container.grade .btn-editar-produto,
+  #produtos-container.coluna .btn-editar-produto,
+  .categoria-grid.grade .btn-editar-produto,
+  .categoria-grid.coluna .btn-editar-produto {
+    top: 0.75rem;
+    left: 0.75rem;
+  }
+}

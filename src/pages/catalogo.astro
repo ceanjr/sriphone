@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import ModalProduto from '../components/ModalProduto.astro';
+import EditarProduto from '../components/EditarProduto.astro';
 import FormularioProduto from '../components/FormularioProduto.astro';
 import GerirCategorias from '../components/GerirCategorias.astro';
 import '../styles/pages/catalogo.css';
@@ -287,6 +288,7 @@ import '../styles/pages/catalogo.css';
   <ModalProduto />
   <FormularioProduto />
   <GerirCategorias />
+  <EditarProduto />
   <Footer />
 </Layout>
 
@@ -467,7 +469,34 @@ import '../styles/pages/catalogo.css';
       const imagemPrincipal = produto.imagens?.[0];
       const temBateria = produto.bateria && produto.bateria > 0;
 
-      // Badges comuns para ambos os modos - mostrar condição apenas se não tiver bateria
+      // Dados para o botão de editar
+      const produtoEditData = JSON.stringify({
+        id: produto.id,
+        codigo: produto.codigo,
+        nome: produto.nome,
+        descricao: produto.descricao,
+        preco: produto.preco,
+        condicao: produto.condicao,
+        bateria: produto.bateria,
+        categoria_id: produto.categoria_id,
+        imagens: produto.imagens || [],
+      });
+
+      // Botão de editar (será mostrado apenas para usuários autenticados)
+      const btnEditar = `
+      <button 
+        class="btn-editar-produto" 
+        data-produto-data='${produtoEditData.replace(/'/g, '&apos;')}'
+        aria-label="Editar produto"
+      >
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    `;
+
+      // Badges comuns
       const badges = `
       ${!temBateria ? `<span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>` : ''}
       ${
@@ -501,14 +530,13 @@ import '../styles/pages/catalogo.css';
         categoria: produto.categoria?.nome || '',
         imagens: produto.imagens || [],
       })}'>
+      ${btnEditar}
       <div class="produto-info">
-          <!-- LADO ESQUERDO: Nome + Descrição -->
           <div class="lista-left">
               <h3>${utils.escapeHtml(produto.nome)}</h3>
               <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
           </div>
           
-          <!-- LADO DIREITO: Badges + Preço -->
           <div class="lista-right">
               <div class="lista-badges">
                   ${!temBateria ? `<span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>` : ''}
@@ -550,6 +578,7 @@ import '../styles/pages/catalogo.css';
             categoria: produto.categoria?.nome || '',
             imagens: produto.imagens || [],
           })}'>
+          ${btnEditar}
           <div class="produto-image">
               ${
                 imagemPrincipal
@@ -803,6 +832,8 @@ import '../styles/pages/catalogo.css';
         .forEach((card) => {
           card.addEventListener('click', handlers.produtoClick);
         });
+
+      setupEditButtons();
     },
 
     loading(mostrar: boolean): void {
@@ -1067,8 +1098,82 @@ import '../styles/pages/catalogo.css';
       savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
     setupEventListeners();
     api.carregarDados();
+
+    // Configurar botões de editar quando houver mudança de autenticação
+    authService.onAuthStateChange(() => {
+      setupEditButtons();
+    });
   }
 
   // Iniciar aplicação
   init();
+
+  // ==================== Controle de Botões de Editar ====================
+  async function setupEditButtons() {
+    const session = await authService.getSession();
+    // Remover botões órfãos (fora de .produto-card)
+    document.querySelectorAll('.btn-editar-produto').forEach((btn) => {
+      if (!btn.closest('.produto-card')) {
+        btn.remove();
+      }
+    });
+
+    const editButtons = document.querySelectorAll(
+      '.produto-card .btn-editar-produto'
+    );
+    console.log('Botões de editar encontrados:', editButtons.length);
+
+    editButtons.forEach((btn) => {
+      const card = btn.closest('.produto-card');
+      const produtoInfo = card?.querySelector('.produto-info');
+
+      if (session) {
+        btn.classList.add('visible');
+        if (produtoInfo) {
+          produtoInfo.classList.add('com-editar');
+        }
+      } else {
+        btn.classList.remove('visible');
+        if (produtoInfo) {
+          produtoInfo.classList.remove('com-editar');
+        }
+      }
+
+      // Remover listeners antigos para evitar duplicação
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode?.replaceChild(newBtn, btn);
+
+      newBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const produtoDataStr = (e.currentTarget as HTMLElement).dataset
+          .produtoData;
+        if (produtoDataStr) {
+          try {
+            const produtoData = JSON.parse(produtoDataStr);
+            (window as any).abrirModalEditarProduto(produtoData);
+          } catch (error) {
+            console.error('Erro ao abrir modal de edição:', error);
+            mostrarToast('Erro ao carregar dados do produto', 'error');
+          }
+        }
+      });
+    });
+  }
+
+  // Função toast para o script principal
+  function mostrarToast(
+    mensagem: string,
+    tipo: 'success' | 'error' | 'warning' | 'info' = 'info'
+  ) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+    toast.textContent = mensagem;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
 </script>

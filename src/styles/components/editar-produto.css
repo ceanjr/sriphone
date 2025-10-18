@@ -1,12 +1,12 @@
 /* Reset e Base */
-.modal-form * {
+.modal-editar * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 /* Container Modal - Mobile First */
-.modal-form {
+.modal-editar {
   position: fixed;
   inset: 0;
   z-index: 2000;
@@ -17,16 +17,16 @@
 }
 
 /* CRITICAL: Resetar conflitos do modal-produto */
-.modal-form .modal-content {
+.modal-editar .modal-content {
   min-width: unset !important;
   max-width: unset !important;
 }
 
-.modal-form.active {
+.modal-editar.active {
   display: flex;
 }
 
-.modal-form .modal-overlay {
+.modal-editar .modal-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.95);
@@ -34,7 +34,7 @@
   animation: fadeIn 0.3s ease;
 }
 
-.modal-form .modal-content {
+.modal-editar .modal-content {
   position: relative;
   background: #0a0a0a;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -50,7 +50,7 @@
 }
 
 /* Drag Handle para Mobile */
-.modal-form .modal-drag-handle {
+.modal-editar .modal-drag-handle {
   position: sticky;
   top: 0;
   width: 40px;
@@ -62,15 +62,15 @@
 }
 
 /* Scrollbar personalizada */
-.modal-form .modal-content::-webkit-scrollbar {
+.modal-editar .modal-content::-webkit-scrollbar {
   width: 4px;
 }
 
-.modal-form .modal-content::-webkit-scrollbar-track {
+.modal-editar .modal-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.modal-form .modal-content::-webkit-scrollbar-thumb {
+.modal-editar .modal-content::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
 }
@@ -97,7 +97,7 @@
 }
 
 /* Header Mobile */
-.modal-form .modal-header {
+.modal-editar .modal-header {
   position: sticky;
   top: 0;
   z-index: 10;
@@ -107,7 +107,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.modal-form .modal-header h2 {
+.modal-editar .modal-header h2 {
   font-family: 'Halenoir', sans-serif;
   font-size: 1.375rem;
   background: linear-gradient(to right, #fff, #999);
@@ -119,14 +119,14 @@
   line-height: 1.3;
 }
 
-.modal-form .modal-subtitle {
+.modal-editar .modal-subtitle {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.5);
   margin: 0;
 }
 
 /* Close Button Mobile */
-.modal-form .modal-close {
+.modal-editar .modal-close {
   position: absolute;
   top: 1rem;
   right: 1rem;
@@ -145,18 +145,18 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.modal-form .modal-close:active {
+.modal-editar .modal-close:active {
   background: rgba(255, 255, 255, 0.15);
   transform: scale(0.95);
 }
 
-.modal-form .modal-close svg {
+.modal-editar .modal-close svg {
   width: 20px;
   height: 20px;
 }
 
 /* Form Mobile */
-.modal-form .product-form {
+.modal-editar .product-form {
   padding: 1.25rem;
   padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
   display: flex;
@@ -165,7 +165,7 @@
 }
 
 /* Section Labels */
-.modal-form .section-label {
+.modal-editar .section-label {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -175,14 +175,14 @@
   margin-bottom: 0.75rem;
 }
 
-.modal-form .label-hint {
+.modal-editar .label-hint {
   font-size: 0.8125rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.4);
 }
 
 /* Upload Area Mobile */
-.modal-form .image-upload-area {
+.modal-editar .image-upload-area {
   position: relative;
   border: 2px dashed rgba(255, 255, 255, 0.15);
   border-radius: 16px;
@@ -194,13 +194,13 @@
   min-height: 140px;
 }
 
-.modal-form .image-upload-area:active {
+.modal-editar .image-upload-area:active {
   border-color: rgba(255, 255, 255, 0.3);
   background: rgba(255, 255, 255, 0.05);
   transform: scale(0.99);
 }
 
-.modal-form .upload-placeholder {
+.modal-editar .upload-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -210,23 +210,23 @@
   min-height: 120px;
 }
 
-.modal-form .upload-placeholder.hidden {
+.modal-editar .upload-placeholder.hidden {
   display: none;
 }
 
-.modal-form .upload-placeholder svg {
+.modal-editar .upload-placeholder svg {
   width: 48px;
   height: 48px;
   color: rgba(255, 255, 255, 0.25);
 }
 
-.modal-form .upload-title {
+.modal-editar .upload-title {
   font-size: 1rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.7);
 }
 
-.modal-form .upload-placeholder small {
+.modal-editar .upload-placeholder small {
   font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.4);
   text-align: center;
@@ -234,13 +234,13 @@
 }
 
 /* Image Preview Grid Mobile */
-.modal-form .image-preview-grid {
+.modal-editar .image-preview-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.625rem;
 }
 
-.modal-form .image-preview-item {
+.modal-editar .image-preview-item {
   position: relative;
   aspect-ratio: 1;
   border-radius: 12px;
@@ -249,17 +249,17 @@
   transition: transform 0.2s ease;
 }
 
-.modal-form .image-preview-item:active {
+.modal-editar .image-preview-item:active {
   transform: scale(0.95);
 }
 
-.modal-form .image-preview-item img {
+.modal-editar .image-preview-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.modal-form .remove-image {
+.modal-editar .remove-image {
   position: absolute;
   top: 0.375rem;
   right: 0.375rem;
@@ -277,17 +277,17 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.modal-form .remove-image svg {
+.modal-editar .remove-image svg {
   width: 16px;
   height: 16px;
 }
 
-.modal-form .remove-image:active {
+.modal-editar .remove-image:active {
   background: #ef4444;
   transform: scale(0.9);
 }
 
-.modal-form .image-number {
+.modal-editar .image-number {
   position: absolute;
   bottom: 0.375rem;
   left: 0.375rem;
@@ -300,13 +300,13 @@
 }
 
 /* Form Groups Mobile */
-.modal-form .form-group {
+.modal-editar .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.modal-form .form-group label {
+.modal-editar .form-group label {
   font-size: 0.9375rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
@@ -315,16 +315,16 @@
   gap: 0.5rem;
 }
 
-.modal-form .label-required {
+.modal-editar .label-required {
   font-size: 0.75rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.4);
   text-transform: lowercase;
 }
 
-.modal-form .form-group input,
-.modal-form .form-group select,
-.modal-form .form-group textarea {
+.modal-editar .form-group input,
+.modal-editar .form-group select,
+.modal-editar .form-group textarea {
   background: rgba(0, 0, 0, 0.4);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
@@ -337,16 +337,16 @@
   appearance: none;
 }
 
-.modal-form .form-group input:focus,
-.modal-form .form-group select:focus,
-.modal-form .form-group textarea:focus {
+.modal-editar .form-group input:focus,
+.modal-editar .form-group select:focus,
+.modal-editar .form-group textarea:focus {
   outline: none;
   border-color: #fff;
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
 }
 
-.modal-form .form-group select {
+.modal-editar .form-group select {
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1.125rem center;
@@ -354,21 +354,21 @@
   padding-right: 2.5rem;
 }
 
-.modal-form .form-group textarea {
+.modal-editar .form-group textarea {
   resize: vertical;
   min-height: 120px;
   line-height: 1.5;
 }
 
 /* Form Layout Mobile */
-.modal-form .form-row-mobile {
+.modal-editar .form-row-mobile {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
 }
 
 /* Actions Mobile - Botões Fixos */
-.modal-form .form-actions {
+.modal-editar .form-actions {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 0.75rem;
@@ -382,8 +382,8 @@
 }
 
 /* Botões Mobile */
-.modal-form .btn-cancel,
-.modal-form .btn-submit {
+.modal-editar .btn-cancel,
+.modal-editar .btn-submit {
   padding: 1rem 1.25rem;
   border-radius: 14px;
   font-weight: 700;
@@ -395,20 +395,20 @@
   touch-action: manipulation;
 }
 
-.modal-form .btn-cancel {
+.modal-editar .btn-cancel {
   background: transparent;
   border: 1.5px solid rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.7);
 }
 
-.modal-form .btn-cancel:active {
+.modal-editar .btn-cancel:active {
   border-color: #fff;
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
   transform: scale(0.98);
 }
 
-.modal-form .btn-submit {
+.modal-editar .btn-submit {
   background: #fff;
   border: none;
   color: #000;
@@ -419,19 +419,53 @@
   font-weight: 700;
 }
 
-.modal-form .btn-submit:active:not(:disabled) {
+.modal-editar .btn-submit:active:not(:disabled) {
   background: #f0f0f0;
   transform: scale(0.98);
 }
 
-.modal-form .btn-submit:disabled {
+.modal-editar .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
+/* Em editar-produto.css */
+.modal-editar .btn-delete {
+  background: transparent;
+  border: 1.5px solid #ef4444;
+  color: #ef4444;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-editar .btn-delete:active {
+  background: #ef4444;
+  color: #fff;
+  transform: scale(0.98);
+}
+
+.modal-editar .btn-delete svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (min-width: 768px) {
+  .modal-editar .btn-delete:hover {
+    background: #ef4444;
+    color: #fff;
+  }
+}
+
 /* Progress Mobile */
-.modal-form .upload-progress {
+.modal-editar .upload-progress {
   display: none;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.3);
@@ -439,11 +473,11 @@
   margin-top: 0.75rem;
 }
 
-.modal-form .upload-progress.active {
+.modal-editar .upload-progress.active {
   display: block;
 }
 
-.modal-form .progress-bar {
+.modal-editar .progress-bar {
   height: 6px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
@@ -451,14 +485,14 @@
   margin-bottom: 0.625rem;
 }
 
-.modal-form .progress-fill {
+.modal-editar .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #22c55e, #16a34a);
   width: 0%;
   transition: width 0.3s ease;
 }
 
-.modal-form .progress-text {
+.modal-editar .progress-text {
   font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.6);
   text-align: center;
@@ -472,7 +506,7 @@
   }
 }
 
-.modal-form .spinner-icon {
+.modal-editar .spinner-icon {
   width: 18px;
   height: 18px;
   animation: rotate 1s linear infinite;
@@ -526,33 +560,33 @@
 }
 
 /* Placeholder para inputs */
-.modal-form input::placeholder,
-.modal-form textarea::placeholder,
-.modal-form select option:first-child {
+.modal-editar input::placeholder,
+.modal-editar textarea::placeholder,
+.modal-editar select option:first-child {
   color: rgba(255, 255, 255, 0.3);
 }
 
 /* Remove spinner dos inputs number no mobile */
-.modal-form input[type='number']::-webkit-inner-spin-button,
-.modal-form input[type='number']::-webkit-outer-spin-button {
+.modal-editar input[type='number']::-webkit-inner-spin-button,
+.modal-editar input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.modal-form input[type='number'] {
+/* .modal-editar input[type='number'] {
   -moz-appearance: textfield;
-}
+} */
 
 /* ========================================
    TABLET (768px+)
    ======================================== */
 @media (min-width: 768px) {
-  .modal-form {
+  .modal-editar {
     align-items: center;
     padding: 1rem;
   }
 
-  .modal-form .modal-content {
+  .modal-editar .modal-content {
     border-radius: 24px;
     width: min(600px, 90vw);
     max-height: 90vh;
@@ -570,55 +604,55 @@
     }
   }
 
-  .modal-form .modal-drag-handle {
+  .modal-editar .modal-drag-handle {
     display: none;
   }
 
-  .modal-form .modal-header {
+  .modal-editar .modal-header {
     padding: 1.5rem 1.75rem;
   }
 
-  .modal-form .modal-header h2 {
+  .modal-editar .modal-header h2 {
     font-size: 1.5rem;
   }
 
-  .modal-form .product-form {
+  .modal-editar .product-form {
     padding: 1.75rem;
     gap: 1.75rem;
   }
 
-  .modal-form .modal-close {
+  .modal-editar .modal-close {
     width: 44px;
     height: 44px;
     top: 1.25rem;
     right: 1.25rem;
   }
 
-  .modal-form .modal-close:hover {
+  .modal-editar .modal-close:hover {
     background: #fff;
     color: #000;
     transform: rotate(90deg);
   }
 
-  .modal-form .modal-close:active {
+  .modal-editar .modal-close:active {
     transform: rotate(90deg) scale(0.95);
   }
 
-  .modal-form .image-upload-area {
+  .modal-editar .image-upload-area {
     padding: 2rem;
   }
 
-  .modal-form .image-upload-area:hover {
+  .modal-editar .image-upload-area:hover {
     border-color: rgba(255, 255, 255, 0.25);
     background: rgba(255, 255, 255, 0.04);
   }
 
-  .modal-form .image-preview-grid {
+  .modal-editar .image-preview-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
   }
 
-  .modal-form .form-actions {
+  .modal-editar .form-actions {
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
@@ -626,19 +660,19 @@
     background: transparent;
   }
 
-  .modal-form .btn-cancel,
-  .modal-form .btn-submit {
+  .modal-editar .btn-cancel,
+  .modal-editar .btn-submit {
     width: auto;
     min-width: 140px;
   }
 
-  .modal-form .btn-cancel:hover {
+  .modal-editar .btn-cancel:hover {
     border-color: #fff;
     color: #fff;
     background: rgba(255, 255, 255, 0.05);
   }
 
-  .modal-form .btn-submit:hover:not(:disabled) {
+  .modal-editar .btn-submit:hover:not(:disabled) {
     background: #f0f0f0;
     transform: translateY(-2px);
   }
@@ -648,16 +682,16 @@
    DESKTOP (1024px+)
    ======================================== */
 @media (min-width: 1024px) {
-  .modal-form .modal-content {
+  .modal-editar .modal-content {
     width: min(700px, 85vw);
   }
 
-  .modal-form .product-form {
+  .modal-editar .product-form {
     padding: 2rem;
     gap: 2rem;
   }
 
-  .modal-form .image-preview-grid {
+  .modal-editar .image-preview-grid {
     grid-template-columns: repeat(5, 1fr);
   }
 }
@@ -666,34 +700,34 @@
    LANDSCAPE MOBILE
    ======================================== */
 @media (max-height: 600px) and (orientation: landscape) {
-  .modal-form .modal-content {
+  .modal-editar .modal-content {
     max-height: 98vh;
     border-radius: 0;
   }
 
-  .modal-form .modal-drag-handle {
+  .modal-editar .modal-drag-handle {
     display: none;
   }
 
-  .modal-form .modal-header {
+  .modal-editar .modal-header {
     padding: 0.875rem 1rem;
   }
 
-  .modal-form .modal-header h2 {
+  .modal-editar .modal-header h2 {
     font-size: 1.125rem;
   }
 
-  .modal-form .product-form {
+  .modal-editar .product-form {
     padding: 1rem;
     gap: 1rem;
   }
 
-  .modal-form .form-actions {
+  .modal-editar .form-actions {
     padding-top: 1rem;
   }
 
-  .modal-form .btn-cancel,
-  .modal-form .btn-submit {
+  .modal-editar .btn-cancel,
+  .modal-editar .btn-submit {
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
   }
@@ -703,9 +737,9 @@
    ACCESSIBILITY
    ======================================== */
 @media (prefers-reduced-motion: reduce) {
-  .modal-form .modal-overlay,
-  .modal-form .modal-content,
-  .modal-form *,
+  .modal-editar .modal-overlay,
+  .modal-editar .modal-content,
+  .modal-editar *,
   .toast {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
@@ -713,7 +747,7 @@
 }
 
 /* Focus visível para navegação por teclado */
-.modal-form *:focus-visible {
+.modal-editar *:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
@@ -722,11 +756,11 @@
    SAFE AREAS (iOS)
    ======================================== */
 @supports (padding: env(safe-area-inset-bottom)) {
-  .modal-form .product-form {
+  .modal-editar .product-form {
     padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
   }
 
-  .modal-form .form-actions {
+  .modal-editar .form-actions {
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
   }
 
@@ -740,7 +774,7 @@
    ======================================== */
 @media (prefers-color-scheme: light) {
   /* Mantém tema escuro mesmo no light mode */
-  .modal-form .modal-content {
+  .modal-editar .modal-content {
     background: #0a0a0a;
     color: #fff;
   }
