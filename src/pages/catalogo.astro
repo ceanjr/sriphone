@@ -1,5 +1,4 @@
 ---
-// src/pages/catalogo.astro
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -84,6 +83,123 @@ import '../styles/pages/catalogo.css';
             </svg>
             Mais Filtros
           </button>
+
+          <!-- Controles de Visualização -->
+          <div class="visualizacao-container">
+            <button
+              class="visualizacao-btn active mobile-only"
+              data-view="coluna"
+              title="Exibição em coluna"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="4"
+                  y="4"
+                  width="16"
+                  height="4"
+                  rx="1"
+                  stroke="currentColor"
+                  stroke-width="2"></rect>
+                <rect
+                  x="4"
+                  y="10"
+                  width="16"
+                  height="4"
+                  rx="1"
+                  stroke="currentColor"
+                  stroke-width="2"></rect>
+                <rect
+                  x="4"
+                  y="16"
+                  width="16"
+                  height="4"
+                  rx="1"
+                  stroke="currentColor"
+                  stroke-width="2"></rect>
+              </svg>
+            </button>
+            <button
+              class="visualizacao-btn"
+              data-view="grade"
+              title="Exibição em grade"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="4"
+                  y="4"
+                  width="6"
+                  height="6"
+                  rx="1"
+                  stroke="currentColor"
+                  stroke-width="2"></rect>
+                <rect
+                  x="14"
+                  y="4"
+                  width="6"
+                  height="6"
+                  rx="1"
+                  stroke="currentColor"
+                  stroke-width="2"></rect>
+                <rect
+                  x="4"
+                  y="14"
+                  width="6"
+                  height="6"
+                  rx="1"
+                  stroke="currentColor"
+                  stroke-width="2"></rect>
+                <rect
+                  x="14"
+                  y="14"
+                  width="6"
+                  height="6"
+                  rx="1"
+                  stroke="currentColor"
+                  stroke-width="2"></rect>
+              </svg>
+            </button>
+            <button
+              class="visualizacao-btn"
+              data-view="lista"
+              title="Exibição em lista"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <line
+                  x1="4"
+                  y1="6"
+                  x2="20"
+                  y2="6"
+                  stroke="currentColor"
+                  stroke-width="2"></line>
+                <line
+                  x1="4"
+                  y1="12"
+                  x2="20"
+                  y2="12"
+                  stroke="currentColor"
+                  stroke-width="2"></line>
+                <line
+                  x1="4"
+                  y1="18"
+                  x2="20"
+                  y2="18"
+                  stroke="currentColor"
+                  stroke-width="2"></line>
+              </svg>
+            </button>
+          </div>
 
           <div class="filtros-avancados" id="filtros-avancados">
             <div class="filtro-group">
@@ -188,6 +304,7 @@ import '../styles/pages/catalogo.css';
     produtos: (Product & { categoria: Category })[];
     categorias: Category[];
     categoriaAtiva: string;
+    modoVisualizacao: 'coluna' | 'grade' | 'lista';
     filtros: {
       busca: string;
       condicao: string;
@@ -200,6 +317,7 @@ import '../styles/pages/catalogo.css';
     produtos: [],
     categorias: [],
     categoriaAtiva: 'todos',
+    modoVisualizacao: window.innerWidth < 768 ? 'coluna' : 'grade',
     filtros: {
       busca: '',
       condicao: '',
@@ -233,6 +351,8 @@ import '../styles/pages/catalogo.css';
     categoriaSelect: document.getElementById(
       'categoria-select'
     ) as HTMLSelectElement,
+    visualizacaoContainer: document.querySelector('.visualizacao-container'),
+    visualizacaoBtns: document.querySelectorAll('.visualizacao-btn'),
   };
 
   // ==================== Utilitários ====================
@@ -270,55 +390,90 @@ import '../styles/pages/catalogo.css';
       const bateriaColorClass = getBateriaColor(produto.bateria);
       const imagemPrincipal = produto.imagens?.[0];
 
-      return `
-            <article class="produto-card" 
-                data-produto-id="${produto.id}"
-                data-produto='${JSON.stringify({
-                  id: produto.id,
-                  codigo: produto.codigo,
-                  nome: produto.nome,
-                  descricao: produto.descricao,
-                  preco: precoFormatado,
-                  condicao: produto.condicao,
-                  bateria: produto.bateria,
-                  categoria: produto.categoria?.nome || '',
-                  imagens: produto.imagens || [],
-                })}'>
-                <div class="produto-image">
-                    ${
-                      imagemPrincipal
-                        ? `
-                        <img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />
-                    `
-                        : `
-                        <div class="image-placeholder">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                                <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                    `
-                    }
-                    <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
-                    <div class="bateria-indicator ${bateriaColorClass}">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bateria-icon">
-                            <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-                            <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
-                            <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor" class="bateria-fill"/>
-                        </svg>
-                        <span>${produto.bateria}%</span>
-                    </div>
-                </div>
-                <div class="produto-info">
+      // Badges comuns para ambos os modos
+      const badges = `
+        <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
+        <div class="bateria-indicator ${bateriaColorClass}">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bateria-icon">
+                <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
+                <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor" class="bateria-fill"/>
+            </svg>
+            <span>${produto.bateria}%</span>
+        </div>
+      `;
+
+      if (state.modoVisualizacao === 'lista') {
+        return `
+          <article class="produto-card lista-mode" 
+              data-produto-id="${produto.id}"
+              data-produto='${JSON.stringify({
+                id: produto.id,
+                codigo: produto.codigo,
+                nome: produto.nome,
+                descricao: produto.descricao,
+                preco: precoFormatado,
+                condicao: produto.condicao,
+                bateria: produto.bateria,
+                categoria: produto.categoria?.nome || '',
+                imagens: produto.imagens || [],
+              })}'>
+              <div class="produto-info">
+                  <div class="lista-header">
                     <h3>${utils.escapeHtml(produto.nome)}</h3>
-                    <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
-                    <div class="produto-footer">
-                        <span class="preco">${precoFormatado}</span>
-                        <button class="btn-detalhes">Ver detalhes</button>
-                    </div>
-                </div>
-            </article>
+                    ${badges}
+                  </div>
+                  <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
+                  <div class="produto-footer">
+                      <span class="preco">${precoFormatado}</span>
+                      <button class="btn-detalhes">Ver detalhes</button>
+                  </div>
+              </div>
+          </article>
         `;
+      }
+
+      return `
+        <article class="produto-card" 
+            data-produto-id="${produto.id}"
+            data-produto='${JSON.stringify({
+              id: produto.id,
+              codigo: produto.codigo,
+              nome: produto.nome,
+              descricao: produto.descricao,
+              preco: precoFormatado,
+              condicao: produto.condicao,
+              bateria: produto.bateria,
+              categoria: produto.categoria?.nome || '',
+              imagens: produto.imagens || [],
+            })}'>
+            <div class="produto-image">
+                ${
+                  imagemPrincipal
+                    ? `
+                    <img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />
+                `
+                    : `
+                    <div class="image-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                `
+                }
+                ${badges}
+            </div>
+            <div class="produto-info">
+                <h3>${utils.escapeHtml(produto.nome)}</h3>
+                <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
+                <div class="produto-footer">
+                    <span class="preco">${precoFormatado}</span>
+                    <button class="btn-detalhes">Ver detalhes</button>
+                </div>
+            </div>
+        </article>
+      `;
     },
 
     categoriaSecao(
@@ -326,13 +481,13 @@ import '../styles/pages/catalogo.css';
       produtos: (Product & { categoria: Category })[]
     ): string {
       return `
-                <div class="categoria-section">
-                    <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
-                    <div class="categoria-grid">
-                        ${produtos.map((p) => templates.produtoCard(p)).join('')}
-                    </div>
-                </div>
-            `;
+        <div class="categoria-section">
+            <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
+            <div class="categoria-grid ${state.modoVisualizacao}">
+                ${produtos.map((p) => templates.produtoCard(p)).join('')}
+            </div>
+        </div>
+      `;
     },
   };
 
@@ -418,25 +573,25 @@ import '../styles/pages/catalogo.css';
 
       // Renderizar opções para o select
       elementos.categoriaSelect.innerHTML = `
-                <option value="todos">Todos</option>
-                ${state.categorias
-                  .map(
-                    (cat) => `
-                    <option value="${cat.id}">${utils.escapeHtml(cat.nome)}</option>
-                `
-                  )
-                  .join('')}
-            `;
+        <option value="todos">Todos</option>
+        ${state.categorias
+          .map(
+            (cat) => `
+            <option value="${cat.id}">${utils.escapeHtml(cat.nome)}</option>
+          `
+          )
+          .join('')}
+      `;
 
       // Renderizar botões para desktop, se elementos existirem
       if (elementos.categoriasLista) {
         elementos.categoriasLista.innerHTML = state.categorias
           .map(
             (cat) => `
-                    <button class="categoria-btn" data-categoria="${cat.id}">
-                        ${utils.escapeHtml(cat.nome)}
-                    </button>
-                `
+            <button class="categoria-btn" data-categoria="${cat.id}">
+                ${utils.escapeHtml(cat.nome)}
+            </button>
+          `
           )
           .join('');
       }
@@ -464,10 +619,26 @@ import '../styles/pages/catalogo.css';
         'change',
         handlers.categoriaSelectChange
       );
+
+      // Definir botão de visualização ativo
+      (elementos.visualizacaoBtns as NodeListOf<HTMLElement>).forEach((btn) => {
+        btn.classList.toggle(
+          'active',
+          btn.dataset.view === state.modoVisualizacao
+        );
+      });
     },
 
     produtos(): void {
       if (!elementos.produtosContainer || !elementos.emptyState) return;
+
+      // Aplicar classe do modo de visualização
+      elementos.produtosContainer.classList.remove('coluna', 'grade', 'lista');
+      elementos.produtosContainer.classList.add(state.modoVisualizacao);
+      document.querySelectorAll('.categoria-grid').forEach((grid) => {
+        grid.classList.remove('coluna', 'grade', 'lista');
+        grid.classList.add(state.modoVisualizacao);
+      });
 
       // Filtrar e ordenar
       let produtosFiltrados = business.filtrarProdutos();
@@ -617,6 +788,31 @@ import '../styles/pages/catalogo.css';
       render.produtos();
     },
 
+    visualizacaoClick(e: Event): void {
+      const target = e.currentTarget as HTMLElement;
+      const view = target.dataset.view as 'coluna' | 'grade' | 'lista';
+
+      // Atualizar estado
+      state.modoVisualizacao = view;
+      localStorage.setItem('modoVisualizacao', view);
+
+      // Atualizar UI dos botões
+      (elementos.visualizacaoBtns as NodeListOf<HTMLElement>).forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+      });
+
+      // Atualizar classes no container
+      elementos.produtosContainer?.classList.remove('coluna', 'grade', 'lista');
+      elementos.produtosContainer?.classList.add(view);
+      document.querySelectorAll('.categoria-grid').forEach((grid) => {
+        grid.classList.remove('coluna', 'grade', 'lista');
+        grid.classList.add(view);
+      });
+
+      // Re-renderizar produtos
+      render.produtos();
+    },
+
     async loginSubmit(e: Event): Promise<void> {
       e.preventDefault();
 
@@ -704,6 +900,11 @@ import '../styles/pages/catalogo.css';
       handlers.limparFiltros
     );
 
+    // Visualização
+    elementos.visualizacaoBtns.forEach((btn) => {
+      btn.addEventListener('click', handlers.visualizacaoClick);
+    });
+
     // Login
     elementos.formLogin?.addEventListener('submit', handlers.loginSubmit);
     elementos.modalLogin
@@ -726,6 +927,12 @@ import '../styles/pages/catalogo.css';
 
   // ==================== Inicialização ====================
   function init(): void {
+    const savedView = localStorage.getItem('modoVisualizacao') as
+      | 'coluna'
+      | 'grade'
+      | 'lista';
+    state.modoVisualizacao =
+      savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
     setupEventListeners();
     api.carregarDados();
   }
