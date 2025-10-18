@@ -1,10 +1,11 @@
 ---
 // src/layouts/Layout.astro
 import '../styles/global.css';
+import Analytics from '@vercel/analytics/astro';
 
 interface Props {
-	title: string;
-    description: string;
+  title: string;
+  description: string;
 }
 
 const { title, description } = Astro.props;
@@ -12,94 +13,108 @@ const { title, description } = Astro.props;
 
 <!doctype html>
 <html lang="pt-br">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="description" content={description} />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-        <title>{title}</title>
-	</head>
-	<body>
-		<slot />
-        
-        <button id="layout-back-to-top" class="layout-back-to-top" aria-label="Voltar ao topo">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <slot name="head" />
+    <Analytics />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+
+    <button
+      id="layout-back-to-top"
+      class="layout-back-to-top"
+      aria-label="Voltar ao topo"
+    >
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M12 19V5M12 5L5 12M12 5L19 12"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path>
+      </svg>
+    </button>
+  </body>
 </html>
 
 <script>
-    const btn = document.getElementById('layout-back-to-top');
-    
-    if (btn) {
-        const toggleVisibility = () => {
-            if (window.scrollY > 300) {
-                btn.classList.add('visible');
-            } else {
-                btn.classList.remove('visible');
-            }
-        };
+  const btn = document.getElementById('layout-back-to-top');
 
-        const scrollToTop = () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
+  if (btn) {
+    const toggleVisibility = () => {
+      if (window.scrollY > 300) {
+        btn.classList.add('visible');
+      } else {
+        btn.classList.remove('visible');
+      }
+    };
 
-        window.addEventListener('scroll', toggleVisibility);
-        btn.addEventListener('click', scrollToTop);
-    }
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('scroll', toggleVisibility);
+    btn.addEventListener('click', scrollToTop);
+  }
 </script>
 
 <style>
-	.layout-back-to-top {
-		position: fixed;
-		bottom: 30px;
-		right: 30px;
-		opacity: 0;
-		visibility: hidden;
-		transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
-		z-index: 1000;
-		width: 45px;
-		height: 45px;
-		border: none;
-		background-color: var(--cor-fundo-claro);
-		color: var(--cor-secundaria);
-		border-radius: 50%;
-		cursor: pointer;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-	}
+  .layout-back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.3s ease,
+      visibility 0.3s ease,
+      transform 0.3s ease;
+    z-index: 1000;
+    width: 45px;
+    height: 45px;
+    border: none;
+    background-color: var(--cor-fundo-claro);
+    color: var(--cor-secundaria);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
 
-	.layout-back-to-top.visible {
-		opacity: 1;
-		visibility: visible;
-		transform: translateY(0);
-	}
+  .layout-back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
 
-	.layout-back-to-top svg {
-		width: 20px;
-		height: 20px;
-		color: #000;
-		stroke: #000;
-	}
+  .layout-back-to-top svg {
+    width: 20px;
+    height: 20px;
+    color: #000;
+    stroke: #000;
+  }
 
-	/* Oculto em telas pequenas */
-	.layout-back-to-top {
-		display: none;
-	}
+  /* Oculto em telas pequenas */
+  .layout-back-to-top {
+    display: none;
+  }
 
-	/* Mostra no desktop */
-	@media (min-width: 768px) {
-		.layout-back-to-top {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
+  /* Mostra no desktop */
+  @media (min-width: 768px) {
+    .layout-back-to-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-		.layout-back-to-top:hover {
-			transform: translateY(-4px);
-			box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
-		}
-	}
+    .layout-back-to-top:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+    }
+  }
 </style>

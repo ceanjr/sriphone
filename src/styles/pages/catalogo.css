@@ -49,7 +49,7 @@
 /* Filtros Section */
 .filtros-section {
   padding: 2rem 1rem;
-  background: #0a0a0a;
+  background: #080808;
   border-bottom: 1px solid #1a1a1a;
 }
 
@@ -363,6 +363,31 @@
   gap: 1rem;
   padding: 4rem 1rem;
   color: #666;
+}
+
+/* Em catalogo.css */
+.produto-card.loading {
+  pointer-events: none;
+}
+
+.produto-card.loading .produto-image,
+.produto-card.loading .produto-info h3,
+.produto-card.loading .produto-info .descricao,
+.produto-card.loading .produto-footer .preco {
+  background: linear-gradient(90deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  color: transparent;
+  user-select: none;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .spinner {
@@ -1418,4 +1443,32 @@
 /* Garantir que a imagem também seja relativa */
 .produto-image {
   position: relative;
+}
+
+.breadcrumbs {
+  padding: 0.5rem 1.5rem;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.breadcrumbs ol {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.breadcrumbs li:not(:last-child)::after {
+  content: '/';
+  margin-left: 0.5rem;
+  color: #666;
+}
+
+.breadcrumbs a {
+  color: #999;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumbs a:hover {
+  color: #fff;
 }

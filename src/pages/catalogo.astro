@@ -7,13 +7,32 @@ import EditarProduto from '../components/EditarProduto.astro';
 import FormularioProduto from '../components/FormularioProduto.astro';
 import GerirCategorias from '../components/GerirCategorias.astro';
 import '../styles/pages/catalogo.css';
+
+const metaDescription =
+  'Explore nossa coleção exclusiva de iPhones novos e seminovos com garantia. Preços competitivos e qualidade certificada.';
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <Layout
   title="Catálogo | Sr. IPHONE"
   description="Explore nossa seleção exclusiva de iPhones seminovos com garantia e qualidade certificada."
 >
+  <fragment slot="head">
+    <link rel="canonical" href={canonicalURL} />
+    <meta property="og:title" content="Catálogo Exclusivo | Sr. IPHONE" />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:image" content="/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </fragment>
+
   <Header />
+
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="/">Início</a></li>
+      <li><span aria-current="page">Catálogo</span></li>
+    </ol>
+  </nav>
 
   <main class="catalogo-page">
     <section class="hero-catalogo">
@@ -1181,5 +1200,25 @@ import '../styles/pages/catalogo.css';
         setTimeout(() => toast.remove(), 300);
       }, 3000);
     }
+
+    // Em catalogo.astro - adicionar Intersection Observer
+    const observerOptions = {
+      root: null,
+      rootMargin: '50px',
+      threshold: 0.01,
+    };
+
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const img = entry.target as HTMLImageElement;
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+            imageObserver.unobserve(img);
+          }
+        }
+      });
+    }, observerOptions);
   </script>
 </Layout>
