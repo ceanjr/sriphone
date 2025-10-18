@@ -423,23 +423,135 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(10px);
   padding: 0.4rem 0.7rem;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
 }
 
-.bateria-indicator svg {
+.bateria-indicator .bateria-icon {
   width: 20px;
   height: 20px;
-  color: #22c55e;
+  transition: color 0.3s ease;
+}
+
+.bateria-indicator .bateria-fill {
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), fill 0.3s ease;
 }
 
 .bateria-indicator span {
   font-size: 0.75rem;
   font-weight: 600;
   color: #fff;
+  transition: color 0.3s ease;
+}
+
+/* Cores Dinâmicas - Verde (90-100%) */
+.bateria-indicator.bateria-verde .bateria-icon {
+  color: #22c55e;
+}
+
+.bateria-indicator.bateria-verde .bateria-fill {
+  fill: #22c55e;
+}
+
+.bateria-indicator.bateria-verde span {
+  color: #22c55e;
+}
+
+.bateria-indicator.bateria-verde {
+  border-color: rgba(34, 197, 94, 0.2);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Cores Dinâmicas - Amarelo/Laranja (80-89%) */
+.bateria-indicator.bateria-amarelo .bateria-icon {
+  color: #f59e0b;
+}
+
+.bateria-indicator.bateria-amarelo .bateria-fill {
+  fill: #f59e0b;
+}
+
+.bateria-indicator.bateria-amarelo span {
+  color: #f59e0b;
+}
+
+.bateria-indicator.bateria-amarelo {
+  border-color: rgba(245, 158, 11, 0.2);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Cores Dinâmicas - Vermelho (0-79%) */
+.bateria-indicator.bateria-vermelho .bateria-icon {
+  color: #ef4444;
+}
+
+.bateria-indicator.bateria-vermelho .bateria-fill {
+  fill: #ef4444;
+}
+
+.bateria-indicator.bateria-vermelho span {
+  color: #ef4444;
+}
+
+.bateria-indicator.bateria-vermelho {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Animação de entrada */
+@keyframes bateriaAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.bateria-indicator {
+  animation: bateriaAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+}
+
+/* Responsivo - Ajustes para telas menores */
+@media (max-width: 640px) {
+  .bateria-indicator {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    padding: 0.35rem 0.6rem;
+  }
+
+  .bateria-indicator .bateria-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .bateria-indicator span {
+    font-size: 0.7rem;
+  }
+}
+
+/* Responsivo - Desktop */
+@media (min-width: 768px) {
+  .bateria-indicator {
+    bottom: 1.25rem;
+    right: 1.25rem;
+    padding: 0.45rem 0.8rem;
+  }
+
+  .bateria-indicator .bateria-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .bateria-indicator span {
+    font-size: 0.8rem;
+  }
 }
 
 .produto-info {

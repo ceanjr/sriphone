@@ -255,62 +255,70 @@ import '../styles/pages/catalogo.css';
     },
   };
 
+  // ==================== Função para calcular cor da bateria ====================
+  function getBateriaColor(bateria: number): string {
+    if (bateria >= 90) return 'bateria-verde';
+    if (bateria >= 80) return 'bateria-amarelo';
+    return 'bateria-vermelho';
+  }
+
   // ==================== Templates ====================
   const templates = {
     produtoCard(produto: Product & { categoria: Category }): string {
       const precoFormatado = utils.formatarPreco(produto.preco);
       const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
+      const bateriaColorClass = getBateriaColor(produto.bateria);
       const imagemPrincipal = produto.imagens?.[0];
 
       return `
-                <article class="produto-card" 
-                    data-produto-id="${produto.id}"
-                    data-produto='${JSON.stringify({
-                      id: produto.id,
-                      codigo: produto.codigo,
-                      nome: produto.nome,
-                      descricao: produto.descricao,
-                      preco: precoFormatado,
-                      condicao: produto.condicao,
-                      bateria: produto.bateria,
-                      categoria: produto.categoria?.nome || '',
-                      imagens: produto.imagens || [],
-                    })}'>
-                    <div class="produto-image">
-                        ${
-                          imagemPrincipal
-                            ? `
-                            <img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />
-                        `
-                            : `
-                            <div class="image-placeholder">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                                    <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                            </div>
-                        `
-                        }
-                        <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
-                        <div class="bateria-indicator">
+            <article class="produto-card" 
+                data-produto-id="${produto.id}"
+                data-produto='${JSON.stringify({
+                  id: produto.id,
+                  codigo: produto.codigo,
+                  nome: produto.nome,
+                  descricao: produto.descricao,
+                  preco: precoFormatado,
+                  condicao: produto.condicao,
+                  bateria: produto.bateria,
+                  categoria: produto.categoria?.nome || '',
+                  imagens: produto.imagens || [],
+                })}'>
+                <div class="produto-image">
+                    ${
+                      imagemPrincipal
+                        ? `
+                        <img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />
+                    `
+                        : `
+                        <div class="image-placeholder">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-                                <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
-                                <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor"/>
+                                <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+                                <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                             </svg>
-                            <span>${produto.bateria}%</span>
                         </div>
+                    `
+                    }
+                    <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
+                    <div class="bateria-indicator ${bateriaColorClass}">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bateria-icon">
+                            <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
+                            <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor" class="bateria-fill"/>
+                        </svg>
+                        <span>${produto.bateria}%</span>
                     </div>
-                    <div class="produto-info">
-                        <h3>${utils.escapeHtml(produto.nome)}</h3>
-                        <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
-                        <div class="produto-footer">
-                            <span class="preco">${precoFormatado}</span>
-                            <button class="btn-detalhes">Ver detalhes</button>
-                        </div>
+                </div>
+                <div class="produto-info">
+                    <h3>${utils.escapeHtml(produto.nome)}</h3>
+                    <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
+                    <div class="produto-footer">
+                        <span class="preco">${precoFormatado}</span>
+                        <button class="btn-detalhes">Ver detalhes</button>
                     </div>
-                </article>
-            `;
+                </div>
+            </article>
+        `;
     },
 
     categoriaSecao(

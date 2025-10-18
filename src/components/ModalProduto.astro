@@ -4,270 +4,379 @@ import '../styles/components/modal-produto.css';
 ---
 
 <div id="modal-produto" class="modal">
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-        <div class="modal-drag-handle"></div>
-        
-        <button class="modal-close" aria-label="Fechar">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-drag-handle"></div>
+
+    <button class="modal-close" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M18 6L6 18M6 6L18 18"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"></path>
+      </svg>
+    </button>
+
+    <div class="modal-body">
+      <!-- Galeria Principal -->
+      <div class="modal-gallery">
+        <div class="main-image-container">
+          <img id="main-image" src="" alt="Produto" class="main-image" />
+          <button class="expand-btn" aria-label="Expandir imagem">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M15 3H21V9M9 21H3V15M21 3L14 10M3 21L10 14"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"></path>
             </svg>
-        </button>
-
-        <div class="modal-body">
-            <!-- Galeria Principal -->
-            <div class="modal-gallery">
-                <div class="main-image-container">
-                    <img id="main-image" src="" alt="Produto" class="main-image" />
-                    <button class="expand-btn" aria-label="Expandir imagem">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15 3H21V9M9 21H3V15M21 3L14 10M3 21L10 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Thumbnails -->
-                <div class="thumbnails-container">
-                    <div class="thumbnails-track" id="thumbnails-track"></div>
-                </div>
-            </div>
-
-            <!-- Informações -->
-            <div class="modal-info">
-                <div class="info-header">
-                    <div class="modal-badges">
-                        <span class="modal-condicao"></span>
-                        <span class="modal-categoria"></span>
-                    </div>
-                    <h2 class="modal-nome"></h2>
-                </div>
-
-                <div class="info-body">
-                    <p class="modal-descricao"></p>
-                    
-                    <div class="modal-specs">
-                        <div class="spec-item">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-                                <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                            <div>
-                                <span class="spec-label">Bateria</span>
-                                <span class="spec-value modal-bateria"></span>
-                            </div>
-                        </div>
-                        <div class="spec-item">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M7 7H17M7 12H17M7 17H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            <div>
-                                <span class="spec-label">Código</span>
-                                <span class="spec-value modal-codigo"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="info-footer">
-                    <div class="modal-preco"></div>
-                    <a href="#" class="btn-whatsapp" target="_blank" rel="noopener noreferrer">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582" fill="currentColor"/>
-                        </svg>
-                        Consultar no WhatsApp
-                    </a>
-                </div>
-            </div>
+          </button>
         </div>
-    </div>
 
-    <!-- Modal de Imagem Expandida -->
-    <div id="modal-imagem-expandida" class="modal-imagem-expandida">
-        <button class="modal-close-expandido" aria-label="Fechar">×</button>
-        <img id="imagem-expandida" src="" alt="Imagem expandida" />
-        <div class="contador-imagens"></div>
+        <!-- Thumbnails -->
+        <div class="thumbnails-container">
+          <div class="thumbnails-track" id="thumbnails-track"></div>
+        </div>
+      </div>
+
+      <!-- Informações -->
+      <div class="modal-info">
+        <div class="info-header">
+          <div class="modal-badges">
+            <span class="modal-condicao"></span>
+            <span class="modal-categoria"></span>
+          </div>
+          <h2 class="modal-nome"></h2>
+        </div>
+
+        <div class="info-body">
+          <p class="modal-descricao"></p>
+
+          <div class="modal-specs">
+            <div class="spec-item">
+              <div class="bateria-icon-wrapper">
+                <svg
+                  class="bateria-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="2"
+                    y="7"
+                    width="18"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    stroke-width="2"></rect>
+                  <path
+                    d="M20 10H22V14H20"
+                    stroke="currentColor"
+                    stroke-width="2"></path>
+                  <rect
+                    class="bateria-fill"
+                    x="4"
+                    y="9"
+                    width="14"
+                    height="6"
+                    rx="1"
+                    fill="currentColor"></rect>
+                </svg>
+              </div>
+              <div>
+                <span class="spec-label">Bateria</span>
+                <span class="spec-value modal-bateria"></span>
+              </div>
+            </div>
+            <div class="spec-item">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7 7H17M7 12H17M7 17H13"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"></path>
+              </svg>
+              <div>
+                <span class="spec-label">Código</span>
+                <span class="spec-value modal-codigo"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-footer">
+          <div class="modal-preco"></div>
+          <a
+            href="#"
+            class="btn-whatsapp"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582"
+                fill="currentColor"></path>
+            </svg>
+            Consultar no WhatsApp
+          </a>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Modal de Imagem Expandida -->
+  <div id="modal-imagem-expandida" class="modal-imagem-expandida">
+    <button class="modal-close-expandido" aria-label="Fechar">×</button>
+    <img id="imagem-expandida" src="" alt="Imagem expandida" />
+    <div class="contador-imagens"></div>
+  </div>
 </div>
 
 <script>
-    import type { Product } from '../types';
+  import type { Product } from '../types';
 
-    const modal = document.getElementById('modal-produto');
-    const modalOverlay = modal?.querySelector('.modal-overlay');
-    const modalClose = modal?.querySelector('.modal-close');
-    const mainImage = document.getElementById('main-image') as HTMLImageElement;
-    const thumbnailsTrack = document.getElementById('thumbnails-track');
-    const expandBtn = modal?.querySelector('.expand-btn');
-    
-    const modalImagemExpandida = document.getElementById('modal-imagem-expandida') as HTMLElement | null;
-    const imagemExpandida = document.getElementById('imagem-expandida') as HTMLImageElement | null;
-    const btnCloseExpandido = modalImagemExpandida?.querySelector('.modal-close-expandido') as HTMLButtonElement | null;
-    const contadorImagens = modalImagemExpandida?.querySelector('.contador-imagens');
-    
-    let currentIndex = 0;
-    let imagensAtuais: string[] = [];
-    let produtoAtual: Product | null = null;
+  const modal = document.getElementById('modal-produto');
+  const modalOverlay = modal?.querySelector('.modal-overlay');
+  const modalClose = modal?.querySelector('.modal-close');
+  const mainImage = document.getElementById('main-image') as HTMLImageElement;
+  const thumbnailsTrack = document.getElementById('thumbnails-track');
+  const expandBtn = modal?.querySelector('.expand-btn');
 
-    (window as any).abrirModalProduto = (produto: any) => {
-        produtoAtual = produto;
-        
-        if (modal) {
-            const modalNome = modal.querySelector('.modal-nome');
-            const modalDescricao = modal.querySelector('.modal-descricao');
-            const modalPreco = modal.querySelector('.modal-preco');
-            const modalCondicao = modal.querySelector('.modal-condicao');
-            const modalCategoria = modal.querySelector('.modal-categoria');
-            const modalBateria = modal.querySelector('.modal-bateria');
-            const modalCodigo = modal.querySelector('.modal-codigo');
-            
-            if (modalNome) modalNome.textContent = produto.nome;
-            if (modalDescricao) modalDescricao.textContent = produto.descricao;
-            if (modalPreco) modalPreco.textContent = produto.preco;
-            if (modalCondicao) modalCondicao.textContent = produto.condicao;
-            if (modalCategoria) modalCategoria.textContent = produto.categoria;
-            if (modalBateria) modalBateria.textContent = `${produto.bateria}%`;
-            if (modalCodigo) modalCodigo.textContent = produto.codigo;
-            
-            imagensAtuais = produto.imagens || [];
-            renderGallery(imagensAtuais);
-            
-            modal.classList.add('active');
-            document.body.classList.add('modal-open');
-        }
-    };
+  const modalImagemExpandida = document.getElementById(
+    'modal-imagem-expandida'
+  ) as HTMLElement | null;
+  const imagemExpandida = document.getElementById(
+    'imagem-expandida'
+  ) as HTMLImageElement | null;
+  const btnCloseExpandido = modalImagemExpandida?.querySelector(
+    '.modal-close-expandido'
+  ) as HTMLButtonElement | null;
+  const contadorImagens =
+    modalImagemExpandida?.querySelector('.contador-imagens');
 
-    function renderGallery(imagens: string[]) {
-        if (!mainImage || !thumbnailsTrack) return;
+  let currentIndex = 0;
+  let imagensAtuais: string[] = [];
+  let produtoAtual: Product | null = null;
 
-        currentIndex = 0;
+  // Função global para abrir o modal
+  (window as any).abrirModalProduto = (produto: any) => {
+    produtoAtual = produto;
 
-        if (imagens.length === 0) {
-            mainImage.src = '';
-            mainImage.style.display = 'none';
-            thumbnailsTrack.innerHTML = '<div class="no-images">Sem imagens disponíveis</div>';
-            return;
-        }
+    if (modal) {
+      const modalNome = modal.querySelector('.modal-nome');
+      const modalDescricao = modal.querySelector('.modal-descricao');
+      const modalPreco = modal.querySelector('.modal-preco');
+      const modalCondicao = modal.querySelector('.modal-condicao');
+      const modalCategoria = modal.querySelector('.modal-categoria');
+      const modalBateria = modal.querySelector('.modal-bateria');
+      const modalCodigo = modal.querySelector('.modal-codigo');
 
-        mainImage.style.display = 'block';
-        mainImage.src = imagens[0];
+      if (modalNome) modalNome.textContent = produto.nome;
+      if (modalDescricao) modalDescricao.textContent = produto.descricao;
+      if (modalPreco) modalPreco.textContent = produto.preco;
+      if (modalCondicao) modalCondicao.textContent = produto.condicao;
+      if (modalCategoria) modalCategoria.textContent = produto.categoria;
+      if (modalBateria) modalBateria.textContent = `${produto.bateria}%`;
+      if (modalCodigo) modalCodigo.textContent = produto.codigo;
 
-        // Render thumbnails
-        thumbnailsTrack.innerHTML = '';
-        imagens.forEach((img, index) => {
-            const thumb = document.createElement('div');
-            thumb.className = `thumbnail ${index === 0 ? 'active' : ''}`;
-            thumb.innerHTML = `
+      // CRITICAL: Atualizar ícone de bateria dinâmico
+      atualizarBateriaIcone(produto.bateria);
+
+      imagensAtuais = produto.imagens || [];
+      renderGallery(imagensAtuais);
+
+      modal.classList.add('active');
+      document.body.classList.add('modal-open');
+    }
+  };
+
+  // Função para atualizar o ícone de bateria com cores dinâmicas
+  function atualizarBateriaIcone(bateria: number) {
+    const bateriaWrapper = modal?.querySelector('.bateria-icon-wrapper');
+    const bateriaFill = modal?.querySelector('.bateria-fill') as SVGRectElement;
+
+    if (!bateriaWrapper || !bateriaFill) return;
+
+    // Calcular largura da barra (máximo 14)
+    const width = (bateria / 100) * 14;
+    bateriaFill.setAttribute('width', width.toString());
+
+    // Remover classes anteriores
+    bateriaWrapper.classList.remove(
+      'bateria-verde',
+      'bateria-amarelo',
+      'bateria-vermelho'
+    );
+
+    // Adicionar classe baseada na porcentagem
+    if (bateria >= 90) {
+      bateriaWrapper.classList.add('bateria-verde');
+    } else if (bateria >= 80) {
+      bateriaWrapper.classList.add('bateria-amarelo');
+    } else {
+      bateriaWrapper.classList.add('bateria-vermelho');
+    }
+  }
+
+  // Renderizar galeria de imagens
+  function renderGallery(imagens: string[]) {
+    if (!mainImage || !thumbnailsTrack) return;
+
+    currentIndex = 0;
+
+    if (imagens.length === 0) {
+      mainImage.src = '';
+      mainImage.style.display = 'none';
+      thumbnailsTrack.innerHTML =
+        '<div class="no-images">Sem imagens disponíveis</div>';
+      return;
+    }
+
+    mainImage.style.display = 'block';
+    mainImage.src = imagens[0];
+
+    // Render thumbnails
+    thumbnailsTrack.innerHTML = '';
+    imagens.forEach((img, index) => {
+      const thumb = document.createElement('div');
+      thumb.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+      thumb.innerHTML = `
                 <img src="${img}" alt="Thumbnail ${index + 1}" loading="lazy" />
                 <div class="thumb-overlay"></div>
             `;
-            thumb.addEventListener('click', () => selectImage(index));
-            thumbnailsTrack.appendChild(thumb);
-        });
-    }
+      thumb.addEventListener('click', () => selectImage(index));
+      thumbnailsTrack.appendChild(thumb);
+    });
+  }
 
-    function selectImage(index: number) {
-        if (!mainImage || !thumbnailsTrack) return;
+  // Selecionar imagem
+  function selectImage(index: number) {
+    if (!mainImage || !thumbnailsTrack) return;
 
-        currentIndex = index;
-        mainImage.src = imagensAtuais[index];
+    currentIndex = index;
+    mainImage.src = imagensAtuais[index];
 
-        // Animação suave na troca
-        mainImage.style.opacity = '0';
-        setTimeout(() => {
-            mainImage.style.opacity = '1';
-        }, 50);
+    // Animação suave na troca
+    mainImage.style.opacity = '0';
+    setTimeout(() => {
+      mainImage.style.opacity = '1';
+    }, 50);
 
-        // Atualizar thumbnails
-        const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
-        thumbs.forEach((thumb, i) => {
-            thumb.classList.toggle('active', i === index);
-        });
-
-        // Scroll automático para thumbnail ativa
-        const activeThumb = thumbs[index] as HTMLElement;
-        if (activeThumb) {
-            activeThumb.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'nearest',
-                inline: 'center'
-            });
-        }
-    }
-
-    function fecharModal() {
-        modal?.classList.remove('active');
-        document.body.classList.remove('modal-open');
-        currentIndex = 0;
-    }
-
-    modalOverlay?.addEventListener('click', fecharModal);
-    modalClose?.addEventListener('click', fecharModal);
-
-    // Expandir imagem
-    expandBtn?.addEventListener('click', () => {
-        if (imagensAtuais.length > 0) {
-            abrirImagemExpandida(currentIndex);
-        }
+    // Atualizar thumbnails
+    const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
+    thumbs.forEach((thumb, i) => {
+      thumb.classList.toggle('active', i === index);
     });
 
-    mainImage?.addEventListener('click', () => {
-        if (imagensAtuais.length > 0) {
-            abrirImagemExpandida(currentIndex);
-        }
-    });
-
-    function abrirImagemExpandida(index: number) {
-        if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
-
-        currentIndex = index;
-        imagemExpandida.src = imagensAtuais[currentIndex];
-        contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
-        
-        modalImagemExpandida.classList.add('active');
+    // Scroll automático para thumbnail ativa
+    const activeThumb = thumbs[index] as HTMLElement;
+    if (activeThumb) {
+      activeThumb.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
     }
+  }
 
-    function fecharImagemExpandida() {
-        modalImagemExpandida?.classList.remove('active');
+  // Fechar modal
+  function fecharModal() {
+    modal?.classList.remove('active');
+    document.body.classList.remove('modal-open');
+    currentIndex = 0;
+  }
+
+  modalOverlay?.addEventListener('click', fecharModal);
+  modalClose?.addEventListener('click', fecharModal);
+
+  // Expandir imagem
+  expandBtn?.addEventListener('click', () => {
+    if (imagensAtuais.length > 0) {
+      abrirImagemExpandida(currentIndex);
     }
+  });
 
-    btnCloseExpandido?.addEventListener('click', fecharImagemExpandida);
-    modalImagemExpandida?.addEventListener('click', (e) => {
-        if (e.target === modalImagemExpandida) {
-            fecharImagemExpandida();
-        }
-    });
+  mainImage?.addEventListener('click', () => {
+    if (imagensAtuais.length > 0) {
+      abrirImagemExpandida(currentIndex);
+    }
+  });
 
-    // Navegação por teclado na imagem expandida
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (modalImagemExpandida?.classList.contains('active')) {
-            if (e.key === 'Escape') {
-                fecharImagemExpandida();
-            } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-                selectImage(currentIndex - 1);
-                abrirImagemExpandida(currentIndex);
-            } else if (e.key === 'ArrowRight' && currentIndex < imagensAtuais.length - 1) {
-                selectImage(currentIndex + 1);
-                abrirImagemExpandida(currentIndex);
-            }
-        } else if (modal?.classList.contains('active')) {
-            if (e.key === 'Escape') {
-                fecharModal();
-            } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-                selectImage(currentIndex - 1);
-            } else if (e.key === 'ArrowRight' && currentIndex < imagensAtuais.length - 1) {
-                selectImage(currentIndex + 1);
-            }
-        }
-    });
+  // Abrir imagem expandida
+  function abrirImagemExpandida(index: number) {
+    if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
 
-    const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
-    btnWhatsapp?.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (produtoAtual) {
-            const telefone = '5577981022246';
-            const mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*\n${produtoAtual.descricao}\n${produtoAtual.preco}`;
-            const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
-            window.open(url, '_blank');
-        }
-    });
+    currentIndex = index;
+    imagemExpandida.src = imagensAtuais[currentIndex];
+    contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
+
+    modalImagemExpandida.classList.add('active');
+  }
+
+  // Fechar imagem expandida
+  function fecharImagemExpandida() {
+    modalImagemExpandida?.classList.remove('active');
+  }
+
+  btnCloseExpandido?.addEventListener('click', fecharImagemExpandida);
+  modalImagemExpandida?.addEventListener('click', (e) => {
+    if (e.target === modalImagemExpandida) {
+      fecharImagemExpandida();
+    }
+  });
+
+  // Navegação por teclado
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (modalImagemExpandida?.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        fecharImagemExpandida();
+      } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        selectImage(currentIndex - 1);
+        abrirImagemExpandida(currentIndex);
+      } else if (
+        e.key === 'ArrowRight' &&
+        currentIndex < imagensAtuais.length - 1
+      ) {
+        selectImage(currentIndex + 1);
+        abrirImagemExpandida(currentIndex);
+      }
+    } else if (modal?.classList.contains('active')) {
+      if (e.key === 'Escape') {
+        fecharModal();
+      } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        selectImage(currentIndex - 1);
+      } else if (
+        e.key === 'ArrowRight' &&
+        currentIndex < imagensAtuais.length - 1
+      ) {
+        selectImage(currentIndex + 1);
+      }
+    }
+  });
+
+  // WhatsApp
+  const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
+  btnWhatsapp?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (produtoAtual) {
+      const telefone = '5577981022246';
+      const mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*\n${produtoAtual.descricao}\n${produtoAtual.preco}`;
+      const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, '_blank');
+    }
+  });
 </script>
