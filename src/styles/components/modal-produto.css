@@ -1073,6 +1073,7 @@ body.modal-open {
 /* Fallback Barbudo */
 .spec-fallback {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -1084,11 +1085,16 @@ body.modal-open {
   height: 100px;
   opacity: 0.4;
   transition: transform 0.3s ease, opacity 0.3s ease;
+  height: 100%;
 }
 
-.spec-fallback img:hover {
-  transform: scale(1.05);
-  opacity: 1;
+.spec-fallback span {
+  margin-top: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+  text-align: center;
+  font-family: 'Halenoir', sans-serif;
+  font-style: italic;
 }
 
 /* Animação suave de entrada */

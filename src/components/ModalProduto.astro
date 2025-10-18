@@ -112,6 +112,10 @@ import '../styles/components/modal-produto.css';
               </div>
             </div>
           </div>
+          <div class="spec-fallback">
+            <img src="/Barbudo.svg" alt="Fallback de specs" />
+            <span>"Transformando tecnologia em confiança"</span>
+          </div>
         </div>
 
         <div class="info-footer">
@@ -182,7 +186,7 @@ import '../styles/components/modal-produto.css';
       ) as HTMLElement;
       const specCodigo = modal?.querySelector(
         '.spec-item:nth-child(2)'
-      ) as HTMLElement; // linha do código
+      ) as HTMLElement;
       const modalNome = modal.querySelector('.modal-nome');
       const modalDescricao = modal.querySelector('.modal-descricao');
       const modalPreco = modal.querySelector('.modal-preco');
@@ -190,6 +194,8 @@ import '../styles/components/modal-produto.css';
       const modalCategoria = modal.querySelector('.modal-categoria');
       const modalBateria = modal.querySelector('.modal-bateria');
       const modalCodigo = modal.querySelector('.modal-codigo');
+      const modalSpecs = modal.querySelector('.modal-specs') as HTMLElement;
+      const specFallback = modal.querySelector('.spec-fallback') as HTMLElement;
 
       if (modalNome) modalNome.textContent = produto.nome;
       if (modalDescricao) modalDescricao.textContent = produto.descricao;
@@ -217,9 +223,25 @@ import '../styles/components/modal-produto.css';
         produto.codigo !== ''
       ) {
         if (modalCodigo) modalCodigo.textContent = produto.codigo;
-        if (specCodigo) specCodigo.style.display = 'flex'; // mostra a linha do código
+        if (specCodigo) specCodigo.style.display = 'flex';
       } else {
-        if (specCodigo) specCodigo.style.display = 'none'; // esconde a linha do código
+        if (specCodigo) specCodigo.style.display = 'none';
+      }
+
+      // Exibe ou oculta o modal-specs e fallback
+      if (
+        produto.codigo !== null &&
+        produto.codigo !== undefined &&
+        produto.codigo !== '' &&
+        produto.bateria !== null &&
+        produto.bateria !== undefined &&
+        produto.bateria !== ''
+      ) {
+        if (modalSpecs) modalSpecs.style.display = 'grid';
+        if (specFallback) specFallback.style.display = 'none';
+      } else {
+        if (modalSpecs) modalSpecs.style.display = 'none';
+        if (specFallback) specFallback.style.display = 'flex';
       }
 
       imagensAtuais = produto.imagens || [];
@@ -398,10 +420,27 @@ import '../styles/components/modal-produto.css';
   const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
   btnWhatsapp?.addEventListener('click', (e) => {
     e.preventDefault();
+
     if (produtoAtual) {
       const telefone = '5577981022246';
-      const mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*\n${produtoAtual.descricao}\n${produtoAtual.preco}`;
+
+      // Gera o link para o produto (pode ajustar o path conforme seu site)
+      const linkProduto = `${window.location.origin}/produto/${encodeURIComponent(
+        produtoAtual.nome.toLowerCase().replace(/\s+/g, '-')
+      )}`;
+
+      // Monta a mensagem dinamicamente
+      let mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*`;
+
+      if (produtoAtual.codigo) {
+        mensagem += `\nCódigo: ${produtoAtual.codigo}`;
+      }
+
+      mensagem += `\n\nLink: ${linkProduto}`;
+
+      // Monta a URL final do WhatsApp
       const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+
       window.open(url, '_blank');
     }
   });
