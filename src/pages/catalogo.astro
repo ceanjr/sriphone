@@ -9,242 +9,288 @@ import GerirCategorias from '../components/GerirCategorias.astro';
 import '../styles/pages/catalogo.css';
 ---
 
-<Layout 
-    title="Catálogo | Sr. IPHONE"
-    description="Explore nossa seleção exclusiva de iPhones seminovos com garantia e qualidade certificada."
+<Layout
+  title="Catálogo | Sr. IPHONE"
+  description="Explore nossa seleção exclusiva de iPhones seminovos com garantia e qualidade certificada."
 >
-    <Header />
-    
-    <main class="catalogo-page">
-        <section class="hero-catalogo">
-            <div class="container">
-                <div class="hero-content">
-                    <img src="/public/Barbudo.svg" alt="">
-                    <span class="eyebrow">NOSSA COLEÇÃO</span>
-                    <h1>Catálogo Exclusivo</h1>
-                    <p>iPhones novos e seminovos selecionados com garantia e qualidade certificada</p>
-                </div>
-            </div>
-        </section>
+  <Header />
 
-        <section class="filtros-section">
-            <div class="container">
-                <!-- Busca -->
-                <div class="search-bar">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <input 
-                        type="text" 
-                        id="search-input" 
-                        placeholder="Buscar produtos..."
-                    />
-                </div>
-
-                <!-- Filtros -->
-                <div class="filtros-container">
-                    <!-- Categorias (Destaque) -->
-                    <div class="categoria-filtros">
-                        <button class="categoria-btn active" data-categoria="todos">
-                            Todos
-                        </button>
-                        <div id="categorias-lista"></div>
-                    </div>
-
-                    <!-- Outros Filtros -->
-                    <button class="toggle-filtros" id="toggle-filtros">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 4H21M3 12H21M3 20H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        Mais Filtros
-                    </button>
-
-                    <div class="filtros-avancados" id="filtros-avancados">
-                        <div class="filtro-group">
-                            <label>Condição</label>
-                            <select id="filtro-condicao">
-                                <option value="">Todas</option>
-                                <option value="Novo">Novo</option>
-                                <option value="Seminovo">Seminovo</option>
-                            </select>
-                        </div>
-
-                        <div class="filtro-group">
-                            <label>Bateria Mínima</label>
-                            <select id="filtro-bateria">
-                                <option value="0">Qualquer</option>
-                                <option value="80">80%+</option>
-                                <option value="90">90%+</option>
-                                <option value="95">95%+</option>
-                            </select>
-                        </div>
-
-                        <div class="filtro-group">
-                            <label>Ordenar Por</label>
-                            <select id="filtro-ordenacao">
-                                <option value="recente">Mais Recentes</option>
-                                <option value="preco-asc">Menor Preço</option>
-                                <option value="preco-desc">Maior Preço</option>
-                                <option value="bateria">Melhor Bateria</option>
-                            </select>
-                        </div>
-
-                        <button class="btn-limpar-filtros" id="btn-limpar-filtros">
-                            Limpar Filtros
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="produtos-section">
-            <div class="container">
-                <div id="loading" class="loading">
-                    <div class="spinner"></div>
-                    <p>Carregando produtos...</p>
-                </div>
-                <div id="produtos-container"></div>
-                <div id="empty-state" class="empty-state" style="display: none;">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    <p>Nenhum produto encontrado</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Modal de Login -->
-    <div id="modal-login" class="modal-login">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-            <button class="modal-close" aria-label="Fechar">×</button>
-            <h2>Login Administrativo</h2>
-            <form id="form-login">
-                <div class="form-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" required />
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Senha</label>
-                    <input type="password" id="login-password" required />
-                </div>
-                <div id="login-error" class="error-message"></div>
-                <button type="submit" class="btn-submit">Entrar</button>
-            </form>
+  <main class="catalogo-page">
+    <section class="hero-catalogo">
+      <div class="container">
+        <div class="hero-content">
+          <img src="/Barbudo.svg" alt="" />
+          <span class="eyebrow">NOSSA COLEÇÃO</span>
+          <h1>Catálogo Exclusivo</h1>
+          <p>
+            iPhones novos e seminovos selecionados com garantia e qualidade
+            certificada
+          </p>
         </div>
-    </div>
+      </div>
+    </section>
 
-    <ModalProduto />
-    <FormularioProduto />
-    <GerirCategorias />
-    <Footer />
+    <section class="filtros-section">
+      <div class="container">
+        <!-- Busca -->
+        <div class="search-bar">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"></path>
+          </svg>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Buscar produtos..."
+          />
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-container">
+          <!-- Categorias (Destaque) -->
+          <div class="categoria-filtros">
+            <button
+              class="categoria-btn active desktop-only"
+              data-categoria="todos"
+            >
+              Todos
+            </button>
+            <div id="categorias-lista" class="desktop-only"></div>
+            <select id="categoria-select" class="categoria-select mobile-only">
+              <option value="todos">Todos</option>
+              <!-- Categorias serão preenchidas via JavaScript -->
+            </select>
+          </div>
+
+          <!-- Outros Filtros -->
+          <button class="toggle-filtros" id="toggle-filtros">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 4H21M3 12H21M3 20H21"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"></path>
+            </svg>
+            Mais Filtros
+          </button>
+
+          <div class="filtros-avancados" id="filtros-avancados">
+            <div class="filtro-group">
+              <label>Condição</label>
+              <select id="filtro-condicao">
+                <option value="">Todas</option>
+                <option value="Novo">Novo</option>
+                <option value="Seminovo">Seminovo</option>
+              </select>
+            </div>
+
+            <div class="filtro-group">
+              <label>Bateria Mínima</label>
+              <select id="filtro-bateria">
+                <option value="0">Qualquer</option>
+                <option value="80">80%+</option>
+                <option value="90">90%+</option>
+                <option value="95">95%+</option>
+              </select>
+            </div>
+
+            <div class="filtro-group">
+              <label>Ordenar Por</label>
+              <select id="filtro-ordenacao">
+                <option value="recente">Mais Recentes</option>
+                <option value="preco-asc">Menor Preço</option>
+                <option value="preco-desc">Maior Preço</option>
+                <option value="bateria">Melhor Bateria</option>
+              </select>
+            </div>
+
+            <button class="btn-limpar-filtros" id="btn-limpar-filtros">
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="produtos-section">
+      <div class="container">
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <p>Carregando produtos...</p>
+        </div>
+        <div id="produtos-container"></div>
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z"
+              stroke="currentColor"
+              stroke-width="2"></path>
+          </svg>
+          <p>Nenhum produto encontrado</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal de Login -->
+  <div id="modal-login" class="modal-login">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Fechar">×</button>
+      <h2>Login Administrativo</h2>
+      <form id="form-login">
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Senha</label>
+          <input type="password" id="login-password" required />
+        </div>
+        <div id="login-error" class="error-message"></div>
+        <button type="submit" class="btn-submit">Entrar</button>
+      </form>
+    </div>
+  </div>
+
+  <ModalProduto />
+  <FormularioProduto />
+  <GerirCategorias />
+  <Footer />
 </Layout>
 
 <script>
-    import { 
-        productService, 
-        categoryService, 
-        authService, 
-        type Product, 
-        type Category 
-    } from '../lib/supabase';
+  import {
+    productService,
+    categoryService,
+    authService,
+    type Product,
+    type Category,
+  } from '../lib/supabase';
 
-    // ==================== Estado ====================
-    interface AppState {
-        produtos: (Product & { categoria: Category })[];
-        categorias: Category[];
-        categoriaAtiva: string;
-        filtros: {
-            busca: string;
-            condicao: string;
-            bateria: number;
-            ordenacao: string;
-        };
-    }
-
-    const state: AppState = {
-        produtos: [],
-        categorias: [],
-        categoriaAtiva: 'todos',
-        filtros: {
-            busca: '',
-            condicao: '',
-            bateria: 0,
-            ordenacao: 'recente'
-        }
+  // ==================== Estado ====================
+  interface AppState {
+    produtos: (Product & { categoria: Category })[];
+    categorias: Category[];
+    categoriaAtiva: string;
+    filtros: {
+      busca: string;
+      condicao: string;
+      bateria: number;
+      ordenacao: string;
     };
+  }
 
-    // ==================== Elementos DOM ====================
-    const elementos = {
-        modalLogin: document.getElementById('modal-login'),
-        formLogin: document.getElementById('form-login') as HTMLFormElement,
-        loginError: document.getElementById('login-error'),
-        searchInput: document.getElementById('search-input') as HTMLInputElement,
-        toggleFiltros: document.getElementById('toggle-filtros'),
-        filtrosAvancados: document.getElementById('filtros-avancados'),
-        btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
-        produtosContainer: document.getElementById('produtos-container'),
-        loading: document.getElementById('loading'),
-        emptyState: document.getElementById('empty-state'),
-        categoriasLista: document.getElementById('categorias-lista'),
-        filtroCondicao: document.getElementById('filtro-condicao') as HTMLSelectElement,
-        filtroBateria: document.getElementById('filtro-bateria') as HTMLSelectElement,
-        filtroOrdenacao: document.getElementById('filtro-ordenacao') as HTMLSelectElement
-    };
+  const state: AppState = {
+    produtos: [],
+    categorias: [],
+    categoriaAtiva: 'todos',
+    filtros: {
+      busca: '',
+      condicao: '',
+      bateria: 0,
+      ordenacao: 'recente',
+    },
+  };
 
-    // ==================== Utilitários ====================
-    const utils = {
-        formatarPreco(valor: number): string {
-            return new Intl.NumberFormat('pt-BR', { 
-                style: 'currency', 
-                currency: 'BRL' 
-            }).format(valor);
-        },
+  // ==================== Elementos DOM ====================
+  const elementos = {
+    modalLogin: document.getElementById('modal-login'),
+    formLogin: document.getElementById('form-login') as HTMLFormElement,
+    loginError: document.getElementById('login-error'),
+    searchInput: document.getElementById('search-input') as HTMLInputElement,
+    toggleFiltros: document.getElementById('toggle-filtros'),
+    filtrosAvancados: document.getElementById('filtros-avancados'),
+    btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
+    produtosContainer: document.getElementById('produtos-container'),
+    loading: document.getElementById('loading'),
+    emptyState: document.getElementById('empty-state'),
+    categoriasLista: document.getElementById('categorias-lista'),
+    filtroCondicao: document.getElementById(
+      'filtro-condicao'
+    ) as HTMLSelectElement,
+    filtroBateria: document.getElementById(
+      'filtro-bateria'
+    ) as HTMLSelectElement,
+    filtroOrdenacao: document.getElementById(
+      'filtro-ordenacao'
+    ) as HTMLSelectElement,
+    categoriaSelect: document.getElementById(
+      'categoria-select'
+    ) as HTMLSelectElement,
+  };
 
-        calcularLarguraBateria(bateria: number): number {
-            return (bateria / 100) * 14;
-        },
+  // ==================== Utilitários ====================
+  const utils = {
+    formatarPreco(valor: number): string {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(valor);
+    },
 
-        escapeHtml(text: string): string {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-    };
+    calcularLarguraBateria(bateria: number): number {
+      return (bateria / 100) * 14;
+    },
 
-    // ==================== Templates ====================
-    const templates = {
-        produtoCard(produto: Product & { categoria: Category }): string {
-            const precoFormatado = utils.formatarPreco(produto.preco);
-            const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
-            const imagemPrincipal = produto.imagens?.[0];
+    escapeHtml(text: string): string {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    },
+  };
 
-            return `
+  // ==================== Templates ====================
+  const templates = {
+    produtoCard(produto: Product & { categoria: Category }): string {
+      const precoFormatado = utils.formatarPreco(produto.preco);
+      const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
+      const imagemPrincipal = produto.imagens?.[0];
+
+      return `
                 <article class="produto-card" 
                     data-produto-id="${produto.id}"
                     data-produto='${JSON.stringify({
-                        id: produto.id,
-                        codigo: produto.codigo,
-                        nome: produto.nome,
-                        descricao: produto.descricao,
-                        preco: precoFormatado,
-                        condicao: produto.condicao,
-                        bateria: produto.bateria,
-                        categoria: produto.categoria?.nome || '',
-                        imagens: produto.imagens || []
+                      id: produto.id,
+                      codigo: produto.codigo,
+                      nome: produto.nome,
+                      descricao: produto.descricao,
+                      preco: precoFormatado,
+                      condicao: produto.condicao,
+                      bateria: produto.bateria,
+                      categoria: produto.categoria?.nome || '',
+                      imagens: produto.imagens || [],
                     })}'>
                     <div class="produto-image">
-                        ${imagemPrincipal ? `
+                        ${
+                          imagemPrincipal
+                            ? `
                             <img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />
-                        ` : `
+                        `
+                            : `
                             <div class="image-placeholder">
                                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
                                     <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
                             </div>
-                        `}
+                        `
+                        }
                         <span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>
                         <div class="bateria-indicator">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -265,318 +311,417 @@ import '../styles/pages/catalogo.css';
                     </div>
                 </article>
             `;
-        },
+    },
 
-        categoriaSecao(nomeCategoria: string, produtos: (Product & { categoria: Category })[]): string {
-            return `
+    categoriaSecao(
+      nomeCategoria: string,
+      produtos: (Product & { categoria: Category })[]
+    ): string {
+      return `
                 <div class="categoria-section">
                     <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
                     <div class="categoria-grid">
-                        ${produtos.map(p => templates.produtoCard(p)).join('')}
+                        ${produtos.map((p) => templates.produtoCard(p)).join('')}
                     </div>
                 </div>
             `;
+    },
+  };
+
+  // ==================== Lógica de Negócio ====================
+  const business = {
+    filtrarProdutos(): (Product & { categoria: Category })[] {
+      return state.produtos.filter((p) => {
+        // Filtro de categoria
+        if (
+          state.categoriaAtiva !== 'todos' &&
+          p.categoria_id !== state.categoriaAtiva
+        ) {
+          return false;
         }
-    };
 
-    // ==================== Lógica de Negócio ====================
-    const business = {
-        filtrarProdutos(): (Product & { categoria: Category })[] {
-            return state.produtos.filter(p => {
-                // Filtro de categoria
-                if (state.categoriaAtiva !== 'todos' && p.categoria_id !== state.categoriaAtiva) {
-                    return false;
-                }
-
-                // Filtro de busca
-                if (state.filtros.busca) {
-                    const busca = state.filtros.busca.toLowerCase();
-                    const match = 
-                        p.nome.toLowerCase().includes(busca) ||
-                        p.descricao.toLowerCase().includes(busca) ||
-                        p.codigo.toLowerCase().includes(busca) ||
-                        p.categoria?.nome.toLowerCase().includes(busca);
-                    if (!match) return false;
-                }
-
-                // Filtro de condição
-                if (state.filtros.condicao && p.condicao !== state.filtros.condicao) {
-                    return false;
-                }
-
-                // Filtro de bateria
-                if (p.bateria < state.filtros.bateria) {
-                    return false;
-                }
-
-                return true;
-            });
-        },
-
-        ordenarProdutos(produtos: (Product & { categoria: Category })[]): (Product & { categoria: Category })[] {
-            const copia = [...produtos];
-            
-            switch (state.filtros.ordenacao) {
-                case 'preco-asc':
-                    return copia.sort((a, b) => a.preco - b.preco);
-                case 'preco-desc':
-                    return copia.sort((a, b) => b.preco - a.preco);
-                case 'bateria':
-                    return copia.sort((a, b) => b.bateria - a.bateria);
-                default: // recente
-                    return copia.sort((a, b) => 
-                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                    );
-            }
-        },
-
-        agruparPorCategoria(produtos: (Product & { categoria: Category })[]): Map<string, (Product & { categoria: Category })[]> {
-            const grupos = new Map<string, (Product & { categoria: Category })[]>();
-            
-            produtos.forEach(p => {
-                const catNome = p.categoria?.nome || 'Sem Categoria';
-                if (!grupos.has(catNome)) {
-                    grupos.set(catNome, []);
-                }
-                grupos.get(catNome)!.push(p);
-            });
-
-            return grupos;
+        // Filtro de busca
+        if (state.filtros.busca) {
+          const busca = state.filtros.busca.toLowerCase();
+          const match =
+            p.nome.toLowerCase().includes(busca) ||
+            p.descricao.toLowerCase().includes(busca) ||
+            p.codigo.toLowerCase().includes(busca) ||
+            p.categoria?.nome.toLowerCase().includes(busca);
+          if (!match) return false;
         }
-    };
 
-    // ==================== Renderização ====================
-    const render = {
-        categorias(): void {
-            if (!elementos.categoriasLista) return;
+        // Filtro de condição
+        if (state.filtros.condicao && p.condicao !== state.filtros.condicao) {
+          return false;
+        }
 
-            elementos.categoriasLista.innerHTML = state.categorias
-                .map(cat => `
+        // Filtro de bateria
+        if (p.bateria < state.filtros.bateria) {
+          return false;
+        }
+
+        return true;
+      });
+    },
+
+    ordenarProdutos(
+      produtos: (Product & { categoria: Category })[]
+    ): (Product & { categoria: Category })[] {
+      const copia = [...produtos];
+
+      switch (state.filtros.ordenacao) {
+        case 'preco-asc':
+          return copia.sort((a, b) => a.preco - b.preco);
+        case 'preco-desc':
+          return copia.sort((a, b) => b.preco - a.preco);
+        case 'bateria':
+          return copia.sort((a, b) => b.bateria - a.bateria);
+        default: // recente
+          return copia.sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          );
+      }
+    },
+
+    agruparPorCategoria(
+      produtos: (Product & { categoria: Category })[]
+    ): Map<string, (Product & { categoria: Category })[]> {
+      const grupos = new Map<string, (Product & { categoria: Category })[]>();
+
+      produtos.forEach((p) => {
+        const catNome = p.categoria?.nome || 'Sem Categoria';
+        if (!grupos.has(catNome)) {
+          grupos.set(catNome, []);
+        }
+        grupos.get(catNome)!.push(p);
+      });
+
+      return grupos;
+    },
+  };
+
+  // ==================== Renderização ====================
+  const render = {
+    categorias(): void {
+      if (!elementos.categoriaSelect) return;
+
+      // Renderizar opções para o select
+      elementos.categoriaSelect.innerHTML = `
+                <option value="todos">Todos</option>
+                ${state.categorias
+                  .map(
+                    (cat) => `
+                    <option value="${cat.id}">${utils.escapeHtml(cat.nome)}</option>
+                `
+                  )
+                  .join('')}
+            `;
+
+      // Renderizar botões para desktop, se elementos existirem
+      if (elementos.categoriasLista) {
+        elementos.categoriasLista.innerHTML = state.categorias
+          .map(
+            (cat) => `
                     <button class="categoria-btn" data-categoria="${cat.id}">
                         ${utils.escapeHtml(cat.nome)}
                     </button>
-                `)
-                .join('');
+                `
+          )
+          .join('');
+      }
 
-            // Adicionar event listeners
-            document.querySelectorAll('.categoria-btn').forEach(btn => {
-                btn.addEventListener('click', handlers.categoriaClick);
-            });
-        },
+      // Definir categoria ativa
+      elementos.categoriaSelect.value = state.categoriaAtiva;
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((btn) => {
+        btn.classList.toggle(
+          'active',
+          btn.dataset.categoria === state.categoriaAtiva
+        );
+      });
 
-        produtos(): void {
-            if (!elementos.produtosContainer || !elementos.emptyState) return;
+      // Adicionar event listeners para botões, se existirem
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((btn) => {
+        btn.addEventListener('click', handlers.categoriaClick);
+      });
 
-            // Filtrar e ordenar
-            let produtosFiltrados = business.filtrarProdutos();
-            produtosFiltrados = business.ordenarProdutos(produtosFiltrados);
+      // Adicionar event listener para o select
+      elementos.categoriaSelect.addEventListener(
+        'change',
+        handlers.categoriaSelectChange
+      );
+    },
 
-            // Verificar se há produtos
-            if (produtosFiltrados.length === 0) {
-                elementos.produtosContainer.innerHTML = '';
-                elementos.emptyState.style.display = 'block';
-                return;
-            }
+    produtos(): void {
+      if (!elementos.produtosContainer || !elementos.emptyState) return;
 
-            elementos.emptyState.style.display = 'none';
+      // Filtrar e ordenar
+      let produtosFiltrados = business.filtrarProdutos();
+      produtosFiltrados = business.ordenarProdutos(produtosFiltrados);
 
-            // Renderizar agrupado ou não
-            if (state.categoriaAtiva === 'todos') {
-                const grupos = business.agruparPorCategoria(produtosFiltrados);
-                elementos.produtosContainer.innerHTML = Array.from(grupos.entries())
-                    .map(([catNome, prods]) => templates.categoriaSecao(catNome, prods))
-                    .join('');
-            } else {
-                elementos.produtosContainer.innerHTML = produtosFiltrados
-                    .map(p => templates.produtoCard(p))
-                    .join('');
-            }
+      // Verificar se há produtos
+      if (produtosFiltrados.length === 0) {
+        elementos.produtosContainer.innerHTML = '';
+        elementos.emptyState.style.display = 'block';
+        return;
+      }
 
-            // Adicionar event listeners aos cards
-            elementos.produtosContainer.querySelectorAll('.produto-card').forEach(card => {
-                card.addEventListener('click', handlers.produtoClick);
-            });
-        },
+      elementos.emptyState.style.display = 'none';
 
-        loading(mostrar: boolean): void {
-            if (elementos.loading) {
-                elementos.loading.style.display = mostrar ? 'flex' : 'none';
-            }
-        }
-    };
+      // Renderizar agrupado ou não
+      if (state.categoriaAtiva === 'todos') {
+        const grupos = business.agruparPorCategoria(produtosFiltrados);
+        elementos.produtosContainer.innerHTML = Array.from(grupos.entries())
+          .map(([catNome, prods]) => templates.categoriaSecao(catNome, prods))
+          .join('');
+      } else {
+        elementos.produtosContainer.innerHTML = produtosFiltrados
+          .map((p) => templates.produtoCard(p))
+          .join('');
+      }
 
-    // ==================== Handlers ====================
-    const handlers = {
-        categoriaClick(e: Event): void {
-            const target = e.currentTarget as HTMLElement;
-            const categoriaId = target.dataset.categoria;
-
-            // Atualizar UI
-            document.querySelectorAll('.categoria-btn').forEach(b => 
-                b.classList.remove('active')
-            );
-            target.classList.add('active');
-
-            // Atualizar estado e re-renderizar
-            state.categoriaAtiva = categoriaId || 'todos';
-            render.produtos();
-        },
-
-        produtoClick(e: Event): void {
-            const card = e.currentTarget as HTMLElement;
-            const produtoData = card.dataset.produto;
-            
-            if (produtoData) {
-                try {
-                    const produto = JSON.parse(produtoData);
-                    (window as any).abrirModalProduto(produto);
-                } catch (error) {
-                    console.error('Erro ao abrir produto:', error);
-                }
-            }
-        },
-
-        searchInput(e: Event): void {
-            const target = e.target as HTMLInputElement;
-            state.filtros.busca = target.value;
-            render.produtos();
-        },
-
-        toggleFiltros(): void {
-            elementos.filtrosAvancados?.classList.toggle('active');
-        },
-
-        filtroCondicao(e: Event): void {
-            const target = e.target as HTMLSelectElement;
-            state.filtros.condicao = target.value;
-            render.produtos();
-        },
-
-        filtroBateria(e: Event): void {
-            const target = e.target as HTMLSelectElement;
-            state.filtros.bateria = parseInt(target.value);
-            render.produtos();
-        },
-
-        filtroOrdenacao(e: Event): void {
-            const target = e.target as HTMLSelectElement;
-            state.filtros.ordenacao = target.value;
-            render.produtos();
-        },
-
-        limparFiltros(): void {
-            // Resetar estado
-            state.filtros = {
-                busca: '',
-                condicao: '',
-                bateria: 0,
-                ordenacao: 'recente'
-            };
-
-            // Resetar inputs
-            if (elementos.searchInput) elementos.searchInput.value = '';
-            if (elementos.filtroCondicao) elementos.filtroCondicao.selectedIndex = 0;
-            if (elementos.filtroBateria) elementos.filtroBateria.selectedIndex = 0;
-            if (elementos.filtroOrdenacao) elementos.filtroOrdenacao.selectedIndex = 0;
-
-            // Re-renderizar
-            render.produtos();
-        },
-
-        async loginSubmit(e: Event): Promise<void> {
-            e.preventDefault();
-            
-            const emailInput = document.getElementById('login-email') as HTMLInputElement;
-            const passwordInput = document.getElementById('login-password') as HTMLInputElement;
-
-            try {
-                await authService.signIn(emailInput.value, passwordInput.value);
-                
-                elementos.modalLogin?.classList.remove('active');
-                elementos.formLogin?.reset();
-                
-                if (elementos.loginError) {
-                    elementos.loginError.textContent = '';
-                    elementos.loginError.classList.remove('show');
-                }
-            } catch (error: any) {
-                if (elementos.loginError) {
-                    elementos.loginError.textContent = error.message || 'Credenciais inválidas';
-                    elementos.loginError.classList.add('show');
-                }
-            }
-        },
-
-        closeModalLogin(): void {
-            elementos.modalLogin?.classList.remove('active');
-        }
-    };
-
-    // ==================== API ====================
-    const api = {
-        async carregarDados(): Promise<void> {
-            try {
-                render.loading(true);
-                if (elementos.emptyState) elementos.emptyState.style.display = 'none';
-                if (elementos.produtosContainer) elementos.produtosContainer.innerHTML = '';
-
-                const [produtosData, categoriasData] = await Promise.all([
-                    productService.getAll(),
-                    categoryService.getAll()
-                ]);
-
-                state.produtos = produtosData;
-                state.categorias = categoriasData;
-
-                render.categorias();
-                render.produtos();
-            } catch (error) {
-                console.error('Erro ao carregar dados:', error);
-                alert('Erro ao carregar produtos. Tente novamente.');
-            } finally {
-                render.loading(false);
-            }
-        }
-    };
-
-    // ==================== Event Listeners ====================
-    function setupEventListeners(): void {
-        // Busca
-        elementos.searchInput?.addEventListener('input', handlers.searchInput);
-
-        // Toggle filtros avançados
-        elementos.toggleFiltros?.addEventListener('click', handlers.toggleFiltros);
-
-        // Filtros
-        elementos.filtroCondicao?.addEventListener('change', handlers.filtroCondicao);
-        elementos.filtroBateria?.addEventListener('change', handlers.filtroBateria);
-        elementos.filtroOrdenacao?.addEventListener('change', handlers.filtroOrdenacao);
-
-        // Limpar filtros
-        elementos.btnLimparFiltros?.addEventListener('click', handlers.limparFiltros);
-
-        // Login
-        elementos.formLogin?.addEventListener('submit', handlers.loginSubmit);
-        elementos.modalLogin?.querySelector('.modal-close')?.addEventListener('click', handlers.closeModalLogin);
-        elementos.modalLogin?.querySelector('.modal-overlay')?.addEventListener('click', handlers.closeModalLogin);
-
-        // Evento customizado para recarregar produtos
-        window.addEventListener('produtos-updated', () => {
-            api.carregarDados();
+      // Adicionar event listeners aos cards
+      elementos.produtosContainer
+        .querySelectorAll('.produto-card')
+        .forEach((card) => {
+          card.addEventListener('click', handlers.produtoClick);
         });
-    }
+    },
 
-    // ==================== Funções Globais ====================
-    (window as any).abrirModalLogin = () => {
-        elementos.modalLogin?.classList.add('active');
-    };
+    loading(mostrar: boolean): void {
+      if (elementos.loading) {
+        elementos.loading.style.display = mostrar ? 'flex' : 'none';
+      }
+    },
+  };
 
-    // ==================== Inicialização ====================
-    function init(): void {
-        setupEventListeners();
-        api.carregarDados();
-    }
+  // ==================== Handlers ====================
+  const handlers = {
+    categoriaClick(e: Event): void {
+      const target = e.currentTarget as HTMLElement;
+      const categoriaId = target.dataset.categoria;
 
-    // Iniciar aplicação
-    init();
+      // Atualizar UI
+      document
+        .querySelectorAll('.categoria-btn')
+        .forEach((b) => b.classList.remove('active'));
+      target.classList.add('active');
+
+      // Atualizar estado e re-renderizar
+      state.categoriaAtiva = categoriaId || 'todos';
+      if (elementos.categoriaSelect) {
+        elementos.categoriaSelect.value = state.categoriaAtiva;
+      }
+      render.produtos();
+    },
+
+    categoriaSelectChange(e: Event): void {
+      const target = e.target as HTMLSelectElement;
+      state.categoriaAtiva = target.value;
+
+      // Atualizar UI dos botões no desktop, se existirem
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((b) => {
+        b.classList.toggle(
+          'active',
+          b.dataset.categoria === state.categoriaAtiva
+        );
+      });
+
+      render.produtos();
+    },
+
+    produtoClick(e: Event): void {
+      const card = e.currentTarget as HTMLElement;
+      const produtoData = card.dataset.produto;
+
+      if (produtoData) {
+        try {
+          const produto = JSON.parse(produtoData);
+          (window as any).abrirModalProduto(produto);
+        } catch (error) {
+          console.error('Erro ao abrir produto:', error);
+        }
+      }
+    },
+
+    searchInput(e: Event): void {
+      const target = e.target as HTMLInputElement;
+      state.filtros.busca = target.value;
+      render.produtos();
+    },
+
+    toggleFiltros(): void {
+      elementos.filtrosAvancados?.classList.toggle('active');
+    },
+
+    filtroCondicao(e: Event): void {
+      const target = e.target as HTMLSelectElement;
+      state.filtros.condicao = target.value;
+      render.produtos();
+    },
+
+    filtroBateria(e: Event): void {
+      const target = e.target as HTMLSelectElement;
+      state.filtros.bateria = parseInt(target.value);
+      render.produtos();
+    },
+
+    filtroOrdenacao(e: Event): void {
+      const target = e.target as HTMLSelectElement;
+      state.filtros.ordenacao = target.value;
+      render.produtos();
+    },
+
+    limparFiltros(): void {
+      // Resetar estado
+      state.filtros = {
+        busca: '',
+        condicao: '',
+        bateria: 0,
+        ordenacao: 'recente',
+      };
+      state.categoriaAtiva = 'todos';
+
+      // Resetar inputs
+      if (elementos.searchInput) elementos.searchInput.value = '';
+      if (elementos.filtroCondicao) elementos.filtroCondicao.selectedIndex = 0;
+      if (elementos.filtroBateria) elementos.filtroBateria.selectedIndex = 0;
+      if (elementos.filtroOrdenacao)
+        elementos.filtroOrdenacao.selectedIndex = 0;
+      if (elementos.categoriaSelect) elementos.categoriaSelect.value = 'todos';
+
+      // Resetar botões, se existirem
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((b) => {
+        b.classList.toggle('active', b.dataset.categoria === 'todos');
+      });
+
+      // Re-renderizar
+      render.produtos();
+    },
+
+    async loginSubmit(e: Event): Promise<void> {
+      e.preventDefault();
+
+      const emailInput = document.getElementById(
+        'login-email'
+      ) as HTMLInputElement;
+      const passwordInput = document.getElementById(
+        'login-password'
+      ) as HTMLInputElement;
+
+      try {
+        await authService.signIn(emailInput.value, passwordInput.value);
+
+        elementos.modalLogin?.classList.remove('active');
+        elementos.formLogin?.reset();
+
+        if (elementos.loginError) {
+          elementos.loginError.textContent = '';
+          elementos.loginError.classList.remove('show');
+        }
+      } catch (error: any) {
+        if (elementos.loginError) {
+          elementos.loginError.textContent =
+            error.message || 'Credenciais inválidas';
+          elementos.loginError.classList.add('show');
+        }
+      }
+    },
+
+    closeModalLogin(): void {
+      elementos.modalLogin?.classList.remove('active');
+    },
+  };
+
+  // ==================== API ====================
+  const api = {
+    async carregarDados(): Promise<void> {
+      try {
+        render.loading(true);
+        if (elementos.emptyState) elementos.emptyState.style.display = 'none';
+        if (elementos.produtosContainer)
+          elementos.produtosContainer.innerHTML = '';
+
+        const [produtosData, categoriasData] = await Promise.all([
+          productService.getAll(),
+          categoryService.getAll(),
+        ]);
+
+        state.produtos = produtosData;
+        state.categorias = categoriasData;
+
+        render.categorias();
+        render.produtos();
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        alert('Erro ao carregar produtos. Tente novamente.');
+      } finally {
+        render.loading(false);
+      }
+    },
+  };
+
+  // ==================== Event Listeners ====================
+  function setupEventListeners(): void {
+    // Busca
+    elementos.searchInput?.addEventListener('input', handlers.searchInput);
+
+    // Toggle filtros avançados
+    elementos.toggleFiltros?.addEventListener('click', handlers.toggleFiltros);
+
+    // Filtros
+    elementos.filtroCondicao?.addEventListener(
+      'change',
+      handlers.filtroCondicao
+    );
+    elementos.filtroBateria?.addEventListener('change', handlers.filtroBateria);
+    elementos.filtroOrdenacao?.addEventListener(
+      'change',
+      handlers.filtroOrdenacao
+    );
+
+    // Limpar filtros
+    elementos.btnLimparFiltros?.addEventListener(
+      'click',
+      handlers.limparFiltros
+    );
+
+    // Login
+    elementos.formLogin?.addEventListener('submit', handlers.loginSubmit);
+    elementos.modalLogin
+      ?.querySelector('.modal-close')
+      ?.addEventListener('click', handlers.closeModalLogin);
+    elementos.modalLogin
+      ?.querySelector('.modal-overlay')
+      ?.addEventListener('click', handlers.closeModalLogin);
+
+    // Evento customizado para recarregar produtos
+    window.addEventListener('produtos-updated', () => {
+      api.carregarDados();
+    });
+  }
+
+  // ==================== Funções Globais ====================
+  (window as any).abrirModalLogin = () => {
+    elementos.modalLogin?.classList.add('active');
+  };
+
+  // ==================== Inicialização ====================
+  function init(): void {
+    setupEventListeners();
+    api.carregarDados();
+  }
+
+  // Iniciar aplicação
+  init();
 </script>
