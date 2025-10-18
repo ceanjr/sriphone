@@ -82,15 +82,11 @@ import { categoryService } from '../lib/supabase';
 
       <!-- Código -->
       <div class="form-group">
-        <label for="produto-codigo">
-          Código do Produto *
-          <span class="label-required">obrigatório</span>
-        </label>
+        <label for="produto-codigo"> Código do Produto </label>
         <input
           type="text"
           id="produto-codigo"
           name="codigo"
-          required
           placeholder="Ex: IP14PM256"
           autocomplete="off"
         />
@@ -443,9 +439,11 @@ import { categoryService } from '../lib/supabase';
 
       fecharModal();
       mostrarToast('Produto criado com sucesso!', 'success');
-    } catch (error) {
-      console.error('Erro ao criar produto:', error);
-      mostrarToast('Erro ao criar produto. Tente novamente.', 'error');
+    } catch (error: any) {
+      const mensagemErro =
+        error?.message || JSON.stringify(error) || 'Erro desconhecido';
+      console.error('Erro ao criar produto:', mensagemErro);
+      mostrarToast(`Erro ao criar produto: ${mensagemErro}`, 'error');
     } finally {
       if (btnSubmit) {
         btnSubmit.disabled = false;

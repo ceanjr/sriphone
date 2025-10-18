@@ -4,153 +4,251 @@ import { categoryService } from '../lib/supabase';
 ---
 
 <div id="modal-categorias" class="gc-modal">
-    <div class="gc-modal-overlay"></div>
-    <div class="gc-modal-content">
-        <div class="gc-modal-drag-handle"></div>
-        
-        <button type="button" class="gc-modal-close" aria-label="Fechar">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-        </button>
+  <div class="gc-modal-overlay"></div>
+  <div class="gc-modal-content">
+    <div class="gc-modal-drag-handle"></div>
 
-        <div class="gc-modal-header">
-            <h2>Gerenciar Categorias</h2>
-            <p class="gc-modal-subtitle">Organize suas categorias de produtos</p>
-        </div>
+    <button type="button" class="gc-modal-close" aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M18 6L6 18M6 6L18 18"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"></path>
+      </svg>
+    </button>
 
-        <div class="gc-modal-body">
-            <!-- Formulário com validação -->
-            <form id="form-nova-categoria" class="gc-add-form">
-                <div class="gc-input-wrapper">
-                    <div class="gc-input-group">
-                        <input 
-                            type="text" 
-                            id="nova-categoria-nome" 
-                            name="categoria"
-                            placeholder="Digite o nome da categoria"
-                            minlength="2"
-                            maxlength="50"
-                            pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+"
-                            required
-                            autocomplete="off"
-                        />
-                        <span class="gc-error-message"></span>
-                    </div>
-                    <button type="submit" class="gc-btn-add" disabled>
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        <span class="gc-btn-text">Adicionar</span>
-                    </button>
-                </div>
-            </form>
-
-            <!-- Loading State -->
-            <div class="gc-loading" id="gc-loading">
-                <div class="gc-spinner"></div>
-                <span>Carregando categorias...</span>
-            </div>
-
-            <!-- Lista de Categorias -->
-            <div class="gc-categories-list" id="categories-list"></div>
-        </div>
+    <div class="gc-modal-header">
+      <h2>Gerenciar Categorias</h2>
+      <p class="gc-modal-subtitle">Organize suas categorias de produtos</p>
     </div>
+
+    <div class="gc-modal-body">
+      <!-- Formulário com validação -->
+      <form id="form-nova-categoria" class="gc-add-form">
+        <div class="gc-input-wrapper">
+          <div class="gc-input-group">
+            <input
+              type="text"
+              id="nova-categoria-nome"
+              name="categoria"
+              placeholder="Digite o nome da categoria"
+              minlength="2"
+              maxlength="50"
+              required
+              autocomplete="off"
+            />
+            <span class="gc-error-message"></span>
+          </div>
+          <button type="submit" class="gc-btn-add" disabled>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 5V19M5 12H19"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"></path>
+            </svg>
+            <span class="gc-btn-text">Adicionar</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Loading State -->
+      <div class="gc-loading" id="gc-loading">
+        <div class="gc-spinner"></div>
+        <span>Carregando categorias...</span>
+      </div>
+
+      <!-- Lista de Categorias -->
+      <div class="gc-categories-list" id="categories-list"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-import { categoryService } from '../lib/supabase';
+  import { categoryService } from '../lib/supabase';
 
-// Tipos
-interface Category {
+  // Ordenação de Categorias
+  function ordenarCategorias(categorias: Category[]): Category[] {
+    const ordem: { [key: string]: number } = {
+      'iphone 4': 1,
+      'iphone 4s': 2,
+      'iphone 5': 3,
+      'iphone 5c': 4,
+      'iphone 5s': 5,
+      'iphone 6': 6,
+      'iphone 6 plus': 7,
+      'iphone 6s': 8,
+      'iphone 6s plus': 9,
+      'iphone 7': 10,
+      'iphone 7 plus': 11,
+      'iphone 8': 12,
+      'iphone 8 plus': 13,
+      'iphone x': 14,
+      'iphone xr': 15,
+      'iphone xs': 16,
+      'iphone xs max': 17,
+      'iphone 11': 18,
+      'iphone 11 pro': 19,
+      'iphone 11 pro max': 20,
+      'iphone se': 21,
+      'iphone se 2': 22,
+      'iphone se 3': 23,
+      'iphone 12': 24,
+      'iphone 12 mini': 25,
+      'iphone 12 pro': 26,
+      'iphone 12 pro max': 27,
+      'iphone 13': 28,
+      'iphone 13 mini': 29,
+      'iphone 13 pro': 30,
+      'iphone 13 pro max': 31,
+      'iphone 14': 32,
+      'iphone 14 plus': 33,
+      'iphone 14 pro': 34,
+      'iphone 14 pro max': 35,
+      'iphone 15': 36,
+      'iphone 15 plus': 37,
+      'iphone 15 pro': 38,
+      'iphone 15 pro max': 39,
+      'iphone 16': 40,
+      'iphone 16 plus': 41,
+      'iphone 16 pro': 42,
+      'iphone 16 pro max': 43,
+      'iphone 17': 44,
+      'iphone 17 air': 45,
+      'iphone 17 pro': 46,
+      'iphone 17 pro max': 47,
+    };
+
+    return [...categorias].sort((a, b) => {
+      const nomeA = a.nome.toLowerCase().trim();
+      const nomeB = b.nome.toLowerCase().trim();
+
+      const ordemA = ordem[nomeA];
+      const ordemB = ordem[nomeB];
+
+      // Se ambos têm ordem definida, usa a ordem
+      if (ordemA !== undefined && ordemB !== undefined) {
+        return ordemA - ordemB;
+      }
+
+      // Se apenas A tem ordem, A vem primeiro
+      if (ordemA !== undefined) return -1;
+
+      // Se apenas B tem ordem, B vem primeiro
+      if (ordemB !== undefined) return 1;
+
+      // Se nenhum tem ordem definida, ordena alfabeticamente
+      return nomeA.localeCompare(nomeB, 'pt-BR');
+    });
+  }
+
+  // Tipos
+  interface Category {
     id: string;
     nome: string;
     created_at?: string;
-}
+  }
 
-// Elements
-const modal = document.getElementById('modal-categorias') as HTMLDivElement;
-const overlay = modal?.querySelector('.gc-modal-overlay') as HTMLDivElement;
-const closeBtn = modal?.querySelector('.gc-modal-close') as HTMLButtonElement;
-const form = document.getElementById('form-nova-categoria') as HTMLFormElement;
-const input = document.getElementById('nova-categoria-nome') as HTMLInputElement;
-const addButton = form?.querySelector('.gc-btn-add') as HTMLButtonElement;
-const list = document.getElementById('categories-list') as HTMLDivElement;
-const loading = document.getElementById('gc-loading') as HTMLDivElement;
-const errorMessage = form?.querySelector('.gc-error-message') as HTMLSpanElement;
+  // Elements
+  const modal = document.getElementById('modal-categorias') as HTMLDivElement;
+  const overlay = modal?.querySelector('.gc-modal-overlay') as HTMLDivElement;
+  const closeBtn = modal?.querySelector('.gc-modal-close') as HTMLButtonElement;
+  const form = document.getElementById(
+    'form-nova-categoria'
+  ) as HTMLFormElement;
+  const input = document.getElementById(
+    'nova-categoria-nome'
+  ) as HTMLInputElement;
+  const addButton = form?.querySelector('.gc-btn-add') as HTMLButtonElement;
+  const list = document.getElementById('categories-list') as HTMLDivElement;
+  const loading = document.getElementById('gc-loading') as HTMLDivElement;
+  const errorMessage = form?.querySelector(
+    '.gc-error-message'
+  ) as HTMLSpanElement;
 
-// Estado
-let isLoading = false;
-let categories: Category[] = [];
+  // Estado
+  let isLoading = false;
+  let categories: Category[] = [];
 
-// Toast notification
-function mostrarToast(mensagem: string, tipo: 'success' | 'error' | 'warning' | 'info' = 'info') {
+  // Toast notification
+  function mostrarToast(
+    mensagem: string,
+    tipo: 'success' | 'error' | 'warning' | 'info' = 'info'
+  ) {
     const toast = document.createElement('div');
     toast.className = `gc-toast gc-toast-${tipo}`;
     toast.textContent = mensagem;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => toast.classList.add('show'), 10);
     setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
     }, 3000);
-}
+  }
 
-// Validação do Input
-function validateInput(value: string): boolean {
+  // Validação do Input
+  function validateInput(value: string): boolean {
     const minLength = 2;
     const maxLength = 50;
     const pattern = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+$/;
 
     if (!value || value.length < minLength) {
-        errorMessage.textContent = `Mínimo de ${minLength} caracteres`;
-        return false;
+      errorMessage.textContent = `Mínimo de ${minLength} caracteres`;
+      return false;
     }
 
     if (value.length > maxLength) {
-        errorMessage.textContent = `Máximo de ${maxLength} caracteres`;
-        return false;
+      errorMessage.textContent = `Máximo de ${maxLength} caracteres`;
+      return false;
     }
 
     if (!pattern.test(value)) {
-        errorMessage.textContent = 'Use apenas letras, números e espaços';
-        return false;
+      errorMessage.textContent = 'Use apenas letras, números e espaços';
+      return false;
     }
 
-    const exists = categories.some(cat => 
-        cat.nome.toLowerCase() === value.toLowerCase()
+    const exists = categories.some(
+      (cat) => cat.nome.toLowerCase() === value.toLowerCase()
     );
-    
+
     if (exists) {
-        errorMessage.textContent = 'Esta categoria já existe';
-        return false;
+      errorMessage.textContent = 'Esta categoria já existe';
+      return false;
     }
 
     errorMessage.textContent = '';
     return true;
-}
+  }
 
-// Input Handler
-input?.addEventListener('input', (e) => {
+  // Input Handler
+  input?.addEventListener('input', (e) => {
     const value = (e.target as HTMLInputElement).value.trim();
     const isValid = validateInput(value);
     addButton.disabled = !isValid;
-});
+  });
 
-// Render Categories
-async function renderCategories() {
+  // Render Categories
+  async function renderCategories() {
     if (!list || !loading || isLoading) return;
-    
-    try {
-        isLoading = true;
-        loading.classList.add('active');
-        list.innerHTML = '';
-        
-        categories = await categoryService.getAll() || [];
 
-        if (categories.length === 0) {
-            list.innerHTML = `
+    try {
+      isLoading = true;
+      loading.classList.add('active');
+      list.innerHTML = '';
+
+      const categoriasData = (await categoryService.getAll()) || [];
+
+      // ORDENAR CATEGORIAS
+      categories = ordenarCategorias(categoriasData);
+
+      if (categories.length === 0) {
+        list.innerHTML = `
                 <div class="gc-empty-state">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -158,21 +256,20 @@ async function renderCategories() {
                     <p>Nenhuma categoria cadastrada</p>
                     <small>Adicione sua primeira categoria acima</small>
                 </div>`;
-            return;
-        }
+        return;
+      }
 
-        const fragment = document.createDocumentFragment();
+      const fragment = document.createDocumentFragment();
 
-        categories.forEach(cat => {
-            const item = createCategoryItem(cat);
-            fragment.appendChild(item);
-        });
+      categories.forEach((cat) => {
+        const item = createCategoryItem(cat);
+        fragment.appendChild(item);
+      });
 
-        list.appendChild(fragment);
-
+      list.appendChild(fragment);
     } catch (error) {
-        console.error('Erro ao carregar categorias:', error);
-        list.innerHTML = `
+      console.error('Erro ao carregar categorias:', error);
+      list.innerHTML = `
             <div class="gc-empty-state gc-error">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -182,15 +279,15 @@ async function renderCategories() {
                     Tentar novamente
                 </button>
             </div>`;
-        mostrarToast('Erro ao carregar categorias', 'error');
+      mostrarToast('Erro ao carregar categorias', 'error');
     } finally {
-        isLoading = false;
-        loading.classList.remove('active');
+      isLoading = false;
+      loading.classList.remove('active');
     }
-}
+  }
 
-// Create Category Item
-function createCategoryItem(cat: Category): HTMLDivElement {
+  // Create Category Item
+  function createCategoryItem(cat: Category): HTMLDivElement {
     const item = document.createElement('div');
     item.classList.add('gc-category-item');
     item.dataset.id = cat.id;
@@ -226,42 +323,46 @@ function createCategoryItem(cat: Category): HTMLDivElement {
     delBtn.addEventListener('click', () => deleteCategory(cat.id));
 
     return item;
-}
+  }
 
-// Delete Category
-async function deleteCategory(id: string) {
+  // Delete Category
+  async function deleteCategory(id: string) {
     if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
 
     const item = list?.querySelector(`[data-id="${id}"]`);
     if (!item) return;
 
     try {
-        item.classList.add('gc-deleting');
-        await categoryService.delete(id);
-        
-        categories = categories.filter(c => c.id !== id);
-        item.addEventListener('transitionend', () => {
-            item.remove();
-            if (categories.length === 0) renderCategories();
-        }, { once: true });
-        
-        window.dispatchEvent(new Event('produtos-updated'));
-        mostrarToast('Categoria excluída com sucesso!', 'success');
-    } catch (error) {
-        console.error('Erro ao excluir categoria:', error);
-        item.classList.remove('gc-deleting');
-        mostrarToast('Erro ao excluir categoria. Tente novamente.', 'error');
-    }
-}
+      item.classList.add('gc-deleting');
+      await categoryService.delete(id);
 
-// Edit Category
-function startEditing(item: HTMLDivElement, cat: Category) {
+      categories = categories.filter((c) => c.id !== id);
+      item.addEventListener(
+        'transitionend',
+        () => {
+          item.remove();
+          if (categories.length === 0) renderCategories();
+        },
+        { once: true }
+      );
+
+      window.dispatchEvent(new Event('produtos-updated'));
+      mostrarToast('Categoria excluída com sucesso!', 'success');
+    } catch (error) {
+      console.error('Erro ao excluir categoria:', error);
+      item.classList.remove('gc-deleting');
+      mostrarToast('Erro ao excluir categoria. Tente novamente.', 'error');
+    }
+  }
+
+  // Edit Category
+  function startEditing(item: HTMLDivElement, cat: Category) {
     const nameSpan = item.querySelector('.gc-category-name');
     const actions = item.querySelector('.gc-category-actions');
     if (!nameSpan || !actions) return;
 
     const originalContent = item.innerHTML;
-    
+
     nameSpan.innerHTML = `
         <input type="text" 
             class="gc-category-input" 
@@ -272,7 +373,7 @@ function startEditing(item: HTMLDivElement, cat: Category) {
             required
         />
     `;
-    
+
     actions.innerHTML = `
         <button type="button" class="gc-btn-icon save" aria-label="Salvar">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -291,64 +392,64 @@ function startEditing(item: HTMLDivElement, cat: Category) {
     const cancelBtn = actions.querySelector('.cancel');
 
     if (editInput) {
-        editInput.focus();
-        editInput.select();
+      editInput.focus();
+      editInput.select();
     }
 
     const handleSave = async () => {
-        const newName = editInput?.value.trim();
-        if (!newName || newName === cat.nome) {
-            handleCancel();
-            return;
-        }
+      const newName = editInput?.value.trim();
+      if (!newName || newName === cat.nome) {
+        handleCancel();
+        return;
+      }
 
-        if (!validateInput(newName)) {
-            editInput?.focus();
-            return;
-        }
+      if (!validateInput(newName)) {
+        editInput?.focus();
+        return;
+      }
 
-        try {
-            item.classList.add('gc-saving');
-            await categoryService.update(cat.id, newName);
-            
-            const index = categories.findIndex(c => c.id === cat.id);
-            if (index !== -1) categories[index].nome = newName;
-            
-            window.dispatchEvent(new Event('produtos-updated'));
-            renderCategories();
-            mostrarToast('Categoria atualizada!', 'success');
-        } catch (error) {
-            console.error('Erro ao atualizar categoria:', error);
-            item.classList.remove('gc-saving');
-            item.innerHTML = originalContent;
-            mostrarToast('Erro ao atualizar categoria. Tente novamente.', 'error');
-        }
+      try {
+        item.classList.add('gc-saving');
+        await categoryService.update(cat.id, newName);
+
+        const index = categories.findIndex((c) => c.id === cat.id);
+        if (index !== -1) categories[index].nome = newName;
+
+        window.dispatchEvent(new Event('produtos-updated'));
+        renderCategories();
+        mostrarToast('Categoria atualizada!', 'success');
+      } catch (error) {
+        console.error('Erro ao atualizar categoria:', error);
+        item.classList.remove('gc-saving');
+        item.innerHTML = originalContent;
+        mostrarToast('Erro ao atualizar categoria. Tente novamente.', 'error');
+      }
     };
 
     const handleCancel = () => {
-        item.innerHTML = originalContent;
-        // Re-adicionar event listeners
-        const newEditBtn = item.querySelector('.edit');
-        const newDelBtn = item.querySelector('.delete');
-        newEditBtn?.addEventListener('click', () => startEditing(item, cat));
-        newDelBtn?.addEventListener('click', () => deleteCategory(cat.id));
+      item.innerHTML = originalContent;
+      // Re-adicionar event listeners
+      const newEditBtn = item.querySelector('.edit');
+      const newDelBtn = item.querySelector('.delete');
+      newEditBtn?.addEventListener('click', () => startEditing(item, cat));
+      newDelBtn?.addEventListener('click', () => deleteCategory(cat.id));
     };
 
     saveBtn?.addEventListener('click', handleSave);
     cancelBtn?.addEventListener('click', handleCancel);
 
     editInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleSave();
-        } else if (e.key === 'Escape') {
-            handleCancel();
-        }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === 'Escape') {
+        handleCancel();
+      }
     });
-}
+  }
 
-// Form Submit
-form?.addEventListener('submit', async (e) => {
+  // Form Submit
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!input || input.disabled) return;
 
@@ -356,51 +457,51 @@ form?.addEventListener('submit', async (e) => {
     if (!nome || !validateInput(nome)) return;
 
     try {
-        input.disabled = true;
-        addButton.disabled = true;
-        form.classList.add('gc-submitting');
+      input.disabled = true;
+      addButton.disabled = true;
+      form.classList.add('gc-submitting');
 
-        await categoryService.create(nome);
-        
-        input.value = '';
-        input.disabled = false;
-        addButton.disabled = true;
-        form.classList.remove('gc-submitting');
-        
-        renderCategories();
-        window.dispatchEvent(new Event('produtos-updated'));
-        mostrarToast('Categoria criada com sucesso!', 'success');
+      await categoryService.create(nome);
+
+      input.value = '';
+      input.disabled = false;
+      addButton.disabled = true;
+      form.classList.remove('gc-submitting');
+
+      renderCategories();
+      window.dispatchEvent(new Event('produtos-updated'));
+      mostrarToast('Categoria criada com sucesso!', 'success');
     } catch (error) {
-        console.error('Erro ao criar categoria:', error);
-        input.disabled = false;
-        addButton.disabled = false;
-        form.classList.remove('gc-submitting');
-        mostrarToast('Erro ao criar categoria. Tente novamente.', 'error');
+      console.error('Erro ao criar categoria:', error);
+      input.disabled = false;
+      addButton.disabled = false;
+      form.classList.remove('gc-submitting');
+      mostrarToast('Erro ao criar categoria. Tente novamente.', 'error');
     }
-});
+  });
 
-// Modal Controls
-function abrirModal() {
+  // Modal Controls
+  function abrirModal() {
     if (!modal) return;
     modal.classList.add('active');
-    
+
     // PREVENIR SCROLL DO BODY
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
     document.body.style.width = '100%';
     document.body.style.top = `-${window.scrollY}px`;
-    
+
     // Focus no input em desktop
     if (window.innerWidth >= 768) {
-        setTimeout(() => input?.focus(), 300);
+      setTimeout(() => input?.focus(), 300);
     }
-    
-    renderCategories();
-}
 
-function fecharModal() {
+    renderCategories();
+  }
+
+  function fecharModal() {
     if (!modal || isLoading) return;
-    
+
     // RESTAURAR SCROLL DO BODY
     const scrollY = document.body.style.top;
     document.body.style.overflow = '';
@@ -408,27 +509,27 @@ function fecharModal() {
     document.body.style.width = '';
     document.body.style.top = '';
     window.scrollTo(0, parseInt(scrollY || '0') * -1);
-    
+
     modal.classList.remove('active');
-    
+
     if (input) {
-        input.value = '';
-        input.disabled = false;
+      input.value = '';
+      input.disabled = false;
     }
     if (addButton) addButton.disabled = true;
     if (errorMessage) errorMessage.textContent = '';
-}
+  }
 
-// Event Listeners
-closeBtn?.addEventListener('click', fecharModal);
-overlay?.addEventListener('click', fecharModal);
+  // Event Listeners
+  closeBtn?.addEventListener('click', fecharModal);
+  overlay?.addEventListener('click', fecharModal);
 
-document.addEventListener('keydown', (e) => {
+  document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal?.classList.contains('active')) {
-        fecharModal();
+      fecharModal();
     }
-});
+  });
 
-// Expose to window
-(window as any).abrirGerirCategorias = abrirModal;
+  // Expose to window
+  (window as any).abrirGerirCategorias = abrirModal;
 </script>

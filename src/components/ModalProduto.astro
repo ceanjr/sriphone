@@ -177,6 +177,12 @@ import '../styles/components/modal-produto.css';
     produtoAtual = produto;
 
     if (modal) {
+      const specBateria = modal?.querySelector(
+        '.spec-item:nth-child(1)'
+      ) as HTMLElement;
+      const specCodigo = modal?.querySelector(
+        '.spec-item:nth-child(2)'
+      ) as HTMLElement; // linha do código
       const modalNome = modal.querySelector('.modal-nome');
       const modalDescricao = modal.querySelector('.modal-descricao');
       const modalPreco = modal.querySelector('.modal-preco');
@@ -190,11 +196,31 @@ import '../styles/components/modal-produto.css';
       if (modalPreco) modalPreco.textContent = produto.preco;
       if (modalCondicao) modalCondicao.textContent = produto.condicao;
       if (modalCategoria) modalCategoria.textContent = produto.categoria;
-      if (modalBateria) modalBateria.textContent = `${produto.bateria}%`;
-      if (modalCodigo) modalCodigo.textContent = produto.codigo;
 
-      // CRITICAL: Atualizar ícone de bateria dinâmico
-      atualizarBateriaIcone(produto.bateria);
+      // Atualiza bateria
+      if (
+        produto.bateria !== null &&
+        produto.bateria !== undefined &&
+        produto.bateria !== ''
+      ) {
+        if (modalBateria) modalBateria.textContent = `${produto.bateria}%`;
+        if (specBateria) specBateria.style.display = 'flex';
+        atualizarBateriaIcone(produto.bateria);
+      } else {
+        if (specBateria) specBateria.style.display = 'none';
+      }
+
+      // Atualiza código
+      if (
+        produto.codigo !== null &&
+        produto.codigo !== undefined &&
+        produto.codigo !== ''
+      ) {
+        if (modalCodigo) modalCodigo.textContent = produto.codigo;
+        if (specCodigo) specCodigo.style.display = 'flex'; // mostra a linha do código
+      } else {
+        if (specCodigo) specCodigo.style.display = 'none'; // esconde a linha do código
+      }
 
       imagensAtuais = produto.imagens || [];
       renderGallery(imagensAtuais);
