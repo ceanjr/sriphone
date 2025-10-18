@@ -1,7 +1,7 @@
 ---
 // src/components/Header.astro
 const currentPath = Astro.url.pathname
-const isCatalogPage = currentPath === '/catalogo'
+const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/' || currentPath.includes('/catalogo')
 ---
 
 <header class="header">
@@ -329,12 +329,28 @@ const isCatalogPage = currentPath === '/catalogo'
         const dropdownMobile = document.getElementById('dropdown-mobile')
         const btnSairMobile = document.getElementById('btn-sair-mobile')
 
+        // Verificar se está na página do catálogo
+        const isCatalogPage = window.location.pathname === '/catalogo' || 
+                              window.location.pathname === '/catalogo/' ||
+                              window.location.pathname.includes('/catalogo')
+
         async function checkAuth() {
+            // Se não estiver na página do catálogo, não fazer nada
+            if (!isCatalogPage) {
+                console.log('Não está na página do catálogo')
+                return
+            }
+
+            console.log('Verificando autenticação no catálogo...')
+            
             const session = await authService.getSession()
+            
+            console.log('Session:', session ? 'Autenticado' : 'Não autenticado')
             
             if (btnAuthDesktop && adminActionsDesktop && btnMenuMobile) {
                 if (session) {
                     // Usuário autenticado
+                    console.log('Configurando UI para usuário autenticado')
                     
                     // Desktop: Mostrar botão Sair
                     btnAuthDesktop.innerHTML = `
@@ -357,12 +373,13 @@ const isCatalogPage = currentPath === '/catalogo'
                     }
                 } else {
                     // Usuário não autenticado
+                    console.log('Configurando UI para usuário não autenticado')
                     
                     btnAuthDesktop.innerHTML = `
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>Entrar</span>
+                        <span>Admin</span>
                     `
                     
                     adminActionsDesktop.style.display = 'none'
@@ -396,6 +413,13 @@ const isCatalogPage = currentPath === '/catalogo'
 
         // Escutar mudanças de autenticação
         authService.onAuthStateChange(() => {
+            console.log('Estado de autenticação mudou')
+            checkAuth()
+        })
+
+        // Re-verificar após carregamento completo da página
+        window.addEventListener('load', () => {
+            console.log('Página carregada completamente, re-verificando auth')
             checkAuth()
         })
 
