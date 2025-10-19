@@ -354,6 +354,11 @@
   padding-right: 2.5rem;
 }
 
+.modal-form .form-group select option {
+  background: #0a0a0a;
+  color: #fff;
+}
+
 .modal-form .form-group textarea {
   resize: vertical;
   min-height: 120px;
