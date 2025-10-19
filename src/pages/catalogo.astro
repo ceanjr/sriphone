@@ -550,9 +550,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         <div class="lista-left">
             <h3>${utils.escapeHtml(produto.nome)}</h3>
             <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
+            <span class="modal-codigo">${produto.codigo ? `Cod.: ${utils.escapeHtml(produto.codigo)}` : ''}</span>
         </div>
         <div class="lista-right">
-            <div class="lista-badges">${badges}</div>
+            <div class="lista-badges">
+                ${badges}
+            </div>
             <div class="produto-footer">
                 <span class="preco">${precoFormatado}</span>
             </div>
