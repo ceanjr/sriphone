@@ -175,9 +175,33 @@ import '../styles/components/modal-produto.css';
   let currentIndex = 0;
   let imagensAtuais: string[] = [];
   let produtoAtual: Product | null = null;
+  let imageCache = new Map<string, HTMLImageElement>();
+
+  // CRITICAL: Pré-carregar imagem
+  function preloadImage(src: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (imageCache.has(src)) {
+        resolve();
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        imageCache.set(src, img);
+        resolve();
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  // CRITICAL: Limpar cache ao fechar
+  function clearImageCache() {
+    imageCache.clear();
+  }
 
   // Função global para abrir o modal
-  (window as any).abrirModalProduto = (produto: any) => {
+  (window as any).abrirModalProduto = async (produto: any) => {
     produtoAtual = produto;
 
     if (modal) {
@@ -245,6 +269,12 @@ import '../styles/components/modal-produto.css';
       }
 
       imagensAtuais = produto.imagens || [];
+
+      // CRITICAL: Pré-carregar primeira imagem antes de abrir
+      if (imagensAtuais.length > 0) {
+        await preloadImage(imagensAtuais[0]);
+      }
+
       renderGallery(imagensAtuais);
 
       modal.classList.add('active');
@@ -253,31 +283,25 @@ import '../styles/components/modal-produto.css';
   };
 
   // Função para atualizar o ícone de bateria com cores dinâmicas
-function atualizarBateriaIcone(bateria: number) {
-  const bateriaWrapper = modal?.querySelector('.bateria-icon-wrapper');
-  const bateriaFill = modal?.querySelector('.bateria-fill') as SVGRectElement;
+  function atualizarBateriaIcone(bateria: number) {
+    const bateriaWrapper = modal?.querySelector('.bateria-icon-wrapper');
+    const bateriaFill = modal?.querySelector('.bateria-fill') as SVGRectElement;
 
-  if (!bateriaWrapper || !bateriaFill) return;
+    if (!bateriaWrapper || !bateriaFill) return;
 
-  // Calcular largura da barra (máximo 14)
-  const width = (bateria / 100) * 14;
-  bateriaFill.setAttribute('width', width.toString());
+    const width = (bateria / 100) * 14;
+    bateriaFill.setAttribute('width', width.toString());
 
-  // Remover classes anteriores
-  bateriaWrapper.classList.remove(
-    'bateria-verde',
-    'bateria-vermelho'
-  );
+    bateriaWrapper.classList.remove('bateria-verde', 'bateria-vermelho');
 
-  // Adicionar classe baseada na porcentagem
-  if (bateria >= 80) {
-    bateriaWrapper.classList.add('bateria-verde');
-  } else {
-    bateriaWrapper.classList.add('bateria-vermelho');
+    if (bateria >= 80) {
+      bateriaWrapper.classList.add('bateria-verde');
+    } else {
+      bateriaWrapper.classList.add('bateria-vermelho');
+    }
   }
-}
 
-  // Renderizar galeria de imagens
+  // CRITICAL: Renderizar galeria otimizado
   function renderGallery(imagens: string[]) {
     if (!mainImage || !thumbnailsTrack) return;
 
@@ -294,55 +318,103 @@ function atualizarBateriaIcone(bateria: number) {
     mainImage.style.display = 'block';
     mainImage.src = imagens[0];
 
-    // Render thumbnails
-    thumbnailsTrack.innerHTML = '';
+    // CRITICAL: Usar DocumentFragment para melhor performance
+    const fragment = document.createDocumentFragment();
+
     imagens.forEach((img, index) => {
       const thumb = document.createElement('div');
       thumb.className = `thumbnail ${index === 0 ? 'active' : ''}`;
+
+      // CRITICAL: Lazy load thumbnails usando loading="lazy"
       thumb.innerHTML = `
-                <img src="${img}" alt="Thumbnail ${index + 1}" loading="lazy" />
-                <div class="thumb-overlay"></div>
-            `;
-      thumb.addEventListener('click', () => selectImage(index));
-      thumbnailsTrack.appendChild(thumb);
+        <img src="${img}" alt="Thumbnail ${index + 1}" loading="lazy" />
+        <div class="thumb-overlay"></div>
+      `;
+
+      thumb.addEventListener('click', () => selectImage(index), {
+        passive: true,
+      });
+      fragment.appendChild(thumb);
     });
+
+    // CRITICAL: Limpar e adicionar de uma vez
+    thumbnailsTrack.innerHTML = '';
+    thumbnailsTrack.appendChild(fragment);
+
+    // CRITICAL: Pré-carregar próximas 2 imagens
+    if (imagens.length > 1) {
+      preloadImage(imagens[1]);
+    }
+    if (imagens.length > 2) {
+      preloadImage(imagens[2]);
+    }
   }
 
-  // Selecionar imagem
+  // CRITICAL: Selecionar imagem otimizado
   function selectImage(index: number) {
     if (!mainImage || !thumbnailsTrack) return;
 
     currentIndex = index;
-    mainImage.src = imagensAtuais[index];
 
-    // Animação suave na troca
-    mainImage.style.opacity = '0';
-    setTimeout(() => {
+    // CRITICAL: Usar imagem do cache se disponível
+    if (imageCache.has(imagensAtuais[index])) {
+      mainImage.src = imagensAtuais[index];
       mainImage.style.opacity = '1';
-    }, 50);
+    } else {
+      mainImage.style.opacity = '0';
+      preloadImage(imagensAtuais[index]).then(() => {
+        mainImage.src = imagensAtuais[index];
+        mainImage.style.opacity = '1';
+      });
+    }
 
-    // Atualizar thumbnails
+    // CRITICAL: Usar classList mais eficiente
     const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
     thumbs.forEach((thumb, i) => {
-      thumb.classList.toggle('active', i === index);
+      if (i === index) {
+        thumb.classList.add('active');
+      } else {
+        thumb.classList.remove('active');
+      }
     });
 
-    // Scroll automático para thumbnail ativa
+    // CRITICAL: Scroll suave otimizado
     const activeThumb = thumbs[index] as HTMLElement;
     if (activeThumb) {
-      activeThumb.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
+      requestAnimationFrame(() => {
+        activeThumb.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+        });
       });
+    }
+
+    // CRITICAL: Pré-carregar imagens adjacentes
+    if (index + 1 < imagensAtuais.length) {
+      preloadImage(imagensAtuais[index + 1]);
+    }
+    if (index - 1 >= 0) {
+      preloadImage(imagensAtuais[index - 1]);
     }
   }
 
-  // Fechar modal
+  // CRITICAL: Fechar modal otimizado
   function fecharModal() {
-    modal?.classList.remove('active');
+    if (!modal) return;
+
+    modal.classList.remove('active');
     document.body.classList.remove('modal-open');
     currentIndex = 0;
+
+    // Espera a transição acabar pra limpar o cache
+    modal.addEventListener(
+      'transitionend',
+      () => {
+        clearImageCache();
+      },
+      { once: true }
+    );
   }
 
   modalOverlay?.addEventListener('click', fecharModal);
@@ -421,12 +493,10 @@ function atualizarBateriaIcone(bateria: number) {
     if (produtoAtual) {
       const telefone = '5577981022246';
 
-      // Gera o link para o produto (pode ajustar o path conforme seu site)
       const linkProduto = `${window.location.origin}/produto/${encodeURIComponent(
         produtoAtual.nome.toLowerCase().replace(/\s+/g, '-')
       )}`;
 
-      // Monta a mensagem dinamicamente
       let mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*`;
 
       if (produtoAtual.codigo) {
@@ -435,7 +505,6 @@ function atualizarBateriaIcone(bateria: number) {
 
       mensagem += `\n\nLink: ${linkProduto}`;
 
-      // Monta a URL final do WhatsApp
       const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
 
       window.open(url, '_blank');

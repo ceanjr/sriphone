@@ -1042,7 +1042,7 @@
 
 #produtos-container.lista .lista-left h3,
 .categoria-grid.lista .lista-left h3 {
-  font-size: 1.2rem;
+  font-size: 1rem;
   margin: 0; /* Remove margens */
   padding-top: 0; /* Remove padding superior */
   line-height: 1.3; /* Mesmo line-height para alinhamento com badges */
@@ -1107,6 +1107,13 @@
   #produtos-container.lista .lista-right h3,
   .categoria-grid.lista .lista-right h3 {
     font-size: 1rem;
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  #produtos-container.lista .lista-left h3,
+  .categoria-grid.lista .lista-left h3 {
+    font-size: 1.2rem;
     margin: 0;
     line-height: 1.3;
   }

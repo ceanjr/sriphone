@@ -477,10 +477,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     };
 
     // ==================== Função para calcular cor da bateria ====================
-function getBateriaColor(bateria: number): string {
-  if (bateria >= 80) return 'bateria-verde';
-  return 'bateria-vermelho';
-}
+    function getBateriaColor(bateria: number): string {
+      if (bateria >= 80) return 'bateria-verde';
+      return 'bateria-vermelho';
+    }
 
     // ==================== Templates ====================
     const templates = {
@@ -575,15 +575,15 @@ function getBateriaColor(bateria: number): string {
     <div class="produto-image">
         ${
           imagemPrincipal
-            ? `<img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />`
+            ? `<img data-src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />`
             : `
-            <div class="image-placeholder">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
-                    <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </div>
-        `
+    <div class="image-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+            <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </div>
+`
         }
         ${badges}
     </div>
@@ -831,6 +831,7 @@ function getBateriaColor(bateria: number): string {
           });
 
         setupEditButtons();
+        observeProductImages();
       },
 
       loading(mostrar: boolean): void {
@@ -1212,17 +1213,31 @@ function getBateriaColor(bateria: number): string {
       threshold: 0.01,
     };
 
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const img = entry.target as HTMLImageElement;
-          if (img.dataset.src) {
-            img.src = img.dataset.src;
-            img.removeAttribute('data-src');
-            imageObserver.unobserve(img);
+    // ==================== LAZY LOADING DE IMAGENS ====================
+    const imageObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const img = entry.target as HTMLImageElement;
+            const src = img.dataset.src;
+
+            if (src && !img.src) {
+              img.src = src;
+              img.removeAttribute('data-src');
+              imageObserver.unobserve(img);
+            }
           }
-        }
-      });
-    }, observerOptions);
+        });
+      },
+      {
+        rootMargin: '100px', // Carregar 100px antes de entrar na viewport
+        threshold: 0.01,
+      }
+    );
+
+    function observeProductImages() {
+      const images = document.querySelectorAll('.produto-card img[data-src]');
+      images.forEach((img) => imageObserver.observe(img));
+    }
   </script>
 </Layout>
