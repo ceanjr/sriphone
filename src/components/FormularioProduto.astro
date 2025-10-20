@@ -269,15 +269,20 @@ import { categoryService } from '../lib/supabase';
     }
 
     let adicionados = 0;
+    const filesToAdd: File[] = [];
+
     Array.from(files).forEach((file) => {
       if (
         file.type.startsWith('image/') &&
-        arquivosImagem.length < MAX_IMAGES
+        arquivosImagem.length + adicionados < MAX_IMAGES
       ) {
-        arquivosImagem.push(file);
+        filesToAdd.push(file);
         adicionados++;
       }
     });
+
+    // Adiciona todos os arquivos de uma vez
+    arquivosImagem.push(...filesToAdd);
 
     if (adicionados > 0) {
       renderAllPreviews();

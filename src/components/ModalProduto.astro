@@ -253,32 +253,29 @@ import '../styles/components/modal-produto.css';
   };
 
   // Função para atualizar o ícone de bateria com cores dinâmicas
-  function atualizarBateriaIcone(bateria: number) {
-    const bateriaWrapper = modal?.querySelector('.bateria-icon-wrapper');
-    const bateriaFill = modal?.querySelector('.bateria-fill') as SVGRectElement;
+function atualizarBateriaIcone(bateria: number) {
+  const bateriaWrapper = modal?.querySelector('.bateria-icon-wrapper');
+  const bateriaFill = modal?.querySelector('.bateria-fill') as SVGRectElement;
 
-    if (!bateriaWrapper || !bateriaFill) return;
+  if (!bateriaWrapper || !bateriaFill) return;
 
-    // Calcular largura da barra (máximo 14)
-    const width = (bateria / 100) * 14;
-    bateriaFill.setAttribute('width', width.toString());
+  // Calcular largura da barra (máximo 14)
+  const width = (bateria / 100) * 14;
+  bateriaFill.setAttribute('width', width.toString());
 
-    // Remover classes anteriores
-    bateriaWrapper.classList.remove(
-      'bateria-verde',
-      'bateria-amarelo',
-      'bateria-vermelho'
-    );
+  // Remover classes anteriores
+  bateriaWrapper.classList.remove(
+    'bateria-verde',
+    'bateria-vermelho'
+  );
 
-    // Adicionar classe baseada na porcentagem
-    if (bateria >= 90) {
-      bateriaWrapper.classList.add('bateria-verde');
-    } else if (bateria >= 80) {
-      bateriaWrapper.classList.add('bateria-amarelo');
-    } else {
-      bateriaWrapper.classList.add('bateria-vermelho');
-    }
+  // Adicionar classe baseada na porcentagem
+  if (bateria >= 80) {
+    bateriaWrapper.classList.add('bateria-verde');
+  } else {
+    bateriaWrapper.classList.add('bateria-vermelho');
   }
+}
 
   // Renderizar galeria de imagens
   function renderGallery(imagens: string[]) {

@@ -474,7 +474,7 @@
 .produto-image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .image-placeholder {
@@ -551,21 +551,21 @@
   background: rgba(0, 0, 0, 0.9);
 }
 
-/* Cores Dinâmicas - Amarelo/Laranja (80-89%) */
-.bateria-indicator.bateria-amarelo .bateria-icon {
-  color: #f59e0b;
+/* Cores Dinâmicas - Verde (80-100%) */
+.bateria-indicator.bateria-verde .bateria-icon {
+  color: #22c55e;
 }
 
-.bateria-indicator.bateria-amarelo .bateria-fill {
-  fill: #f59e0b;
+.bateria-indicator.bateria-verde .bateria-fill {
+  fill: #22c55e;
 }
 
-.bateria-indicator.bateria-amarelo span {
-  color: #f59e0b;
+.bateria-indicator.bateria-verde span {
+  color: #22c55e;
 }
 
-.bateria-indicator.bateria-amarelo {
-  border-color: rgba(245, 158, 11, 0.2);
+.bateria-indicator.bateria-verde {
+  border-color: rgba(34, 197, 94, 0.2);
   background: rgba(0, 0, 0, 0.9);
 }
 

@@ -445,10 +445,6 @@
   color: #22c55e;
 }
 
-.bateria-icon-wrapper.bateria-amarelo + div .modal-bateria {
-  color: #f59e0b;
-}
-
 .bateria-icon-wrapper.bateria-vermelho + div .modal-bateria {
   color: #ef4444;
 }

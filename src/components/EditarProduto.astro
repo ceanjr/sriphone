@@ -309,15 +309,20 @@ import '../styles/components/editar-produto.css';
     }
 
     let adicionados = 0;
+    const filesToAdd: File[] = [];
+
     Array.from(files).forEach((file) => {
       if (
         file.type.startsWith('image/') &&
         totalAtual + adicionados < MAX_IMAGES
       ) {
-        arquivosImagem.push(file);
+        filesToAdd.push(file);
         adicionados++;
       }
     });
+
+    // Adiciona todos os arquivos de uma vez
+    arquivosImagem.push(...filesToAdd);
 
     if (adicionados > 0) {
       renderAllPreviews();
