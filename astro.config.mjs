@@ -1,15 +1,10 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import vercel from '@astrojs/vercel/serverless';
+import vercel from '@astrojs/vercel/static'; // MUDANÇA AQUI
 
 export default defineConfig({
   site: 'https://sriphonevca.com.br',
-  output: 'static',
-  adapter: vercel({
-    webAnalytics: {
-      enabled: true, // set to false when using @vercel/analytics@1.4.0
-    },
-  }),
+  output: 'static', // Mantém static
   vite: {
     define: {
       'import.meta.env.PUBLIC_SUPABASE_URL': JSON.stringify(
