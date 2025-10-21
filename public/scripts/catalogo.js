@@ -1,5 +1,9 @@
 // src/scripts/catalogo.js
-import { productService, categoryService, authService } from '../lib/supabase';
+import {
+  productService,
+  categoryService,
+  authService,
+} from '../../src/lib/supabase';
 
 window.addEventListener('DOMContentLoaded', () => {
   requestIdleCallback(() => {
