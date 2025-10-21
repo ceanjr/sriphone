@@ -4,7 +4,6 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   site: 'https://sriphonevca.com.br',
   output: 'static',
-  trailingSlash: 'always',
   vite: {
     define: {
       'import.meta.env.PUBLIC_SUPABASE_URL': JSON.stringify(
