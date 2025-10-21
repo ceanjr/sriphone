@@ -322,9 +322,5 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <Footer />
   </main>
 
-  <script type="module">
-    import { initCatalogo } from '../scripts/catalogo.ts';
-
-    initCatalogo();
-  </script>
+  <script type="module" src="../scripts/catalogo.js" defer></script>
 </Layout>
