@@ -19,5 +19,10 @@ export default defineConfig({
         process.env.PUBLIC_SUPABASE_ANON_KEY
       ),
     },
+    build: {
+      minify: 'esbuild',
+      target: 'esnext',
+      chunkSizeWarningLimit: 1000,
+    },
   },
 });
