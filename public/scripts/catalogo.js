@@ -1,9 +1,5 @@
 // src/scripts/catalogo.js
-import {
-  productService,
-  categoryService,
-  authService,
-} from '../../src/lib/supabase';
+import { productService, categoryService, authService } from '../lib/supabase';
 
 export function initCatalogo() {
   // ==================== Estado ====================
