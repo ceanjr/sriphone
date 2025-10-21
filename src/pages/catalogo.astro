@@ -1,6 +1,4 @@
 ---
-import catalogoScript from '../scripts/catalogo.ts?raw';
-
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -325,8 +323,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   </main>
 
   <script type="module">
-    {
-      catalogoScript;
-    }
+    import { initCatalogo } from '../scripts/catalogo.ts';
+
+    initCatalogo();
   </script>
 </Layout>

@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function initCatalogo() {
+export default function initCatalogo() {
   // ==================== Estado ====================
   interface AppState {
     produtos: (Product & { categoria: Category })[];
