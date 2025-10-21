@@ -1,9 +1,33 @@
-// src/scripts/catalogo.js
-import { productService, categoryService, authService } from '../lib/supabase';
+import {
+  productService,
+  categoryService,
+  authService,
+  type Product,
+  type Category,
+} from '../lib/supabase';
 
-export function initCatalogo() {
+window.addEventListener('DOMContentLoaded', () => {
+  requestIdleCallback(() => {
+    initCatalogo();
+  });
+});
+
+export default function initCatalogo() {
   // ==================== Estado ====================
-  const state = {
+  interface AppState {
+    produtos: (Product & { categoria: Category })[];
+    categorias: Category[];
+    categoriaAtiva: string;
+    modoVisualizacao: 'coluna' | 'grade' | 'lista';
+    filtros: {
+      busca: string;
+      condicao: string;
+      bateria: number;
+      ordenacao: string;
+    };
+  }
+
+  const state: AppState = {
     produtos: [],
     categorias: [],
     categoriaAtiva: 'todos',
@@ -19,9 +43,9 @@ export function initCatalogo() {
   // ==================== Elementos DOM ====================
   const elementos = {
     modalLogin: document.getElementById('modal-login'),
-    formLogin: document.getElementById('form-login'),
+    formLogin: document.getElementById('form-login') as HTMLFormElement,
     loginError: document.getElementById('login-error'),
-    searchInput: document.getElementById('search-input'),
+    searchInput: document.getElementById('search-input') as HTMLInputElement,
     toggleFiltros: document.getElementById('toggle-filtros'),
     filtrosAvancados: document.getElementById('filtros-avancados'),
     btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
@@ -29,17 +53,25 @@ export function initCatalogo() {
     loading: document.getElementById('loading'),
     emptyState: document.getElementById('empty-state'),
     categoriasLista: document.getElementById('categorias-lista'),
-    filtroCondicao: document.getElementById('filtro-condicao'),
-    filtroBateria: document.getElementById('filtro-bateria'),
-    filtroOrdenacao: document.getElementById('filtro-ordenacao'),
-    categoriaSelect: document.getElementById('categoria-select'),
+    filtroCondicao: document.getElementById(
+      'filtro-condicao'
+    ) as HTMLSelectElement,
+    filtroBateria: document.getElementById(
+      'filtro-bateria'
+    ) as HTMLSelectElement,
+    filtroOrdenacao: document.getElementById(
+      'filtro-ordenacao'
+    ) as HTMLSelectElement,
+    categoriaSelect: document.getElementById(
+      'categoria-select'
+    ) as HTMLSelectElement,
     visualizacaoContainer: document.querySelector('.visualizacao-container'),
     visualizacaoBtns: document.querySelectorAll('.visualizacao-btn'),
   };
 
   // ==================== Ordenação de Categorias ====================
-  function ordenarCategorias(categorias) {
-    const ordem = {
+  function ordenarCategorias(categorias: Category[]): Category[] {
+    const ordem: { [key: string]: number } = {
       todos: 0,
       'iphone 4': 1,
       'iphone 4s': 2,
@@ -97,31 +129,36 @@ export function initCatalogo() {
       const ordemA = ordem[nomeA];
       const ordemB = ordem[nomeB];
 
+      // Se ambos têm ordem definida, usa a ordem
       if (ordemA !== undefined && ordemB !== undefined) {
         return ordemA - ordemB;
       }
 
+      // Se apenas A tem ordem, A vem primeiro
       if (ordemA !== undefined) return -1;
+
+      // Se apenas B tem ordem, B vem primeiro
       if (ordemB !== undefined) return 1;
 
+      // Se nenhum tem ordem definida, ordena alfabeticamente
       return nomeA.localeCompare(nomeB, 'pt-BR');
     });
   }
 
   // ==================== Utilitários ====================
   const utils = {
-    formatarPreco(valor) {
+    formatarPreco(valor: number): string {
       return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
         currency: 'BRL',
       }).format(valor);
     },
 
-    calcularLarguraBateria(bateria) {
+    calcularLarguraBateria(bateria: number): number {
       return (bateria / 100) * 14;
     },
 
-    escapeHtml(text) {
+    escapeHtml(text: string): string {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
@@ -129,20 +166,21 @@ export function initCatalogo() {
   };
 
   // ==================== Função para calcular cor da bateria ====================
-  function getBateriaColor(bateria) {
+  function getBateriaColor(bateria: number): string {
     if (bateria >= 80) return 'bateria-verde';
     return 'bateria-vermelho';
   }
 
   // ==================== Templates ====================
   const templates = {
-    produtoCard(produto) {
+    produtoCard(produto: Product & { categoria: Category }): string {
       const precoFormatado = utils.formatarPreco(produto.preco);
       const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
       const bateriaColorClass = getBateriaColor(produto.bateria);
       const imagemPrincipal = produto.imagens?.[0];
       const temBateria = produto.bateria && produto.bateria > 0;
 
+      // Dados do produto para o modal
       const produtoModalData = JSON.stringify({
         id: produto.id,
         codigo: produto.codigo,
@@ -155,6 +193,7 @@ export function initCatalogo() {
         imagens: produto.imagens || [],
       }).replace(/"/g, '&quot;');
 
+      // Dados para edição
       const produtoEditData = JSON.stringify({
         id: produto.id,
         codigo: produto.codigo,
@@ -167,6 +206,7 @@ export function initCatalogo() {
         imagens: produto.imagens || [],
       }).replace(/"/g, '&quot;');
 
+      // Badges comuns
       const badges = `
       ${
         !temBateria
@@ -262,7 +302,10 @@ export function initCatalogo() {
 `;
     },
 
-    categoriaSecao(nomeCategoria, produtos) {
+    categoriaSecao(
+      nomeCategoria: string,
+      produtos: (Product & { categoria: Category })[]
+    ): string {
       return `
       <div class="categoria-section">
           <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
@@ -276,8 +319,9 @@ export function initCatalogo() {
 
   // ==================== Lógica de Negócio ====================
   const business = {
-    filtrarProdutos() {
+    filtrarProdutos(): (Product & { categoria: Category })[] {
       return state.produtos.filter((p) => {
+        // Filtro de categoria
         if (
           state.categoriaAtiva !== 'todos' &&
           p.categoria_id !== state.categoriaAtiva
@@ -285,6 +329,7 @@ export function initCatalogo() {
           return false;
         }
 
+        // Filtro de busca
         if (state.filtros.busca) {
           const busca = state.filtros.busca.toLowerCase();
           const match =
@@ -295,10 +340,12 @@ export function initCatalogo() {
           if (!match) return false;
         }
 
+        // Filtro de condição
         if (state.filtros.condicao && p.condicao !== state.filtros.condicao) {
           return false;
         }
 
+        // Filtro de bateria
         if (p.bateria < state.filtros.bateria) {
           return false;
         }
@@ -307,7 +354,9 @@ export function initCatalogo() {
       });
     },
 
-    ordenarProdutos(produtos) {
+    ordenarProdutos(
+      produtos: (Product & { categoria: Category })[]
+    ): (Product & { categoria: Category })[] {
       const copia = [...produtos];
 
       switch (state.filtros.ordenacao) {
@@ -317,7 +366,7 @@ export function initCatalogo() {
           return copia.sort((a, b) => b.preco - a.preco);
         case 'bateria':
           return copia.sort((a, b) => b.bateria - a.bateria);
-        default:
+        default: // recente
           return copia.sort(
             (a, b) =>
               new Date(b.created_at).getTime() -
@@ -326,15 +375,17 @@ export function initCatalogo() {
       }
     },
 
-    agruparPorCategoria(produtos) {
-      const grupos = new Map();
+    agruparPorCategoria(
+      produtos: (Product & { categoria: Category })[]
+    ): Map<string, (Product & { categoria: Category })[]> {
+      const grupos = new Map<string, (Product & { categoria: Category })[]>();
 
       produtos.forEach((p) => {
         const catNome = p.categoria?.nome || 'Sem Categoria';
         if (!grupos.has(catNome)) {
           grupos.set(catNome, []);
         }
-        grupos.get(catNome).push(p);
+        grupos.get(catNome)!.push(p);
       });
 
       return grupos;
@@ -343,11 +394,13 @@ export function initCatalogo() {
 
   // ==================== Renderização ====================
   const render = {
-    categorias() {
+    categorias(): void {
       if (!elementos.categoriaSelect) return;
 
+      // ORDENAR CATEGORIAS ANTES DE RENDERIZAR
       const categoriasOrdenadas = ordenarCategorias(state.categorias);
 
+      // Renderizar opções para o select
       elementos.categoriaSelect.innerHTML = `
     <option value="todos">Todos</option>
     ${categoriasOrdenadas
@@ -359,6 +412,7 @@ export function initCatalogo() {
       .join('')}
   `;
 
+      // Renderizar botões para desktop, se elementos existirem
       if (elementos.categoriasLista) {
         elementos.categoriasLista.innerHTML = categoriasOrdenadas
           .map(
@@ -371,24 +425,32 @@ export function initCatalogo() {
           .join('');
       }
 
+      // Definir categoria ativa
       elementos.categoriaSelect.value = state.categoriaAtiva;
-      document.querySelectorAll('.categoria-btn').forEach((btn) => {
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((btn) => {
         btn.classList.toggle(
           'active',
           btn.dataset.categoria === state.categoriaAtiva
         );
       });
 
-      document.querySelectorAll('.categoria-btn').forEach((btn) => {
+      // Adicionar event listeners para botões, se existirem
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((btn) => {
         btn.addEventListener('click', handlers.categoriaClick);
       });
 
+      // Adicionar event listener para o select
       elementos.categoriaSelect.addEventListener(
         'change',
         handlers.categoriaSelectChange
       );
 
-      elementos.visualizacaoBtns.forEach((btn) => {
+      // Definir botão de visualização ativo
+      (elementos.visualizacaoBtns as NodeListOf<HTMLElement>).forEach((btn) => {
         btn.classList.toggle(
           'active',
           btn.dataset.view === state.modoVisualizacao
@@ -396,9 +458,10 @@ export function initCatalogo() {
       });
     },
 
-    produtos() {
+    produtos(): void {
       if (!elementos.produtosContainer || !elementos.emptyState) return;
 
+      // Aplicar classe do modo de visualização
       elementos.produtosContainer.classList.remove('coluna', 'grade', 'lista');
       elementos.produtosContainer.classList.add(state.modoVisualizacao);
       document.querySelectorAll('.categoria-grid').forEach((grid) => {
@@ -406,9 +469,11 @@ export function initCatalogo() {
         grid.classList.add(state.modoVisualizacao);
       });
 
+      // Filtrar e ordenar
       let produtosFiltrados = business.filtrarProdutos();
       produtosFiltrados = business.ordenarProdutos(produtosFiltrados);
 
+      // Verificar se há produtos
       if (produtosFiltrados.length === 0) {
         elementos.produtosContainer.innerHTML = '';
         elementos.emptyState.style.display = 'block';
@@ -417,9 +482,11 @@ export function initCatalogo() {
 
       elementos.emptyState.style.display = 'none';
 
+      // Renderizar agrupado ou não
       if (state.categoriaAtiva === 'todos') {
         const grupos = business.agruparPorCategoria(produtosFiltrados);
 
+        // ORDENAR AS CATEGORIAS NO AGRUPAMENTO
         const categoriasComProdutos = Array.from(grupos.keys()).map(
           (nomeCategoria) => {
             const categoria = state.categorias.find(
@@ -453,6 +520,7 @@ export function initCatalogo() {
           .join('');
       }
 
+      // Adicionar event listeners aos cards
       elementos.produtosContainer
         .querySelectorAll('.produto-card')
         .forEach((card) => {
@@ -462,7 +530,7 @@ export function initCatalogo() {
       setupEditButtons();
     },
 
-    loading(mostrar) {
+    loading(mostrar: boolean): void {
       if (elementos.loading) {
         elementos.loading.style.display = mostrar ? 'flex' : 'none';
       }
@@ -471,15 +539,17 @@ export function initCatalogo() {
 
   // ==================== Handlers ====================
   const handlers = {
-    categoriaClick(e) {
-      const target = e.currentTarget;
+    categoriaClick(e: Event): void {
+      const target = e.currentTarget as HTMLElement;
       const categoriaId = target.dataset.categoria;
 
+      // Atualizar UI
       document
         .querySelectorAll('.categoria-btn')
         .forEach((b) => b.classList.remove('active'));
       target.classList.add('active');
 
+      // Atualizar estado e re-renderizar
       state.categoriaAtiva = categoriaId || 'todos';
       if (elementos.categoriaSelect) {
         elementos.categoriaSelect.value = state.categoriaAtiva;
@@ -487,11 +557,14 @@ export function initCatalogo() {
       renderProdutosComDelay();
     },
 
-    categoriaSelectChange(e) {
-      const target = e.target;
+    categoriaSelectChange(e: Event): void {
+      const target = e.target as HTMLSelectElement;
       state.categoriaAtiva = target.value;
 
-      document.querySelectorAll('.categoria-btn').forEach((b) => {
+      // Atualizar UI dos botões no desktop, se existirem
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((b) => {
         b.classList.toggle(
           'active',
           b.dataset.categoria === state.categoriaAtiva
@@ -501,49 +574,50 @@ export function initCatalogo() {
       renderProdutosComDelay();
     },
 
-    produtoClick(e) {
-      const card = e.currentTarget;
+    produtoClick(e: Event): void {
+      const card = e.currentTarget as HTMLElement;
       const produtoData = card.dataset.produto;
 
       if (produtoData) {
         try {
           const produto = JSON.parse(produtoData);
-          window.abrirModalProduto(produto);
+          (window as any).abrirModalProduto(produto);
         } catch (error) {
           console.error('Erro ao abrir produto:', error);
         }
       }
     },
 
-    searchInput(e) {
-      const target = e.target;
+    searchInput(e: Event): void {
+      const target = e.target as HTMLInputElement;
       state.filtros.busca = target.value;
       renderProdutosComDelay();
     },
 
-    toggleFiltros() {
+    toggleFiltros(): void {
       elementos.filtrosAvancados?.classList.toggle('active');
     },
 
-    filtroCondicao(e) {
-      const target = e.target;
+    filtroCondicao(e: Event): void {
+      const target = e.target as HTMLSelectElement;
       state.filtros.condicao = target.value;
       renderProdutosComDelay();
     },
 
-    filtroBateria(e) {
-      const target = e.target;
+    filtroBateria(e: Event): void {
+      const target = e.target as HTMLSelectElement;
       state.filtros.bateria = parseInt(target.value);
       renderProdutosComDelay();
     },
 
-    filtroOrdenacao(e) {
-      const target = e.target;
+    filtroOrdenacao(e: Event): void {
+      const target = e.target as HTMLSelectElement;
       state.filtros.ordenacao = target.value;
       renderProdutosComDelay();
     },
 
-    limparFiltros() {
+    limparFiltros(): void {
+      // Resetar estado
       state.filtros = {
         busca: '',
         condicao: '',
@@ -552,6 +626,7 @@ export function initCatalogo() {
       };
       state.categoriaAtiva = 'todos';
 
+      // Resetar inputs
       if (elementos.searchInput) elementos.searchInput.value = '';
       if (elementos.filtroCondicao) elementos.filtroCondicao.selectedIndex = 0;
       if (elementos.filtroBateria) elementos.filtroBateria.selectedIndex = 0;
@@ -559,24 +634,31 @@ export function initCatalogo() {
         elementos.filtroOrdenacao.selectedIndex = 0;
       if (elementos.categoriaSelect) elementos.categoriaSelect.value = 'todos';
 
-      document.querySelectorAll('.categoria-btn').forEach((b) => {
+      // Resetar botões, se existirem
+      (
+        document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
+      ).forEach((b) => {
         b.classList.toggle('active', b.dataset.categoria === 'todos');
       });
 
+      // Re-renderizar
       renderProdutosComDelay();
     },
 
-    visualizacaoClick(e) {
-      const target = e.currentTarget;
-      const view = target.dataset.view;
+    visualizacaoClick(e: Event): void {
+      const target = e.currentTarget as HTMLElement;
+      const view = target.dataset.view as 'coluna' | 'grade' | 'lista';
 
+      // Atualizar estado
       state.modoVisualizacao = view;
       localStorage.setItem('modoVisualizacao', view);
 
-      elementos.visualizacaoBtns.forEach((btn) => {
+      // Atualizar UI dos botões
+      (elementos.visualizacaoBtns as NodeListOf<HTMLElement>).forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.view === view);
       });
 
+      // Atualizar classes no container
       elementos.produtosContainer?.classList.remove('coluna', 'grade', 'lista');
       elementos.produtosContainer?.classList.add(view);
       document.querySelectorAll('.categoria-grid').forEach((grid) => {
@@ -584,14 +666,19 @@ export function initCatalogo() {
         grid.classList.add(view);
       });
 
+      // Re-renderizar produtos
       renderProdutosComDelay();
     },
 
-    async loginSubmit(e) {
+    async loginSubmit(e: Event): Promise<void> {
       e.preventDefault();
 
-      const emailInput = document.getElementById('login-email');
-      const passwordInput = document.getElementById('login-password');
+      const emailInput = document.getElementById(
+        'login-email'
+      ) as HTMLInputElement;
+      const passwordInput = document.getElementById(
+        'login-password'
+      ) as HTMLInputElement;
 
       try {
         await authService.signIn(emailInput.value, passwordInput.value);
@@ -603,7 +690,7 @@ export function initCatalogo() {
           elementos.loginError.textContent = '';
           elementos.loginError.classList.remove('show');
         }
-      } catch (error) {
+      } catch (error: any) {
         if (elementos.loginError) {
           elementos.loginError.textContent =
             error.message || 'Credenciais inválidas';
@@ -612,14 +699,14 @@ export function initCatalogo() {
       }
     },
 
-    closeModalLogin() {
+    closeModalLogin(): void {
       elementos.modalLogin?.classList.remove('active');
     },
   };
 
   // ==================== API ====================
   const api = {
-    async carregarDados() {
+    async carregarDados(): Promise<void> {
       try {
         render.loading(true);
         if (elementos.emptyState) elementos.emptyState.style.display = 'none';
@@ -646,9 +733,14 @@ export function initCatalogo() {
   };
 
   // ==================== Event Listeners ====================
-  function setupEventListeners() {
+  function setupEventListeners(): void {
+    // Busca
     elementos.searchInput?.addEventListener('input', handlers.searchInput);
+
+    // Toggle filtros avançados
     elementos.toggleFiltros?.addEventListener('click', handlers.toggleFiltros);
+
+    // Filtros
     elementos.filtroCondicao?.addEventListener(
       'change',
       handlers.filtroCondicao
@@ -658,15 +750,19 @@ export function initCatalogo() {
       'change',
       handlers.filtroOrdenacao
     );
+
+    // Limpar filtros
     elementos.btnLimparFiltros?.addEventListener(
       'click',
       handlers.limparFiltros
     );
 
+    // Visualização
     elementos.visualizacaoBtns.forEach((btn) => {
       btn.addEventListener('click', handlers.visualizacaoClick);
     });
 
+    // Login
     elementos.formLogin?.addEventListener('submit', handlers.loginSubmit);
     elementos.modalLogin
       ?.querySelector('.modal-close')
@@ -675,29 +771,35 @@ export function initCatalogo() {
       ?.querySelector('.modal-overlay')
       ?.addEventListener('click', handlers.closeModalLogin);
 
+    // Evento customizado para recarregar produtos
     window.addEventListener('produtos-updated', () => {
       api.carregarDados();
     });
   }
 
   // ==================== Funções Globais ====================
-  window.abrirModalLogin = () => {
+  (window as any).abrirModalLogin = () => {
     elementos.modalLogin?.classList.add('active');
   };
 
   // ==================== Inicialização ====================
-  function init() {
-    const savedView = localStorage.getItem('modoVisualizacao');
+  function init(): void {
+    const savedView = localStorage.getItem('modoVisualizacao') as
+      | 'coluna'
+      | 'grade'
+      | 'lista';
     state.modoVisualizacao =
       savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
     setupEventListeners();
     api.carregarDados();
 
+    // Configurar botões de editar quando houver mudança de autenticação
     authService.onAuthStateChange(() => {
       setupEditButtons();
     });
   }
 
+  // Iniciar aplicação
   init();
 
   // ==================== Controle de Botões de Editar ====================
@@ -705,15 +807,27 @@ export function initCatalogo() {
     const session = await authService.getSession();
     const allEditButtons = document.querySelectorAll('.btn-editar-produto');
 
-    allEditButtons.forEach((btn) => {
+    console.log('=== DEBUG BOTÕES EDITAR ===');
+    console.log('Total de botões encontrados:', allEditButtons.length);
+    console.log('Usuário autenticado:', !!session);
+
+    allEditButtons.forEach((btn, index) => {
       const card = btn.closest('.produto-card');
       const produtoInfo = card?.querySelector('.produto-info');
 
+      console.log(`Botão ${index + 1}:`, {
+        dentroDeCard: !!card,
+        temProdutoInfo: !!produtoInfo,
+      });
+
+      // REMOVER botões órfãos
       if (!card) {
+        console.warn(`Botão ${index + 1} está ÓRFÃO - removendo`);
         btn.remove();
         return;
       }
 
+      // Controlar visibilidade
       if (session) {
         btn.classList.add('visible');
         if (produtoInfo) {
@@ -726,15 +840,19 @@ export function initCatalogo() {
         }
       }
 
+      // Configurar evento de clique
       btn.addEventListener('click', handleEditClick);
     });
+
+    console.log('=== FIM DEBUG ===');
   }
 
-  function handleEditClick(e) {
-    e.stopPropagation();
+  // Handler separado para o clique do botão editar
+  function handleEditClick(e: Event) {
+    e.stopPropagation(); // Impede que abra o modal do produto
     e.preventDefault();
 
-    const btn = e.currentTarget;
+    const btn = e.currentTarget as HTMLElement;
     const produtoDataStr = btn.dataset.produtoEdit;
 
     if (!produtoDataStr) {
@@ -745,14 +863,19 @@ export function initCatalogo() {
 
     try {
       const produtoData = JSON.parse(produtoDataStr);
-      window.abrirModalEditarProduto(produtoData);
+      console.log('Abrindo modal de edição para:', produtoData.nome);
+      (window as any).abrirModalEditarProduto(produtoData);
     } catch (error) {
       console.error('Erro ao parsear dados do produto:', error);
       mostrarToast('Erro ao carregar dados do produto', 'error');
     }
   }
 
-  function mostrarToast(mensagem, tipo = 'info') {
+  // Função toast para o script principal
+  function mostrarToast(
+    mensagem: string,
+    tipo: 'success' | 'error' | 'warning' | 'info' = 'info'
+  ) {
     const toast = document.createElement('div');
     toast.className = `toast toast-${tipo}`;
     toast.textContent = mensagem;
@@ -765,17 +888,35 @@ export function initCatalogo() {
     }, 3000);
   }
 
+  // Em catalogo.astro - adicionar Intersection Observer
+  const observerOptions = {
+    root: null,
+    rootMargin: '50px',
+    threshold: 0.01,
+  };
+
+  const imageObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const img = entry.target as HTMLImageElement;
+        if (img.dataset.src) {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+          imageObserver.unobserve(img);
+        }
+      }
+    });
+  }, observerOptions);
+
   function renderProdutosComDelay() {
     const produtos = business.filtrarProdutos();
     const container = elementos.produtosContainer;
-
-    if (!container) return;
 
     container.innerHTML = '';
     let i = 0;
 
     function renderChunk() {
-      const chunk = produtos.slice(i, i + 10);
+      const chunk = produtos.slice(i, i + 10); // 10 produtos por iteração
       chunk.forEach((p) =>
         container.insertAdjacentHTML('beforeend', templates.produtoCard(p))
       );
