@@ -1,6 +1,6 @@
 // src/scripts/catalogo.js
 import { productService, categoryService, authService } from '../lib/supabase';
-
+console.log('Catalogo script loaded');
 export function initCatalogo() {
   // ==================== Estado ====================
   const state = {
@@ -789,3 +789,5 @@ export function initCatalogo() {
     requestIdleCallback(renderChunk);
   }
 }
+
+initCatalogo();

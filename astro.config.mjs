@@ -14,5 +14,8 @@ export default defineConfig({
         process.env.PUBLIC_SUPABASE_ANON_KEY
       ),
     },
+    build: {
+      assetsDir: 'scripts', // Garante que os scripts vão para /scripts na saída
+    },
   },
 });
