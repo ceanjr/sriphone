@@ -1,4 +1,6 @@
 {
+  "buildCommand": "astro build",
+  "outputDirectory": "dist",
   "headers": [
     {
       "source": "/(.*)\\.(js|css|png|jpg|webp|svg|ico|woff2)$",
