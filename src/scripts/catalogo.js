@@ -1,15 +1,5 @@
 // src/scripts/catalogo.js
-import {
-  productService,
-  categoryService,
-  authService,
-} from '../../src/lib/supabase';
-
-window.addEventListener('DOMContentLoaded', () => {
-  requestIdleCallback(() => {
-    initCatalogo();
-  });
-});
+import { productService, categoryService, authService } from '../lib/supabase';
 
 export function initCatalogo() {
   // ==================== Estado ====================
