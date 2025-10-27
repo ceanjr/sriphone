@@ -222,7 +222,24 @@ import '../styles/components/modal-produto.css';
     navigatorWithConnection.connection?.effectiveType === '2g';
   
   // CRITICAL: Limitar cache em mobile para evitar crash
-  const MAX_CACHE_SIZE = isMobile ? 5 : 20;
+  const MAX_CACHE_SIZE = isMobile ? 3 : 20; // Reduzido de 5 para 3 no mobile
+
+  // CRITICAL: Limpar cache agressivamente no mobile
+  function clearOldCache() {
+    if (isMobile && imageCache.size > MAX_CACHE_SIZE) {
+      console.log('🧹 Limpando cache antigo:', imageCache.size);
+      // Manter apenas as últimas 2 imagens
+      const entries = Array.from(imageCache.entries());
+      const toKeep = entries.slice(-2);
+      imageCache.clear();
+      toKeep.forEach(([key, value]) => imageCache.set(key, value));
+      
+      // Forçar garbage collection (sugestão ao browser)
+      if (window.gc) {
+        window.gc();
+      }
+    }
+  }
 
   // CRITICAL: Preload MUITO simplificado para mobile
   function preloadImage(
@@ -601,47 +618,61 @@ import '../styles/components/modal-produto.css';
     selectImage(index);
   });
 
-  // Selecionar imagem - OTIMIZADO com precarregamento
+  // Selecionar imagem - ULTRA SIMPLIFICADO para mobile
   function selectImage(index: number) {
     if (!mainImage || !thumbnailsTrack) return;
 
     currentIndex = index;
     const novaImagem = imagensAtuais[index];
 
-    // CRITICAL: Verificar se já está no cache
+    // NO MOBILE: Troca DIRETA sem cache, sem animações complexas
+    if (isMobile) {
+      console.log('📱 Mobile: Trocando para imagem', index);
+      
+      // Limpar cache antes de trocar
+      clearOldCache();
+      
+      // Troca direta - sem fade, sem cache
+      mainImage.src = novaImagem;
+      
+      // Atualizar thumbnails
+      const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
+      thumbs.forEach((thumb, i) => {
+        thumb.classList.toggle('active', i === index);
+      });
+      
+      return; // Sair - não fazer nada mais no mobile
+    }
+
+    // DESKTOP: Pode usar cache e animações
     if (imageCache.has(novaImagem)) {
-      // Se já está carregada, trocar imediatamente
       mainImage.style.opacity = '0';
       setTimeout(() => {
         mainImage.src = imageCache.get(novaImagem)!.src;
         mainImage.style.opacity = '1';
       }, 150);
     } else {
-      // Se não está carregada, mostrar placeholder e carregar
       lazyLoadImage(mainImage, novaImagem, false);
     }
 
-    // NO MOBILE: NÃO precarregar imagens adjacentes (causa crash)
-    // Carregar apenas quando o usuário navegar
-    if (!isMobile) {
-      const preloadNext = () => {
-        if (index + 1 < imagensAtuais.length) {
-          preloadImage(imagensAtuais[index + 1]).catch(() => {});
-        }
-        if (index - 1 >= 0) {
-          preloadImage(imagensAtuais[index - 1]).catch(() => {});
-        }
-      };
-      setTimeout(preloadNext, 200);
-    }
+    // Desktop: precarregar adjacentes
+    const preloadNext = () => {
+      if (index + 1 < imagensAtuais.length) {
+        preloadImage(imagensAtuais[index + 1]).catch(() => {});
+      }
+      if (index - 1 >= 0) {
+        preloadImage(imagensAtuais[index - 1]).catch(() => {});
+      }
+    };
+    setTimeout(preloadNext, 200);
 
-    // Atualizar thumbnails - OTIMIZADO
+    // Atualizar thumbnails
     const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
     thumbs.forEach((thumb, i) => {
       thumb.classList.toggle('active', i === index);
     });
 
-    // Scroll automático para thumbnail ativa - OTIMIZADO
+    // Scroll para thumbnail ativa
     const activeThumb = thumbs[index] as HTMLElement;
     if (activeThumb) {
       activeThumb.scrollIntoView({
