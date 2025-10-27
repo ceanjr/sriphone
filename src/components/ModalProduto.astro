@@ -558,14 +558,32 @@ import '../styles/components/modal-produto.css';
     console.log(`📸 ${imagens.length} thumbnails renderizadas`);
   }
 
-  // CRITICAL: Event delegation para thumbnails
+  // CRITICAL: Throttle para evitar múltiplos cliques rápidos no mobile
+  let isProcessingClick = false;
+  
+  function throttledSelectImage(index: number) {
+    if (isProcessingClick) {
+      console.log('⚠️ Clique ignorado (throttle)');
+      return;
+    }
+    
+    isProcessingClick = true;
+    selectImage(index);
+    
+    // Liberar após delay menor no mobile
+    setTimeout(() => {
+      isProcessingClick = false;
+    }, isMobile ? 100 : 50);
+  }
+
+  // CRITICAL: Event delegation para thumbnails - COM THROTTLE
   thumbnailsTrack?.addEventListener('click', (e) => {
     const thumb = (e.target as HTMLElement).closest('.thumbnail');
     if (!thumb) return;
 
     const index = parseInt((thumb as HTMLElement).dataset.index || '0');
-    selectImage(index);
-  });
+    throttledSelectImage(index);
+  }, { passive: true });
 
   // Selecionar imagem - ULTRA SIMPLIFICADO para mobile
   function selectImage(index: number) {
@@ -628,7 +646,7 @@ import '../styles/components/modal-produto.css';
     }
   }
 
-  // Fechar modal - Limpar tudo no mobile
+  // Fechar modal - Limpar tudo no mobile + REMOVER LISTENERS
   function fecharModal() {
     if (!isModalOpen) return;
 
@@ -637,12 +655,20 @@ import '../styles/components/modal-produto.css';
       document.body.classList.remove('modal-open');
       isModalOpen = false;
       currentIndex = 0;
+      isProcessingClick = false; // Reset throttle
       
       // NO MOBILE: Limpar absolutamente tudo
       if (isMobile && mainImage) {
         mainImage.src = ''; // Limpar src da imagem
+        mainImage.style.opacity = '0';
         imagensAtuais = []; // Limpar array
-        console.log('🧹 Modal fechado - memória liberada');
+        
+        // Limpar thumbnails do DOM
+        if (thumbnailsTrack) {
+          thumbnailsTrack.innerHTML = '';
+        }
+        
+        console.log('🧹 Modal fechado - tudo limpo');
       } else if (imageCache) {
         // Desktop: limpar cache
         imageCache.clear();
@@ -651,21 +677,21 @@ import '../styles/components/modal-produto.css';
     });
   }
 
-  // CRITICAL: Usar event delegation
-  modalOverlay?.addEventListener('click', fecharModal);
-  modalClose?.addEventListener('click', fecharModal);
+  // CRITICAL: Usar event delegation com passive listeners
+  modalOverlay?.addEventListener('click', fecharModal, { passive: true });
+  modalClose?.addEventListener('click', fecharModal, { passive: true });
 
   expandBtn?.addEventListener('click', () => {
     if (imagensAtuais.length > 0) {
       abrirImagemExpandida(currentIndex);
     }
-  });
+  }, { passive: true });
 
   mainImage?.addEventListener('click', () => {
     if (imagensAtuais.length > 0) {
       abrirImagemExpandida(currentIndex);
     }
-  });
+  }, { passive: true });
 
   function abrirImagemExpandida(index: number) {
     if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
@@ -697,38 +723,59 @@ import '../styles/components/modal-produto.css';
   });
 
   // Navegação por teclado - OTIMIZADO
+  // Keyboard navigation - COM THROTTLE no mobile
+  let lastKeyPress = 0;
+  
   document.addEventListener('keydown', (e: KeyboardEvent) => {
+    // NO MOBILE: Ignorar teclado (não tem keyboard físico)
+    if (isMobile) return;
+    
+    // Throttle para evitar múltiplos eventos
+    const now = Date.now();
+    if (now - lastKeyPress < 200) return;
+    lastKeyPress = now;
+    
     if (modalImagemExpandida?.classList.contains('active')) {
       if (e.key === 'Escape') {
         fecharImagemExpandida();
       } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-        selectImage(currentIndex - 1);
+        throttledSelectImage(currentIndex - 1);
         abrirImagemExpandida(currentIndex);
       } else if (
         e.key === 'ArrowRight' &&
         currentIndex < imagensAtuais.length - 1
       ) {
-        selectImage(currentIndex + 1);
+        throttledSelectImage(currentIndex + 1);
         abrirImagemExpandida(currentIndex);
       }
     } else if (modal?.classList.contains('active')) {
       if (e.key === 'Escape') {
         fecharModal();
       } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-        selectImage(currentIndex - 1);
+        throttledSelectImage(currentIndex - 1);
       } else if (
         e.key === 'ArrowRight' &&
         currentIndex < imagensAtuais.length - 1
       ) {
-        selectImage(currentIndex + 1);
+        throttledSelectImage(currentIndex + 1);
       }
     }
-  });
+  }, { passive: true });
 
-  // WhatsApp - OTIMIZADO
+  // WhatsApp - COM THROTTLE
   const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
+  let lastWhatsappClick = 0;
+  
   btnWhatsapp?.addEventListener('click', (e) => {
     e.preventDefault();
+    
+    // Throttle para evitar múltiplos cliques
+    const now = Date.now();
+    if (now - lastWhatsappClick < 1000) {
+      console.log('⚠️ WhatsApp click ignorado (throttle)');
+      return;
+    }
+    lastWhatsappClick = now;
 
     if (produtoAtual) {
       const telefone = '5577981022246';
@@ -748,5 +795,5 @@ import '../styles/components/modal-produto.css';
 
       window.open(url, '_blank');
     }
-  });
+  }, { passive: true });
 </script>
