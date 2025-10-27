@@ -578,12 +578,15 @@ import '../styles/components/modal-produto.css';
 
   // CRITICAL: Event delegation para thumbnails - COM THROTTLE
   thumbnailsTrack?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const thumb = (e.target as HTMLElement).closest('.thumbnail');
     if (!thumb) return;
 
     const index = parseInt((thumb as HTMLElement).dataset.index || '0');
     throttledSelectImage(index);
-  }, { passive: true });
+  });
 
   // Selecionar imagem - ULTRA SIMPLIFICADO para mobile
   function selectImage(index: number) {
@@ -683,14 +686,26 @@ import '../styles/components/modal-produto.css';
     });
   }
 
-  // CRITICAL: Usar event delegation com passive listeners
-  modalOverlay?.addEventListener('click', fecharModal, { passive: true });
-  modalClose?.addEventListener('click', fecharModal, { passive: true });
+  // CRITICAL: Usar event delegation
+  modalOverlay?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fecharModal();
+  });
+  
+  modalClose?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fecharModal();
+  });
 
   // CRITICAL: Throttle para expandir imagem
   let isExpandingImage = false;
   
-  expandBtn?.addEventListener('click', () => {
+  expandBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (isExpandingImage) {
       console.log('⚠️ Expandir ignorado (throttle)');
       return;
@@ -702,11 +717,14 @@ import '../styles/components/modal-produto.css';
       
       setTimeout(() => {
         isExpandingImage = false;
-      }, isMobile ? 300 : 100);
+      }, 300);
     }
-  }, { passive: true });
+  });
 
-  mainImage?.addEventListener('click', () => {
+  mainImage?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (isExpandingImage) {
       console.log('⚠️ Expandir ignorado (throttle)');
       return;
@@ -718,9 +736,9 @@ import '../styles/components/modal-produto.css';
       
       setTimeout(() => {
         isExpandingImage = false;
-      }, isMobile ? 300 : 100);
+      }, 300);
     }
-  }, { passive: true });
+  });
 
   function abrirImagemExpandida(index: number) {
     if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
@@ -756,15 +774,20 @@ import '../styles/components/modal-produto.css';
     });
   }
 
-  btnCloseExpandido?.addEventListener('click', fecharImagemExpandida, { passive: true });
+  btnCloseExpandido?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fecharImagemExpandida();
+  });
 
   modalImagemExpandida?.addEventListener('click', (e) => {
     if (e.target === modalImagemExpandida) {
+      e.preventDefault();
+      e.stopPropagation();
       fecharImagemExpandida();
     }
-  }, { passive: true });
+  });
 
-  // Navegação por teclado - OTIMIZADO
   // Keyboard navigation - COM THROTTLE no mobile
   let lastKeyPress = 0;
   
@@ -802,7 +825,7 @@ import '../styles/components/modal-produto.css';
         throttledSelectImage(currentIndex + 1);
       }
     }
-  }, { passive: true });
+  });
 
   // WhatsApp - COM THROTTLE
   const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
@@ -837,5 +860,5 @@ import '../styles/components/modal-produto.css';
 
       window.open(url, '_blank');
     }
-  }, { passive: true });
+  });
 </script>
