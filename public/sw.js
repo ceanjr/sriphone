@@ -3,7 +3,7 @@ const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
 
-// Assets críticos para cache agressivo
+// Assets críticos para cache agressivo (apenas arquivos que existem)
 const STATIC_ASSETS = [
   '/',
   '/catalogo',
@@ -11,22 +11,26 @@ const STATIC_ASSETS = [
   '/offline.html',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/fonts/inter-var.woff2',
-  '/icons/logo.svg',
-  '/icons/whatsapp.svg',
-  '/icons/instagram.svg',
-  '/images/hero-bg.webp',
-  '/_astro/global.css'
+  '/fonts/Halenoir-Bold.otf',
+  '/images/Barbudo.webp',
+  '/favicon.svg'
 ];
 
 const MAX_CACHE_SIZE = 100; // Aumentado para performance
 const MAX_CACHE_AGE = 30 * 24 * 60 * 60 * 1000; // 30 dias - mais agressivo
 
-// Instalação - cachear assets estáticos
+// Instalação - cachear assets estáticos (com tratamento de erro)
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((cache) => {
+        // Cachear individualmente para evitar falha total
+        return Promise.allSettled(
+          STATIC_ASSETS.map(url => 
+            cache.add(url).catch(err => console.warn(`Failed to cache ${url}:`, err))
+          )
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });

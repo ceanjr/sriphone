@@ -68,12 +68,13 @@ p {
   font-size: 1rem;
 }
 
-/* Reduzir repaints */
+/* Otimização de renderização */
 img,
 video,
 iframe {
-  will-change: transform;
-  transform: translateZ(0);
+  /* Removido will-change para evitar tela preta no scroll rápido mobile */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Utilities */
@@ -228,13 +229,13 @@ section:not(:last-child) {
   }
 }
 
-/* Hardware acceleration */
+/* Hardware acceleration - otimizado para mobile */
 .modal-content,
 .produto-card,
 .thumbnail {
-  transform: translateZ(0);
   backface-visibility: hidden;
-  perspective: 1000px;
+  -webkit-backface-visibility: hidden;
+  /* Removido perspective e transform para evitar tela preta no scroll */
 }
 
 /* ============================================
@@ -263,12 +264,19 @@ button, a, input, textarea, select {
 html {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  /* Prevenir repaint excessivo durante scroll */
+  scroll-behavior: smooth;
 }
 
-/* Melhorar performance de scroll */
+/* Melhorar performance de scroll - CRITICAL para mobile */
 body {
   overflow-x: hidden;
   overflow-y: auto;
+  /* Garantir composição de camadas suave */
+  isolation: isolate;
+  /* Prevenir tela preta no scroll rápido */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* Evitar zoom indesejado em inputs no iOS */
@@ -310,10 +318,19 @@ input, textarea, select {
   }
 }
 
-/* Performance: GPU acceleration para elementos interativos */
-button, a, .card, .modal {
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
+/* Performance: GPU acceleration otimizada */
+button:active, 
+a:active, 
+.card:active {
+  /* will-change removido para evitar problemas de scroll no mobile */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Otimizar scroll mobile - prevenir tela preta */
+body {
+  /* Garantir composição de camadas suave */
+  isolation: isolate;
 }
 
 /* Otimizar animações em PWA */
@@ -324,6 +341,17 @@ button, a, .card, .modal {
   
   .smooth-scroll {
     scroll-behavior: auto;
+  }
+  
+  /* Desabilitar will-change em mobile para prevenir tela preta */
+  * {
+    will-change: auto !important;
+  }
+  
+  /* Otimizar scroll mobile */
+  body, html {
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
   }
 }
 

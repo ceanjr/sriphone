@@ -58,7 +58,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.5);
-  will-change: transform;
+  /* will-change removido para prevenir tela preta no scroll mobile */
   contain: layout style paint;
 }
 
@@ -172,7 +172,7 @@
   border-radius: 8px;
   transition: opacity 0.3s ease;
   cursor: pointer;
-  will-change: opacity;
+  /* will-change: opacity removido para melhor performance mobile */
 }
 
 /* Loading states for images */
@@ -251,7 +251,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
   background: #0a0a0a; /* Fundo para evitar transparências estranhas */
-  will-change: transform, border-color;
+  /* will-change removido para prevenir problemas de scroll */
   contain: layout style paint;
 }
 
@@ -1083,9 +1083,12 @@ body.modal-open {
   -webkit-tap-highlight-color: transparent;
 }
 
-.modal-overlay,
-.modal-content {
-  will-change: opacity, transform;
+/* Otimização de performance - será aplicado apenas durante animações */
+.modal.active .modal-overlay,
+.modal.active .modal-content {
+  /* will-change aplicado dinamicamente via JS seria melhor */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* Fallback Barbudo */

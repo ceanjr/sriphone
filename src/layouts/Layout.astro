@@ -70,25 +70,22 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <!-- Prefetch rotas críticas -->
     <link rel="prefetch" href="/catalogo" />
 
-    <!-- Preload recursos críticos -->
-    <link
-      rel="preload"
-      href="/fonts/inter-var.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link rel="preload" href="/images/hero-bg.webp" as="image" />
-    <link rel="preload" href="/icons/logo.svg" as="image" />
+    <!-- Preload recursos críticos que existem -->
+    <link rel="preload" href="/fonts/Halenoir-Bold.otf" as="font" type="font/otf" crossorigin />
+    <link rel="preload" href="/images/Barbudo.webp" as="image" />
+    <link rel="preload" href="/favicon.svg" as="image" />
 
     <!-- Critical CSS Inline para eliminar render-blocking -->
     {criticalCSS && <style is:inline set:html={criticalCSS} />}
 
     <slot name="head" />
-    <Analytics />
+  </head>
 
-    <!-- Scripts otimizados para reduzir TBT -->
-    <script type="module" src="/src/scripts/webVitals.js" defer></script>
+  <body>
+    <slot />
+
+    <!-- Vercel Analytics -->
+    <Analytics />
 
     <!-- Service Worker para cache agressivo e PWA -->
     <script is:inline>
@@ -112,11 +109,6 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
         });
       }
     </script>
-
-    <title>{title}</title>
-  </head>
-  <body>
-    <slot />
 
     <button
       id="layout-back-to-top"
@@ -210,6 +202,3 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     }
   }
 </style>
-
-<!-- Vercel Analytics -->
-<Analytics />

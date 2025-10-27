@@ -696,10 +696,12 @@ body.gc-modal-open {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Melhora performance de animações */
-.gc-modal-overlay,
-.gc-modal-content {
-    will-change: opacity, transform;
+/* Melhora performance de animações - otimizado para mobile */
+.gc-modal.active .gc-modal-overlay,
+.gc-modal.active .gc-modal-content {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* will-change aplicado apenas quando modal está ativo */
 }
 
 /* Remove número spinner dos inputs */
