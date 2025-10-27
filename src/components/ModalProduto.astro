@@ -484,6 +484,14 @@ import '../styles/components/modal-produto.css';
       requestAnimationFrame(() => {
         modal.classList.add('active');
         document.body.classList.add('modal-open');
+        
+        // CRITICAL: Forçar scroll para o topo
+        setTimeout(() => {
+          modal.scrollTop = 0;
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }, 10);
       });
     }
   }, 100); // Debounce de 100ms
