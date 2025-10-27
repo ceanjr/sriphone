@@ -6,6 +6,7 @@ import ModalProduto from '../components/ModalProduto.astro';
 import EditarProduto from '../components/EditarProduto.astro';
 import FormularioProduto from '../components/FormularioProduto.astro';
 import GerirCategorias from '../components/GerirCategorias.astro';
+import PWAInstallPrompt from '../components/PWAInstallPrompt.astro';
 import '../styles/pages/catalogo.css';
 
 import { initCatalogo } from '../scripts/catalogo.js';
@@ -1338,4 +1339,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       });
     }, observerOptions);
   </script>
+
+  <PWAInstallPrompt />
 </Layout>

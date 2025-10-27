@@ -236,3 +236,144 @@ section:not(:last-child) {
   backface-visibility: hidden;
   perspective: 1000px;
 }
+
+/* ============================================
+   PWA Mobile Optimizations
+   ============================================ */
+
+/* Safe area insets para dispositivos com notch */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Otimizações de toque para PWA */
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  -webkit-touch-callout: none;
+}
+
+button, a, input, textarea, select {
+  -webkit-tap-highlight-color: rgba(74, 144, 226, 0.2);
+}
+
+/* Suavizar scroll em dispositivos móveis */
+html {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Melhorar performance de scroll */
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Evitar zoom indesejado em inputs no iOS */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+/* Otimizar gestos de swipe */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  input, textarea {
+    -webkit-user-select: auto;
+    user-select: auto;
+  }
+}
+
+/* Melhorar aparência no modo standalone (instalado) */
+@media (display-mode: standalone) {
+  /* Adicionar padding top para compensar status bar */
+  body {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  
+  /* Esconder elementos desnecessários em modo app */
+  .external-link-indicator {
+    display: none;
+  }
+}
+
+/* Gestos de navegação iOS */
+@supports (-webkit-touch-callout: none) {
+  body {
+    padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  }
+}
+
+/* Performance: GPU acceleration para elementos interativos */
+button, a, .card, .modal {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Otimizar animações em PWA */
+@media (hover: none) and (pointer: coarse) {
+  * {
+    transition-duration: 0.2s !important;
+  }
+  
+  .smooth-scroll {
+    scroll-behavior: auto;
+  }
+}
+
+/* Esconder scrollbar no modo PWA para aparência nativa */
+@media (display-mode: standalone) {
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+  
+  body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Pull-to-refresh customizado */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Melhorar touch targets (mínimo 44x44px) */
+button, a, input[type="button"], input[type="submit"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Otimizar fonte para dispositivos móveis */
+@media (max-width: 768px) {
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+}
+
+/* Prevenir bounce scroll no iOS */
+html, body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Melhorar contraste em dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}

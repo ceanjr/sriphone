@@ -26,5 +26,13 @@ export default defineConfig({
       cssCodeSplit: true,
       assetsInlineLimit: 4096,
     },
+    // PWA optimizations
+    server: {
+      headers: {
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    },
   },
+  // Compressão adicional
+  compressHTML: true,
 });

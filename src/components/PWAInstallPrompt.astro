@@ -1,0 +1,393 @@
+---
+// src/components/PWAInstallPrompt.astro
+// Componente para promover instalação do PWA
+---
+
+<div id="pwa-install-prompt" class="pwa-install-prompt hidden">
+  <div class="pwa-prompt-content">
+    <button id="pwa-prompt-close" class="pwa-prompt-close" aria-label="Fechar">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    
+    <div class="pwa-prompt-icon">
+      <img src="/icons/icon-96x96.png" alt="SriPhone" width="64" height="64" />
+    </div>
+    
+    <div class="pwa-prompt-text">
+      <h3>Instale o App na Tela Inicial</h3>
+      <p>Acesse rápido e use como aplicativo nativo!</p>
+    </div>
+    
+    <button id="pwa-install-button" class="pwa-install-button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Instalar App
+    </button>
+    
+    <button id="pwa-manual-instructions" class="pwa-manual-link">
+      Ver instruções manuais
+    </button>
+  </div>
+</div>
+
+<!-- Modal com instruções manuais -->
+<div id="pwa-instructions-modal" class="pwa-modal hidden">
+  <div class="pwa-modal-overlay"></div>
+  <div class="pwa-modal-content">
+    <button id="pwa-modal-close" class="pwa-prompt-close" aria-label="Fechar">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    
+    <h2>Como Instalar o App</h2>
+    
+    <div class="pwa-instructions">
+      <div class="pwa-instruction-section">
+        <h3>📱 No iPhone (Safari)</h3>
+        <ol>
+          <li>Toque no botão <strong>Compartilhar</strong> (ícone de quadrado com seta)</li>
+          <li>Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong></li>
+          <li>Toque em <strong>"Adicionar"</strong> no canto superior direito</li>
+          <li>O app aparecerá na sua tela inicial!</li>
+        </ol>
+      </div>
+      
+      <div class="pwa-instruction-section">
+        <h3>📱 No Android (Chrome)</h3>
+        <ol>
+          <li>Toque no menu <strong>⋮</strong> (três pontos) no canto superior direito</li>
+          <li>Selecione <strong>"Adicionar à tela inicial"</strong> ou <strong>"Instalar app"</strong></li>
+          <li>Confirme tocando em <strong>"Adicionar"</strong> ou <strong>"Instalar"</strong></li>
+          <li>O app aparecerá na sua tela inicial!</li>
+        </ol>
+      </div>
+      
+      <div class="pwa-instruction-section">
+        <h3>💻 No Desktop (Chrome/Edge)</h3>
+        <ol>
+          <li>Clique no ícone <strong>⊕</strong> ou <strong>🖥️</strong> na barra de endereços</li>
+          <li>Clique em <strong>"Instalar"</strong></li>
+          <li>O app será instalado e aberto em uma janela separada!</li>
+        </ol>
+      </div>
+    </div>
+    
+    <button id="pwa-modal-got-it" class="pwa-install-button">
+      Entendi!
+    </button>
+  </div>
+</div>
+
+<script>
+  // Gerenciar prompt de instalação do PWA
+  let deferredPrompt: any = null;
+  const promptEl = document.getElementById('pwa-install-prompt');
+  const installBtn = document.getElementById('pwa-install-button');
+  const closeBtn = document.getElementById('pwa-prompt-close');
+  const manualBtn = document.getElementById('pwa-manual-instructions');
+  const modal = document.getElementById('pwa-instructions-modal');
+  const modalClose = document.getElementById('pwa-modal-close');
+  const modalGotIt = document.getElementById('pwa-modal-got-it');
+
+  // Verificar se já foi instalado ou se o prompt foi dispensado
+  const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+  const promptDismissed = localStorage.getItem('pwa-prompt-dismissed');
+  const promptDismissedTime = promptDismissed ? parseInt(promptDismissed) : 0;
+  const daysSinceDismissed = (Date.now() - promptDismissedTime) / (1000 * 60 * 60 * 24);
+
+  // Capturar evento de instalação
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Mostrar prompt se não foi instalado e não foi dispensado recentemente
+    if (!isInstalled && daysSinceDismissed > 7) {
+      setTimeout(() => {
+        promptEl?.classList.remove('hidden');
+        promptEl?.classList.add('visible');
+      }, 3000); // Esperar 3 segundos antes de mostrar
+    }
+  });
+
+  // Botão de instalação
+  installBtn?.addEventListener('click', async () => {
+    if (!deferredPrompt) {
+      // Se não há prompt disponível, mostrar instruções manuais
+      modal?.classList.remove('hidden');
+      modal?.classList.add('visible');
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('PWA instalado com sucesso');
+    }
+    
+    deferredPrompt = null;
+    promptEl?.classList.remove('visible');
+    promptEl?.classList.add('hidden');
+  });
+
+  // Fechar prompt
+  closeBtn?.addEventListener('click', () => {
+    promptEl?.classList.remove('visible');
+    promptEl?.classList.add('hidden');
+    localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
+  });
+
+  // Mostrar instruções manuais
+  manualBtn?.addEventListener('click', () => {
+    modal?.classList.remove('hidden');
+    modal?.classList.add('visible');
+  });
+
+  // Fechar modal
+  modalClose?.addEventListener('click', () => {
+    modal?.classList.remove('visible');
+    modal?.classList.add('hidden');
+  });
+
+  modalGotIt?.addEventListener('click', () => {
+    modal?.classList.remove('visible');
+    modal?.classList.add('hidden');
+  });
+
+  // Fechar modal ao clicar no overlay
+  modal?.querySelector('.pwa-modal-overlay')?.addEventListener('click', () => {
+    modal?.classList.remove('visible');
+    modal?.classList.add('hidden');
+  });
+
+  // Detectar quando o app é instalado
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA foi instalado');
+    promptEl?.classList.remove('visible');
+    promptEl?.classList.add('hidden');
+    localStorage.setItem('pwa-installed', 'true');
+  });
+</script>
+
+<style>
+  .pwa-install-prompt {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border-top: 2px solid #333;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1.5rem;
+  }
+
+  .pwa-install-prompt.visible {
+    bottom: 0;
+  }
+
+  .pwa-install-prompt.hidden {
+    display: block;
+  }
+
+  .pwa-prompt-content {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .pwa-prompt-close {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #fff;
+    transition: all 0.2s;
+  }
+
+  .pwa-prompt-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+
+  .pwa-prompt-icon img {
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .pwa-prompt-text {
+    text-align: center;
+  }
+
+  .pwa-prompt-text h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #fff;
+  }
+
+  .pwa-prompt-text p {
+    color: #aaa;
+    font-size: 0.95rem;
+  }
+
+  .pwa-install-button {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: #fff;
+    border: none;
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+  }
+
+  .pwa-install-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+  }
+
+  .pwa-manual-link {
+    background: transparent;
+    color: #4a90e2;
+    border: none;
+    font-size: 0.875rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0.5rem;
+  }
+
+  .pwa-manual-link:hover {
+    color: #357abd;
+  }
+
+  /* Modal */
+  .pwa-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .pwa-modal.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .pwa-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+  }
+
+  .pwa-modal-content {
+    position: relative;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .pwa-modal-content h2 {
+    color: #fff;
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .pwa-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .pwa-instruction-section h3 {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .pwa-instruction-section ol {
+    color: #ccc;
+    padding-left: 1.5rem;
+    line-height: 1.8;
+  }
+
+  .pwa-instruction-section li {
+    margin-bottom: 0.5rem;
+  }
+
+  .pwa-instruction-section strong {
+    color: #4a90e2;
+  }
+
+  #pwa-modal-got-it {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  /* Mobile responsivo */
+  @media (max-width: 768px) {
+    .pwa-install-prompt {
+      padding: 1rem;
+    }
+
+    .pwa-prompt-text h3 {
+      font-size: 1.1rem;
+    }
+
+    .pwa-install-button {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .pwa-modal-content {
+      padding: 1.5rem;
+    }
+
+    .pwa-modal-content h2 {
+      font-size: 1.5rem;
+    }
+  }
+
+  /* Esconder em modo standalone (já instalado) */
+  @media (display-mode: standalone) {
+    .pwa-install-prompt {
+      display: none !important;
+    }
+  }
+</style>

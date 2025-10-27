@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v3-performance';
+const CACHE_VERSION = 'v4-pwa';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -7,6 +7,10 @@ const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   '/',
   '/catalogo',
+  '/manifest.json',
+  '/offline.html',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
   '/fonts/inter-var.woff2',
   '/icons/logo.svg',
   '/icons/whatsapp.svg',
@@ -127,6 +131,10 @@ self.addEventListener('fetch', (event) => {
           return response;
         });
       })
-      .catch(() => caches.match(request))
+      .catch(() => {
+        return caches.match(request).then((cached) => {
+          return cached || caches.match('/offline.html');
+        });
+      })
   );
 });
