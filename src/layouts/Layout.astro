@@ -42,9 +42,24 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- Preconnect to critical origins -->
+    <!-- Resource hints críticos para performance -->
     <link rel="preconnect" href="https://vercel-analytics.com" crossorigin />
-    <link rel="dns-prefetch" href="https://supabase.co" />
+    <link rel="preconnect" href="https://supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+    <!-- Prefetch rotas críticas -->
+    <link rel="prefetch" href="/catalogo" />
+
+    <!-- Preload recursos críticos -->
+    <link
+      rel="preload"
+      href="/fonts/inter-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="preload" href="/images/hero-bg.webp" as="image" />
+    <link rel="preload" href="/icons/logo.svg" as="image" />
 
     <!-- Critical CSS Inline para eliminar render-blocking -->
     {criticalCSS && <style is:inline set:html={criticalCSS} />}
@@ -52,8 +67,15 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <slot name="head" />
     <Analytics />
 
-    <!-- Web Vitals Performance Tracking -->
-    <script type="module" src="/src/scripts/webVitals.js"></script>
+    <!-- Scripts otimizados para reduzir TBT -->
+    <script type="module" src="/src/scripts/webVitals.js" defer></script>
+
+    <!-- Service Worker para cache agressivo -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {}); // Silent fail
+      }
+    </script>
 
     <title>{title}</title>
   </head>

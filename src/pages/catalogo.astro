@@ -335,32 +335,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       productService,
       categoryService,
       authService,
-      type Product,
-      type Category,
     } from '../lib/supabase';
 
     // ==================== Estado ====================
-    interface AppState {
-      produtos: (Product & { categoria: Category })[];
-      categorias: Category[];
-      categoriaAtiva: string;
-      modoVisualizacao: 'coluna' | 'grade' | 'lista';
-      filtros: {
-        busca: string;
-        condicao: string;
-        bateria: number;
-        ordenacao: string;
-      };
-      paginacao: {
-        itensPorPagina: number;
-        paginaAtual: number;
-        totalPaginas: number;
-        carregando: boolean;
-        hasMore: boolean;
-      };
-    }
-
-    const state: AppState = {
+    const state = {
       produtos: [],
       categorias: [],
       categoriaAtiva: 'todos',
@@ -412,7 +390,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     };
 
     // ==================== Ordenação de Categorias ====================
-    function ordenarCategorias(categorias: Category[]): Category[] {
+    function ordenarCategorias(categorias: any[]) {
       const ordem: { [key: string]: number } = {
         todos: 0,
         'iphone 4': 1,
@@ -515,7 +493,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Templates ====================
     const templates = {
-      produtoCard(produto: Product & { categoria: Category }): string {
+      produtoCard(produto: {
+        preco: number;
+        bateria: number;
+        imagens: any[];
+        id: any;
+        codigo: string;
+        nome: string;
+        descricao: string;
+        condicao: string;
+        categoria: { nome: any };
+        categoria_id: any;
+      }) {
         const precoFormatado = utils.formatarPreco(produto.preco);
         const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
         const bateriaColorClass = getBateriaColor(produto.bateria);
@@ -630,15 +619,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 `;
       },
 
-      categoriaSecao(
-        nomeCategoria: string,
-        produtos: (Product & { categoria: Category })[],
-      ): string {
+      categoriaSecao(nomeCategoria: string, produtos: any[]) {
         return `
       <div class="categoria-section">
           <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
           <div class="categoria-grid ${state.modoVisualizacao}">
-              ${produtos.map((p) => templates.produtoCard(p)).join('')}
+              ${produtos.map((p: any) => templates.produtoCard(p)).join('')}
           </div>
       </div>
     `;
@@ -647,7 +633,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Lógica de Negócio ====================
     const business = {
-      filtrarProdutos(): (Product & { categoria: Category })[] {
+      filtrarProdutos() {
         return state.produtos.filter((p) => {
           // Filtro de categoria
           if (
@@ -682,9 +668,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         });
       },
 
-      ordenarProdutos(
-        produtos: (Product & { categoria: Category })[],
-      ): (Product & { categoria: Category })[] {
+      ordenarProdutos(produtos: any[]) {
         const copia = [...produtos];
 
         switch (state.filtros.ordenacao) {
@@ -703,12 +687,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         }
       },
 
-      agruparPorCategoria(
-        produtos: (Product & { categoria: Category })[],
-      ): Map<string, (Product & { categoria: Category })[]> {
-        const grupos = new Map<string, (Product & { categoria: Category })[]>();
+      agruparPorCategoria(produtos: any[]) {
+        const grupos = new Map();
 
-        produtos.forEach((p) => {
+        produtos.forEach((p: { categoria: { nome: string } }) => {
           const catNome = p.categoria?.nome || 'Sem Categoria';
           if (!grupos.has(catNome)) {
             grupos.set(catNome, []);
@@ -722,7 +704,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Renderização ====================
     const render = {
-      categorias(): void {
+      categorias() {
         if (!elementos.categoriaSelect) return;
 
         // ORDENAR CATEGORIAS ANTES DE RENDERIZAR
@@ -788,7 +770,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         );
       },
 
-      produtos(): void {
+      produtos() {
         if (!elementos.produtosContainer || !elementos.emptyState) return;
 
         // Aplicar classe do modo de visualização
@@ -864,7 +846,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         setupEditButtons();
       },
 
-      loading(mostrar: boolean): void {
+      loading(mostrar: boolean) {
         if (elementos.loading) {
           elementos.loading.style.display = mostrar ? 'flex' : 'none';
         }
@@ -873,8 +855,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Handlers ====================
     const handlers = {
-      categoriaClick(e: Event): void {
-        const target = e.currentTarget as HTMLElement;
+      categoriaClick(e: { currentTarget: any }) {
+        const target = e.currentTarget;
         const categoriaId = target.dataset.categoria;
 
         // Atualizar UI
@@ -891,25 +873,23 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         render.produtos();
       },
 
-      categoriaSelectChange(e: Event): void {
-        const target = e.target as HTMLSelectElement;
+      categoriaSelectChange(e: { target: any }) {
+        const target = e.target;
         state.categoriaAtiva = target.value;
 
         // Atualizar UI dos botões no desktop, se existirem
-        (
-          document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
-        ).forEach((b) => {
+        document.querySelectorAll('.categoria-btn').forEach((b) => {
           b.classList.toggle(
             'active',
-            b.dataset.categoria === state.categoriaAtiva,
+            (b as HTMLElement).dataset.categoria === state.categoriaAtiva,
           );
         });
 
         render.produtos();
       },
 
-      produtoClick(e: Event): void {
-        const card = e.currentTarget as HTMLElement;
+      produtoClick(e: { currentTarget: any }) {
+        const card = e.currentTarget;
         const produtoData = card.dataset.produto;
 
         if (produtoData) {
@@ -922,35 +902,35 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         }
       },
 
-      searchInput(e: Event): void {
-        const target = e.target as HTMLInputElement;
+      searchInput(e: { target: any }) {
+        const target = e.target;
         state.filtros.busca = target.value;
         render.produtos();
       },
 
-      toggleFiltros(): void {
+      toggleFiltros() {
         elementos.filtrosAvancados?.classList.toggle('active');
       },
 
-      filtroCondicao(e: Event): void {
-        const target = e.target as HTMLSelectElement;
+      filtroCondicao(e: { target: any }) {
+        const target = e.target;
         state.filtros.condicao = target.value;
         render.produtos();
       },
 
-      filtroBateria(e: Event): void {
-        const target = e.target as HTMLSelectElement;
+      filtroBateria(e: { target: any }) {
+        const target = e.target;
         state.filtros.bateria = parseInt(target.value);
         render.produtos();
       },
 
-      filtroOrdenacao(e: Event): void {
-        const target = e.target as HTMLSelectElement;
+      filtroOrdenacao(e: { target: any }) {
+        const target = e.target;
         state.filtros.ordenacao = target.value;
         render.produtos();
       },
 
-      limparFiltros(): void {
+      limparFiltros() {
         // Resetar estado
         state.filtros = {
           busca: '',
@@ -971,30 +951,32 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           elementos.categoriaSelect.value = 'todos';
 
         // Resetar botões, se existirem
-        (
-          document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
-        ).forEach((b) => {
-          b.classList.toggle('active', b.dataset.categoria === 'todos');
+        document.querySelectorAll('.categoria-btn').forEach((b) => {
+          b.classList.toggle(
+            'active',
+            (b as HTMLElement).dataset.categoria === 'todos',
+          );
         });
 
         // Re-renderizar
         render.produtos();
       },
 
-      visualizacaoClick(e: Event): void {
-        const target = e.currentTarget as HTMLElement;
-        const view = target.dataset.view as 'coluna' | 'grade' | 'lista';
+      visualizacaoClick(e: { currentTarget: any }) {
+        const target = e.currentTarget;
+        const view = target.dataset.view;
 
         // Atualizar estado
         state.modoVisualizacao = view;
         localStorage.setItem('modoVisualizacao', view);
 
         // Atualizar UI dos botões
-        (elementos.visualizacaoBtns as NodeListOf<HTMLElement>).forEach(
-          (btn) => {
-            btn.classList.toggle('active', btn.dataset.view === view);
-          },
-        );
+        elementos.visualizacaoBtns.forEach((btn) => {
+          btn.classList.toggle(
+            'active',
+            (btn as HTMLElement).dataset.view === view,
+          );
+        });
 
         // Atualizar classes no container
         elementos.produtosContainer?.classList.remove(
@@ -1012,7 +994,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         render.produtos();
       },
 
-      async loginSubmit(e: Event): Promise<void> {
+      async loginSubmit(e: { preventDefault: () => void }) {
         e.preventDefault();
 
         const emailInput = document.getElementById(
@@ -1032,7 +1014,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             elementos.loginError.textContent = '';
             elementos.loginError.classList.remove('show');
           }
-        } catch (error: any) {
+        } catch (error) {
           if (elementos.loginError) {
             elementos.loginError.textContent =
               error.message || 'Credenciais inválidas';
@@ -1041,14 +1023,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         }
       },
 
-      closeModalLogin(): void {
+      closeModalLogin() {
         elementos.modalLogin?.classList.remove('active');
       },
     };
 
     // ==================== API ====================
     const api = {
-      async carregarDados(): Promise<void> {
+      async carregarDados() {
         try {
           render.loading(true);
           if (elementos.emptyState) elementos.emptyState.style.display = 'none';
@@ -1075,10 +1057,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
               setTimeout(() => {
                 const imagesToPreload = produtos
                   .slice(0, 6) // Primeiras 6 imagens
-                  .map((p) => p.imagens?.[0])
+                  .map((p: { imagens: any[] }) => p.imagens?.[0])
                   .filter(Boolean);
 
-                imagesToPreload.forEach((src, index) => {
+                imagesToPreload.forEach((src: string, index: number) => {
                   setTimeout(() => {
                     const img = new Image();
                     img.src = src;
@@ -1122,7 +1104,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         }
       },
 
-      async carregarMaisProdutos(): Promise<void> {
+      async carregarMaisProdutos() {
         if (state.paginacao.carregando || !state.paginacao.hasMore) return;
 
         try {
@@ -1150,7 +1132,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         }
       },
 
-      invalidarCache(): void {
+      invalidarCache() {
         sessionStorage.removeItem('sriphone-produtos-cache');
         sessionStorage.removeItem('sriphone-produtos-cache-time');
         // Resetar paginação
@@ -1160,7 +1142,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     };
 
     // ==================== Event Listeners ====================
-    function setupEventListeners(): void {
+    function setupEventListeners() {
       // Busca
       elementos.searchInput?.addEventListener('input', handlers.searchInput);
 
@@ -1218,8 +1200,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           threshold: 0.1,
         };
 
-        const observerCallback = (entries: IntersectionObserverEntry[]) => {
-          entries.forEach((entry) => {
+        const observerCallback = (entries: any[]) => {
+          entries.forEach((entry: { isIntersecting: any }) => {
             if (
               entry.isIntersecting &&
               !state.paginacao.carregando &&

@@ -1,15 +1,22 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3-performance';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
 
+// Assets críticos para cache agressivo
 const STATIC_ASSETS = [
   '/',
   '/catalogo',
+  '/fonts/inter-var.woff2',
+  '/icons/logo.svg',
+  '/icons/whatsapp.svg',
+  '/icons/instagram.svg',
+  '/images/hero-bg.webp',
+  '/_astro/global.css'
 ];
 
-const MAX_CACHE_SIZE = 50;
-const MAX_CACHE_AGE = 7 * 24 * 60 * 60 * 1000; // 7 dias
+const MAX_CACHE_SIZE = 100; // Aumentado para performance
+const MAX_CACHE_AGE = 30 * 24 * 60 * 60 * 1000; // 30 dias - mais agressivo
 
 // Instalação - cachear assets estáticos
 self.addEventListener('install', (event) => {
