@@ -399,6 +399,25 @@
   animation: spin 1s linear infinite;
 }
 
+.spinner-small {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #1a1a1a;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  color: #999;
+  font-size: 0.9rem;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

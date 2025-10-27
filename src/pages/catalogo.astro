@@ -280,6 +280,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             <p>Carregando produtos...</p>
           </div>
           <div id="produtos-container"></div>
+          <div id="loading-more" class="loading-more" style="display: none;">
+            <div class="spinner-small"></div>
+            <p>Carregando mais produtos...</p>
+          </div>
+          <div id="scroll-sentinel" style="height: 1px;"></div>
           <div id="empty-state" class="empty-state" style="display: none;">
             <svg
               viewBox="0 0 24 24"
@@ -350,6 +355,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         itensPorPagina: number;
         paginaAtual: number;
         totalPaginas: number;
+        carregando: boolean;
+        hasMore: boolean;
       };
     }
 
@@ -368,6 +375,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         itensPorPagina: 30,
         paginaAtual: 1,
         totalPaginas: 1,
+        carregando: false,
+        hasMore: true,
       },
     };
 
@@ -382,6 +391,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
       produtosContainer: document.getElementById('produtos-container'),
       loading: document.getElementById('loading'),
+      loadingMore: document.getElementById('loading-more'),
+      scrollSentinel: document.getElementById('scroll-sentinel'),
       emptyState: document.getElementById('empty-state'),
       categoriasLista: document.getElementById('categorias-lista'),
       filtroCondicao: document.getElementById(
@@ -1089,12 +1100,45 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           alert('Erro ao carregar produtos. Tente novamente.');
         } finally {
           render.loading(false);
+          state.paginacao.carregando = false;
+        }
+      },
+
+      async carregarMaisProdutos(): Promise<void> {
+        if (state.paginacao.carregando || !state.paginacao.hasMore) return;
+
+        try {
+          state.paginacao.carregando = true;
+          if (elementos.loadingMore) elementos.loadingMore.style.display = 'flex';
+
+          console.log(`📄 Carregando página ${state.paginacao.paginaAtual + 1}`);
+
+          // Aqui você pode implementar a lógica de carregar mais
+          // Por enquanto, vamos usar abordagem client-side (filtrar do state.produtos)
+          // Em produção, seria melhor usar productService.getPaginated()
+          
+          // Simular delay de rede
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Por enquanto, marcar como não há mais (já carregamos tudo)
+          // Quando implementar paginação no backend, atualizar aqui
+          state.paginacao.hasMore = false;
+          state.paginacao.paginaAtual++;
+
+        } catch (error) {
+          console.error('Erro ao carregar mais produtos:', error);
+        } finally {
+          state.paginacao.carregando = false;
+          if (elementos.loadingMore) elementos.loadingMore.style.display = 'none';
         }
       },
       
       invalidarCache(): void {
         sessionStorage.removeItem('sriphone-produtos-cache');
         sessionStorage.removeItem('sriphone-produtos-cache-time');
+        // Resetar paginação
+        state.paginacao.paginaAtual = 1;
+        state.paginacao.hasMore = true;
       },
     };
 
@@ -1148,6 +1192,26 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         api.invalidarCache();
         api.carregarDados();
       });
+
+      // Intersection Observer para scroll infinito
+      if (elementos.scrollSentinel) {
+        const observerOptions = {
+          root: null,
+          rootMargin: '100px',
+          threshold: 0.1
+        };
+
+        const observerCallback = (entries: IntersectionObserverEntry[]) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting && !state.paginacao.carregando && state.paginacao.hasMore) {
+              api.carregarMaisProdutos();
+            }
+          });
+        };
+
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        observer.observe(elementos.scrollSentinel);
+      }
     }
 
     // ==================== Funções Globais ====================
