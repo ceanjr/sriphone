@@ -329,48 +329,57 @@ import '../styles/components/modal-produto.css';
     showPlaceholder = true,
     priority = false,
   ) {
-    if (showPlaceholder) {
-      // Placeholder mais elaborado para mobile
-      img.style.background = isMobile
-        ? 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)'
-        : 'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
-      img.style.backgroundSize = isMobile ? '300% 100%' : '200% 100%';
-      img.style.animation = `skeleton-loading ${isMobile ? '1.2s' : '1.5s'} ease-in-out infinite`;
-
-      // Adicionar loading indicator para mobile
-      if (isMobile) {
-        const container = img.closest('.main-image-container');
-        if (container && !container.querySelector('.loading-indicator')) {
-          const indicator = document.createElement('div');
-          indicator.className = 'loading-indicator';
-          indicator.innerHTML = `
-            <div class="loading-spinner"></div>
-            <span>Carregando imagem...</span>
-          `;
-          container.appendChild(indicator);
-        }
+    // NO MOBILE: Carregar DIRETO sem cache/preload (evita travamentos)
+    if (isMobile) {
+      console.log('📱 Mobile: Carregando imagem diretamente:', src);
+      
+      if (showPlaceholder) {
+        img.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
+        img.style.backgroundSize = '300% 100%';
+        img.style.animation = 'skeleton-loading 1.2s ease-in-out infinite';
+        img.alt = 'Carregando...';
       }
+
+      // Carregar DIRETO - sem preload, sem cache
+      img.onload = () => {
+        console.log('✅ Imagem carregada com sucesso');
+        img.style.background = '';
+        img.style.animation = '';
+        img.style.opacity = '1';
+      };
+
+      img.onerror = (error) => {
+        console.error('❌ Erro ao carregar imagem:', src, error);
+        img.style.background = '';
+        img.style.animation = '';
+        img.alt = 'Erro ao carregar';
+        // Tentar novamente sem otimização
+        setTimeout(() => {
+          img.src = src;
+        }, 1000);
+      };
+
+      // Definir src diretamente
+      img.src = src;
+      return;
     }
 
-    preloadImage(src, priority || isMobile)
+    // DESKTOP: Usar preload normal
+    if (showPlaceholder) {
+      img.style.background = 'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
+      img.style.backgroundSize = '200% 100%';
+      img.style.animation = 'skeleton-loading 1.5s ease-in-out infinite';
+    }
+
+    preloadImage(src, priority)
       .then((cachedImg) => {
         img.src = cachedImg.src;
         img.style.background = '';
         img.style.animation = '';
         img.style.opacity = '0';
 
-        // Remover loading indicator
-        const container = img.closest('.main-image-container');
-        const indicator = container?.querySelector('.loading-indicator');
-        if (indicator) {
-          indicator.remove();
-        }
-
-        // Fade in mais rápido em mobile
         requestAnimationFrame(() => {
-          img.style.transition = isMobile
-            ? 'opacity 0.2s ease'
-            : 'opacity 0.3s ease';
+          img.style.transition = 'opacity 0.3s ease';
           img.style.opacity = '1';
         });
       })
@@ -378,23 +387,7 @@ import '../styles/components/modal-produto.css';
         console.error('Erro ao carregar imagem:', error);
         img.style.background = '';
         img.style.animation = '';
-
-        // Remover loading indicator
-        const container = img.closest('.main-image-container');
-        const indicator = container?.querySelector('.loading-indicator');
-        if (indicator) {
-          indicator.remove();
-        }
-
-        // Mostrar placeholder de erro
-        img.alt = 'Erro ao carregar imagem';
-        if (isMobile) {
-          // Mostrar erro mais visível em mobile
-          const errorDiv = document.createElement('div');
-          errorDiv.className = 'image-error-mobile';
-          errorDiv.textContent = 'Erro ao carregar';
-          container?.appendChild(errorDiv);
-        }
+        img.src = src; // Tentar carregar diretamente
       });
   }
 
