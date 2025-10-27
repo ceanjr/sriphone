@@ -211,7 +211,7 @@ import '../styles/components/modal-produto.css';
     };
   }
 
-  // CRITICAL: Cache de imagens + detecção mobile
+  // CRITICAL: Cache de imagens + detecção mobile - SIMPLIFICADO
   const imageCache = new Map<string, HTMLImageElement>();
   const loadingImages = new Set<string>();
   const isMobile = window.innerWidth <= 768;
@@ -220,19 +220,28 @@ import '../styles/components/modal-produto.css';
     (navigatorWithConnection.connection &&
       navigatorWithConnection.connection.effectiveType === 'slow-2g') ||
     navigatorWithConnection.connection?.effectiveType === '2g';
+  
+  // CRITICAL: Limitar cache em mobile para evitar crash
+  const MAX_CACHE_SIZE = isMobile ? 5 : 20;
 
-  // CRITICAL: Preload otimizado para mobile
+  // CRITICAL: Preload MUITO simplificado para mobile
   function preloadImage(
     src: string,
     priority = false,
   ): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
-      // Otimizar URL para mobile
-      const optimizedSrc = optimizeImageForDevice(src);
+      // NO MOBILE: Não otimizar URL, usar original
+      const optimizedSrc = isMobile ? src : optimizeImageForDevice(src);
 
       if (imageCache.has(optimizedSrc)) {
         resolve(imageCache.get(optimizedSrc)!);
         return;
+      }
+
+      // NO MOBILE: Se já tem muitas imagens em cache, limpar antigas
+      if (isMobile && imageCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = imageCache.keys().next().value;
+        imageCache.delete(firstKey);
       }
 
       if (loadingImages.has(optimizedSrc)) {
@@ -251,27 +260,24 @@ import '../styles/components/modal-produto.css';
       loadingImages.add(optimizedSrc);
       const img = new Image();
 
-      // Configurar loading priority para mobile
-      if (priority || isMobile) {
+      // NO MOBILE: Sempre usar loading lazy, exceto primeira imagem
+      if (priority && !isMobile) {
         img.fetchPriority = 'high';
         img.loading = 'eager';
+      } else {
+        img.loading = 'lazy';
       }
 
       img.onload = () => {
         loadingImages.delete(optimizedSrc);
         imageCache.set(optimizedSrc, img);
-        imageCache.set(src, img); // Cache também a URL original
         resolve(img);
       };
 
       img.onerror = () => {
         loadingImages.delete(optimizedSrc);
-        // Tentar URL original se a otimizada falhou
-        if (optimizedSrc !== src) {
-          preloadImage(src, priority).then(resolve).catch(reject);
-        } else {
-          reject(new Error(`Failed to load image: ${src}`));
-        }
+        console.error('❌ Erro ao carregar imagem:', src);
+        reject(new Error(`Failed to load image: ${src}`));
       };
 
       // Definir crossOrigin se necessário
@@ -394,12 +400,7 @@ import '../styles/components/modal-produto.css';
 
   // Função global para abrir o modal - COM PRELOAD ANTECIPADO
   (window as any).abrirModalProduto = debounce((produto: any) => {
-    console.log('🔍 Modal sendo aberto:', { produto, isModalOpen, modal: !!modal });
-    
-    if (isModalOpen) {
-      console.warn('⚠️ Modal já está aberto, ignorando');
-      return; // Prevenir múltiplas aberturas
-    }
+    if (isModalOpen) return; // Prevenir múltiplas aberturas
 
     if (!modal) {
       console.error('❌ Elemento modal não encontrado!');
@@ -409,18 +410,15 @@ import '../styles/components/modal-produto.css';
     produtoAtual = produto;
     isModalOpen = true;
 
-    // CRITICAL: Preload da primeira imagem IMEDIATAMENTE (especialmente importante em mobile)
+    // CRITICAL: NO MOBILE - Carregar APENAS a primeira imagem
     if (produto.imagens && produto.imagens.length > 0) {
-      preloadImage(produto.imagens[0], true).catch(() => {});
+      // Carregar apenas a primeira imagem com alta prioridade
+      preloadImage(produto.imagens[0], true).catch((err) => {
+        console.error('❌ Erro ao carregar imagem principal:', err);
+      });
 
-      // Em mobile, precarregar todas as imagens pequenas em paralelo
-      if (isMobile && produto.imagens.length > 1 && !isSlowConnection) {
-        produto.imagens.slice(1, 4).forEach((img: string, index: number) => {
-          setTimeout(() => {
-            preloadImage(img, index < 2).catch(() => {});
-          }, index * 25); // Stagger bem pequeno
-        });
-      }
+      // NO MOBILE: NÃO precarregar outras imagens
+      // Elas serão carregadas sob demanda quando o usuário navegar
     }
 
     if (modal) {
@@ -492,16 +490,8 @@ import '../styles/components/modal-produto.css';
 
       // CRITICAL: Usar requestAnimationFrame para abrir modal
       requestAnimationFrame(() => {
-        console.log('✅ Adicionando classe active ao modal');
         modal.classList.add('active');
         document.body.classList.add('modal-open');
-        
-        console.log('📊 Estado do modal:', {
-          hasActiveClass: modal.classList.contains('active'),
-          display: window.getComputedStyle(modal).display,
-          zIndex: window.getComputedStyle(modal).zIndex,
-          visibility: window.getComputedStyle(modal).visibility
-        });
         
         // CRITICAL: Forçar scroll para o topo
         setTimeout(() => {
@@ -550,36 +540,19 @@ import '../styles/components/modal-produto.css';
 
     mainImage.style.display = 'block';
 
-    // CRITICAL: Carregar imagem principal com prioridade alta
+    // CRITICAL: Carregar APENAS imagem principal no mobile
     lazyLoadImage(mainImage, imagens[0], true, true);
 
-    // CRITICAL: Precarregar todas as imagens em mobile (conexão assumida)
-    if (isMobile && !isSlowConnection) {
-      // Mobile com boa conexão: precarregar todas
+    // NO MOBILE: NÃO precarregar outras imagens automaticamente
+    // Apenas quando usuário navegar (via selectImage)
+    if (!isMobile && imagens.length > 1) {
+      // Desktop: precarregar apenas próximas 2 imagens
       setTimeout(() => {
-        imagens.slice(1).forEach((img, index) => {
-          setTimeout(() => {
-            preloadImage(img, index < 2).catch(() => {}); // Primeiras 2 com alta prioridade
-          }, index * 50);
-        });
-      }, 100);
-    } else if (isMobile && isSlowConnection) {
-      // Mobile com conexão lenta: apenas próxima
-      if (imagens.length > 1) {
-        setTimeout(() => {
-          preloadImage(imagens[1]).catch(() => {});
-        }, 300);
-      }
-    } else {
-      // Desktop: estratégia original
-      if (imagens.length > 1) {
-        setTimeout(() => {
-          preloadImage(imagens[1]).catch(() => {});
-          if (imagens.length > 2) {
-            setTimeout(() => preloadImage(imagens[2]).catch(() => {}), 100);
-          }
-        }, 200);
-      }
+        preloadImage(imagens[1]).catch(() => {});
+        if (imagens.length > 2) {
+          setTimeout(() => preloadImage(imagens[2]).catch(() => {}), 200);
+        }
+      }, 300);
     }
 
     // CRITICAL: Render thumbnails com DocumentFragment
@@ -604,22 +577,31 @@ import '../styles/components/modal-produto.css';
       // CRITICAL: Event delegation em vez de listener individual
       thumb.dataset.index = index.toString();
 
-      // Lazy load com intersection observer para thumbnails
+      // NO MOBILE: Thumbnails muito simplificadas
       const thumbObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
               const img = entry.target as HTMLImageElement;
-              preloadImage(img.dataset.src!)
-                .then((cachedImg) => {
-                  img.src = cachedImg.src;
-                  img.style.opacity = '1';
-                  thumbObserver.unobserve(img);
-                })
-                .catch(() => {
-                  img.style.opacity = '1';
-                  thumbObserver.unobserve(img);
-                });
+              // NO MOBILE: Carregar direto sem preload
+              if (isMobile) {
+                img.src = img.dataset.src!;
+                img.style.opacity = '1';
+                thumbObserver.unobserve(img);
+              } else {
+                // Desktop: usar preload
+                preloadImage(img.dataset.src!)
+                  .then((cachedImg) => {
+                    img.src = cachedImg.src;
+                    img.style.opacity = '1';
+                    thumbObserver.unobserve(img);
+                  })
+                  .catch(() => {
+                    img.src = img.dataset.src!;
+                    img.style.opacity = '1';
+                    thumbObserver.unobserve(img);
+                  });
+              }
             }
           });
         },
@@ -665,17 +647,19 @@ import '../styles/components/modal-produto.css';
       lazyLoadImage(mainImage, novaImagem, false);
     }
 
-    // CRITICAL: Precarregar imagens adjacentes
-    const preloadNext = () => {
-      if (index + 1 < imagensAtuais.length) {
-        preloadImage(imagensAtuais[index + 1]).catch(() => {});
-      }
-      if (index - 1 >= 0) {
-        preloadImage(imagensAtuais[index - 1]).catch(() => {});
-      }
-    };
-
-    setTimeout(preloadNext, 100);
+    // NO MOBILE: NÃO precarregar imagens adjacentes (causa crash)
+    // Carregar apenas quando o usuário navegar
+    if (!isMobile) {
+      const preloadNext = () => {
+        if (index + 1 < imagensAtuais.length) {
+          preloadImage(imagensAtuais[index + 1]).catch(() => {});
+        }
+        if (index - 1 >= 0) {
+          preloadImage(imagensAtuais[index - 1]).catch(() => {});
+        }
+      };
+      setTimeout(preloadNext, 200);
+    }
 
     // Atualizar thumbnails - OTIMIZADO
     const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
@@ -694,7 +678,7 @@ import '../styles/components/modal-produto.css';
     }
   }
 
-  // Fechar modal - OTIMIZADO
+  // Fechar modal - OTIMIZADO + limpar cache no mobile
   function fecharModal() {
     if (!isModalOpen) return;
 
@@ -703,6 +687,13 @@ import '../styles/components/modal-produto.css';
       document.body.classList.remove('modal-open');
       isModalOpen = false;
       currentIndex = 0;
+      
+      // NO MOBILE: Limpar cache ao fechar para liberar memória
+      if (isMobile) {
+        imageCache.clear();
+        loadingImages.clear();
+        console.log('🧹 Cache limpo (mobile)');
+      }
     });
   }
 
