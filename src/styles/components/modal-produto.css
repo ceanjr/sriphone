@@ -1115,6 +1115,81 @@ body.modal-open {
   font-style: italic;
 }
 
+/* Loading Indicators para Mobile */
+.loading-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #333;
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-indicator span {
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.image-error-mobile {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(220, 53, 69, 0.9);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 10;
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .main-image {
+    /* Otimização para touch */
+    touch-action: manipulation;
+  }
+  
+  /* Skeleton loading mais rápido em mobile */
+  .main-image[style*="skeleton-loading"] {
+    animation-duration: 1.2s !important;
+  }
+  
+  /* Transições mais rápidas em mobile */
+  .main-image {
+    transition: opacity 0.2s ease !important;
+  }
+  
+  /* Loading indicator responsivo */
+  .loading-indicator {
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+  }
+  
+  .loading-indicator span {
+    font-size: 0.8125rem;
+  }
+}
+
 /* Animação suave de entrada */
 @keyframes fadeIn {
   from {
@@ -1125,4 +1200,9 @@ body.modal-open {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

@@ -459,6 +459,9 @@ export function initCatalogo() {
         .querySelectorAll('.produto-card')
         .forEach((card) => {
           card.addEventListener('click', handlers.produtoClick);
+          
+          // Preload inteligente para modal (especialmente importante em mobile)
+          setupCardPreload(card);
         });
 
       setupEditButtons();
@@ -797,6 +800,89 @@ export function initCatalogo() {
         subtree: true
       });
     }
+  }
+
+  // ==================== Preload Inteligente de Modal ====================
+  function setupCardPreload(card) {
+    const isMobile = window.innerWidth <= 768;
+    let preloadTimeout;
+    let hasPreloaded = false;
+
+    // Função para fazer preload das imagens do modal
+    function preloadModalImages() {
+      if (hasPreloaded) return;
+      
+      const produtoData = card.dataset.produto;
+      if (!produtoData) return;
+
+      try {
+        const produto = JSON.parse(produtoData);
+        if (produto.imagens && produto.imagens.length > 0) {
+          // Precarregar primeira imagem imediatamente
+          const firstImg = new Image();
+          
+          // Otimizar para mobile
+          if (isMobile && produto.imagens[0].includes('supabase')) {
+            const url = new URL(produto.imagens[0]);
+            url.searchParams.set('width', '800');
+            url.searchParams.set('quality', '80');
+            url.searchParams.set('format', 'webp');
+            firstImg.src = url.toString();
+          } else {
+            firstImg.src = produto.imagens[0];
+          }
+
+          // Precarregar segunda imagem se disponível (mobile)
+          if (isMobile && produto.imagens.length > 1) {
+            setTimeout(() => {
+              const secondImg = new Image();
+              if (produto.imagens[1].includes('supabase')) {
+                const url = new URL(produto.imagens[1]);
+                url.searchParams.set('width', '800');
+                url.searchParams.set('quality', '80');
+                url.searchParams.set('format', 'webp');
+                secondImg.src = url.toString();
+              } else {
+                secondImg.src = produto.imagens[1];
+              }
+            }, 100);
+          }
+
+          hasPreloaded = true;
+        }
+      } catch (error) {
+        console.warn('Erro no preload do modal:', error);
+      }
+    }
+
+    if (isMobile) {
+      // Mobile: preload no touchstart (mais rápido)
+      card.addEventListener('touchstart', () => {
+        clearTimeout(preloadTimeout);
+        preloadTimeout = setTimeout(preloadModalImages, 50);
+      }, { passive: true });
+
+      // Fallback para hover em mobile híbrido
+      card.addEventListener('mouseenter', () => {
+        clearTimeout(preloadTimeout);
+        preloadTimeout = setTimeout(preloadModalImages, 100);
+      });
+    } else {
+      // Desktop: preload no hover
+      card.addEventListener('mouseenter', () => {
+        clearTimeout(preloadTimeout);
+        preloadTimeout = setTimeout(preloadModalImages, 200);
+      });
+    }
+
+    // Cancelar preload se saiu antes de completar
+    card.addEventListener('mouseleave', () => {
+      clearTimeout(preloadTimeout);
+    });
+
+    card.addEventListener('touchend', () => {
+      clearTimeout(preloadTimeout);
+    });
   }  function handleEditClick(e) {
     e.stopPropagation();
     e.preventDefault();

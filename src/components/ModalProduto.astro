@@ -199,23 +199,28 @@ import '../styles/components/modal-produto.css';
     };
   }
 
-  // CRITICAL: Cache de imagens
+  // CRITICAL: Cache de imagens + detecção mobile
   const imageCache = new Map<string, HTMLImageElement>();
   const loadingImages = new Set<string>();
+  const isMobile = window.innerWidth <= 768;
+  const isSlowConnection = navigator.connection && navigator.connection.effectiveType === 'slow-2g' || navigator.connection?.effectiveType === '2g';
 
-  // CRITICAL: Preload e cache de imagens
-  function preloadImage(src: string): Promise<HTMLImageElement> {
+  // CRITICAL: Preload otimizado para mobile
+  function preloadImage(src: string, priority = false): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
-      if (imageCache.has(src)) {
-        resolve(imageCache.get(src)!);
+      // Otimizar URL para mobile
+      const optimizedSrc = optimizeImageForDevice(src);
+      
+      if (imageCache.has(optimizedSrc)) {
+        resolve(imageCache.get(optimizedSrc)!);
         return;
       }
 
-      if (loadingImages.has(src)) {
+      if (loadingImages.has(optimizedSrc)) {
         // Se já estamos carregando essa imagem, esperar
         const checkLoaded = () => {
-          if (imageCache.has(src)) {
-            resolve(imageCache.get(src)!);
+          if (imageCache.has(optimizedSrc)) {
+            resolve(imageCache.get(optimizedSrc)!);
           } else {
             setTimeout(checkLoaded, 10);
           }
@@ -224,53 +229,119 @@ import '../styles/components/modal-produto.css';
         return;
       }
 
-      loadingImages.add(src);
+      loadingImages.add(optimizedSrc);
       const img = new Image();
-
+      
+      // Configurar loading priority para mobile
+      if (priority || isMobile) {
+        img.fetchPriority = 'high';
+        img.loading = 'eager';
+      }
+      
       img.onload = () => {
-        loadingImages.delete(src);
-        imageCache.set(src, img);
+        loadingImages.delete(optimizedSrc);
+        imageCache.set(optimizedSrc, img);
+        imageCache.set(src, img); // Cache também a URL original
         resolve(img);
       };
-
+      
       img.onerror = () => {
-        loadingImages.delete(src);
-        reject(new Error(`Failed to load image: ${src}`));
+        loadingImages.delete(optimizedSrc);
+        // Tentar URL original se a otimizada falhou
+        if (optimizedSrc !== src) {
+          preloadImage(src, priority).then(resolve).catch(reject);
+        } else {
+          reject(new Error(`Failed to load image: ${src}`));
+        }
       };
-
+      
       // Definir crossOrigin se necessário
-      if (src.includes('supabase')) {
+      if (optimizedSrc.includes('supabase')) {
         img.crossOrigin = 'anonymous';
       }
-
-      img.src = src;
+      
+      img.src = optimizedSrc;
     });
   }
 
-  // CRITICAL: Lazy load de imagens com preload
+  // Otimizar imagem baseado no dispositivo
+  function optimizeImageForDevice(src: string): string {
+    if (!src.includes('supabase')) return src;
+    
+    try {
+      const url = new URL(src);
+      
+      // Otimizações específicas para mobile
+      if (isMobile) {
+        url.searchParams.set('width', '800'); // Máximo 800px em mobile
+        url.searchParams.set('quality', isSlowConnection ? '70' : '80');
+        url.searchParams.set('format', 'webp');
+        
+        // Compressão adicional para conexões lentas
+        if (isSlowConnection) {
+          url.searchParams.set('resize', 'fill');
+          url.searchParams.set('width', '600');
+          url.searchParams.set('quality', '60');
+        }
+      } else {
+        // Desktop - qualidade maior
+        url.searchParams.set('width', '1200');
+        url.searchParams.set('quality', '85');
+        url.searchParams.set('format', 'webp');
+      }
+      
+      return url.toString();
+    } catch (error) {
+      console.warn('Erro ao otimizar URL da imagem:', error);
+      return src;
+    }
+  }  // CRITICAL: Lazy load otimizado para mobile
   function lazyLoadImage(
     img: HTMLImageElement,
     src: string,
     showPlaceholder = true,
+    priority = false
   ) {
     if (showPlaceholder) {
-      // Mostrar placeholder de loading
-      img.style.background =
-        'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
-      img.style.backgroundSize = '200% 100%';
-      img.style.animation = 'skeleton-loading 1.5s ease-in-out infinite';
+      // Placeholder mais elaborado para mobile
+      img.style.background = isMobile 
+        ? 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 25%, #1a1a1a 50%, #2a2a2a 75%, #1a1a1a 100%)'
+        : 'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
+      img.style.backgroundSize = isMobile ? '300% 100%' : '200% 100%';
+      img.style.animation = `skeleton-loading ${isMobile ? '1.2s' : '1.5s'} ease-in-out infinite`;
+      
+      // Adicionar loading indicator para mobile
+      if (isMobile) {
+        const container = img.closest('.main-image-container');
+        if (container && !container.querySelector('.loading-indicator')) {
+          const indicator = document.createElement('div');
+          indicator.className = 'loading-indicator';
+          indicator.innerHTML = `
+            <div class="loading-spinner"></div>
+            <span>Carregando imagem...</span>
+          `;
+          container.appendChild(indicator);
+        }
+      }
     }
 
-    preloadImage(src)
+    preloadImage(src, priority || isMobile)
       .then((cachedImg) => {
         img.src = cachedImg.src;
         img.style.background = '';
         img.style.animation = '';
         img.style.opacity = '0';
 
-        // Fade in suave
+        // Remover loading indicator
+        const container = img.closest('.main-image-container');
+        const indicator = container?.querySelector('.loading-indicator');
+        if (indicator) {
+          indicator.remove();
+        }
+
+        // Fade in mais rápido em mobile
         requestAnimationFrame(() => {
-          img.style.transition = 'opacity 0.3s ease';
+          img.style.transition = isMobile ? 'opacity 0.2s ease' : 'opacity 0.3s ease';
           img.style.opacity = '1';
         });
       })
@@ -278,17 +349,46 @@ import '../styles/components/modal-produto.css';
         console.error('Erro ao carregar imagem:', error);
         img.style.background = '';
         img.style.animation = '';
+        
+        // Remover loading indicator
+        const container = img.closest('.main-image-container');
+        const indicator = container?.querySelector('.loading-indicator');
+        if (indicator) {
+          indicator.remove();
+        }
+        
         // Mostrar placeholder de erro
         img.alt = 'Erro ao carregar imagem';
+        if (isMobile) {
+          // Mostrar erro mais visível em mobile
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'image-error-mobile';
+          errorDiv.textContent = 'Erro ao carregar';
+          container?.appendChild(errorDiv);
+        }
       });
   }
 
-  // Função global para abrir o modal - COM DEBOUNCE
+  // Função global para abrir o modal - COM PRELOAD ANTECIPADO
   (window as any).abrirModalProduto = debounce((produto: any) => {
     if (isModalOpen) return; // Prevenir múltiplas aberturas
 
     produtoAtual = produto;
     isModalOpen = true;
+
+    // CRITICAL: Preload da primeira imagem IMEDIATAMENTE (especialmente importante em mobile)
+    if (produto.imagens && produto.imagens.length > 0) {
+      preloadImage(produto.imagens[0], true).catch(() => {});
+      
+      // Em mobile, precarregar todas as imagens pequenas em paralelo
+      if (isMobile && produto.imagens.length > 1 && !isSlowConnection) {
+        produto.imagens.slice(1, 4).forEach((img: string, index: number) => {
+          setTimeout(() => {
+            preloadImage(img, index < 2).catch(() => {});
+          }, index * 25); // Stagger bem pequeno
+        });
+      }
+    }
 
     if (modal) {
       const specBateria = modal?.querySelector(
@@ -399,17 +499,36 @@ import '../styles/components/modal-produto.css';
 
     mainImage.style.display = 'block';
 
-    // CRITICAL: Carregar imagem principal imediatamente
-    lazyLoadImage(mainImage, imagens[0], true);
+    // CRITICAL: Carregar imagem principal com prioridade alta
+    lazyLoadImage(mainImage, imagens[0], true, true);
 
-    // CRITICAL: Precarregar próximas 2 imagens em background
-    if (imagens.length > 1) {
+    // CRITICAL: Precarregar todas as imagens em mobile (conexão assumida)
+    if (isMobile && !isSlowConnection) {
+      // Mobile com boa conexão: precarregar todas
       setTimeout(() => {
-        preloadImage(imagens[1]).catch(() => {});
-        if (imagens.length > 2) {
-          setTimeout(() => preloadImage(imagens[2]).catch(() => {}), 100);
-        }
-      }, 200);
+        imagens.slice(1).forEach((img, index) => {
+          setTimeout(() => {
+            preloadImage(img, index < 2).catch(() => {}); // Primeiras 2 com alta prioridade
+          }, index * 50);
+        });
+      }, 100);
+    } else if (isMobile && isSlowConnection) {
+      // Mobile com conexão lenta: apenas próxima
+      if (imagens.length > 1) {
+        setTimeout(() => {
+          preloadImage(imagens[1]).catch(() => {});
+        }, 300);
+      }
+    } else {
+      // Desktop: estratégia original
+      if (imagens.length > 1) {
+        setTimeout(() => {
+          preloadImage(imagens[1]).catch(() => {});
+          if (imagens.length > 2) {
+            setTimeout(() => preloadImage(imagens[2]).catch(() => {}), 100);
+          }
+        }, 200);
+      }
     }
 
     // CRITICAL: Render thumbnails com DocumentFragment
