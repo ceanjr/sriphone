@@ -656,6 +656,7 @@ import '../styles/components/modal-produto.css';
       isModalOpen = false;
       currentIndex = 0;
       isProcessingClick = false; // Reset throttle
+      isExpandingImage = false; // Reset expand throttle
       
       // NO MOBILE: Limpar absolutamente tudo
       if (isMobile && mainImage) {
@@ -666,6 +667,11 @@ import '../styles/components/modal-produto.css';
         // Limpar thumbnails do DOM
         if (thumbnailsTrack) {
           thumbnailsTrack.innerHTML = '';
+        }
+        
+        // Limpar imagem expandida também
+        if (imagemExpandida) {
+          imagemExpandida.src = '';
         }
         
         console.log('🧹 Modal fechado - tudo limpo');
@@ -681,15 +687,38 @@ import '../styles/components/modal-produto.css';
   modalOverlay?.addEventListener('click', fecharModal, { passive: true });
   modalClose?.addEventListener('click', fecharModal, { passive: true });
 
+  // CRITICAL: Throttle para expandir imagem
+  let isExpandingImage = false;
+  
   expandBtn?.addEventListener('click', () => {
+    if (isExpandingImage) {
+      console.log('⚠️ Expandir ignorado (throttle)');
+      return;
+    }
+    
     if (imagensAtuais.length > 0) {
+      isExpandingImage = true;
       abrirImagemExpandida(currentIndex);
+      
+      setTimeout(() => {
+        isExpandingImage = false;
+      }, isMobile ? 300 : 100);
     }
   }, { passive: true });
 
   mainImage?.addEventListener('click', () => {
+    if (isExpandingImage) {
+      console.log('⚠️ Expandir ignorado (throttle)');
+      return;
+    }
+    
     if (imagensAtuais.length > 0) {
+      isExpandingImage = true;
       abrirImagemExpandida(currentIndex);
+      
+      setTimeout(() => {
+        isExpandingImage = false;
+      }, isMobile ? 300 : 100);
     }
   }, { passive: true });
 
@@ -698,8 +727,14 @@ import '../styles/components/modal-produto.css';
 
     currentIndex = index;
 
-    // CRITICAL: Lazy load
-    lazyLoadImage(imagemExpandida, imagensAtuais[currentIndex]);
+    // NO MOBILE: Carregar imagem direto, sem lazy load complexo
+    if (isMobile) {
+      console.log('📱 Expandindo imagem:', index);
+      imagemExpandida.src = imagensAtuais[currentIndex];
+    } else {
+      // DESKTOP: Usar lazy load
+      lazyLoadImage(imagemExpandida, imagensAtuais[currentIndex]);
+    }
 
     contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
 
@@ -709,18 +744,25 @@ import '../styles/components/modal-produto.css';
   }
 
   function fecharImagemExpandida() {
+    isExpandingImage = false; // Reset throttle
+    
     requestAnimationFrame(() => {
       modalImagemExpandida?.classList.remove('active');
+      
+      // NO MOBILE: Limpar imagem ao fechar
+      if (isMobile && imagemExpandida) {
+        imagemExpandida.src = '';
+      }
     });
   }
 
-  btnCloseExpandido?.addEventListener('click', fecharImagemExpandida);
+  btnCloseExpandido?.addEventListener('click', fecharImagemExpandida, { passive: true });
 
   modalImagemExpandida?.addEventListener('click', (e) => {
     if (e.target === modalImagemExpandida) {
       fecharImagemExpandida();
     }
-  });
+  }, { passive: true });
 
   // Navegação por teclado - OTIMIZADO
   // Keyboard navigation - COM THROTTLE no mobile
