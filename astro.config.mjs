@@ -6,6 +6,22 @@ export default defineConfig({
   site: 'https://sriphonevca.com.br',
   output: 'server',
   adapter: vercel(),
+  
+  // Otimização de imagens com Astro
+  image: {
+    domains: ['supabase.co', 'supabase.storage'],
+    remotePatterns: [{
+      protocol: 'https',
+      hostname: '**.supabase.co',
+    }],
+    service: {
+      entrypoint: 'astro/assets/services/sharp',
+      config: {
+        limitInputPixels: 268402689, // ~16K x 16K
+      }
+    },
+  },
+  
   vite: {
     build: {
       assetsDir: '_astro',

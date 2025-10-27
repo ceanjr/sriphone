@@ -1,0 +1,63 @@
+---
+// src/components/OptimizedImage.astro
+// Componente para imagens otimizadas com suporte a Supabase
+
+import { 
+  optimizeSupabaseImage, 
+  generateResponsiveSrcSet,
+  generateSizes,
+  getPlaceholderColor
+} from '../lib/imageOptimizer';
+
+interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  type?: 'product' | 'hero' | 'thumbnail' | 'full';
+  loading?: 'lazy' | 'eager';
+  priority?: boolean;
+  class?: string;
+}
+
+const { 
+  src, 
+  alt, 
+  width = 800, 
+  height = 800,
+  type = 'product',
+  loading = 'lazy',
+  priority = false,
+  class: className = ''
+} = Astro.props;
+
+// Otimizar URL do Supabase
+const optimizedSrc = optimizeSupabaseImage(src, { 
+  width, 
+  quality: 80,
+  format: 'webp'
+});
+
+// Gerar srcset responsivo
+const srcset = generateResponsiveSrcSet(src);
+
+// Gerar sizes
+const sizes = generateSizes(type);
+
+// Placeholder color
+const placeholderColor = getPlaceholderColor(0);
+---
+
+<img
+  src={optimizedSrc}
+  srcset={srcset}
+  sizes={sizes}
+  alt={alt}
+  width={width}
+  height={height}
+  loading={priority ? 'eager' : loading}
+  decoding="async"
+  fetchpriority={priority ? 'high' : 'auto'}
+  class={className}
+  style={`background-color: ${placeholderColor}; object-fit: cover;`}
+/>

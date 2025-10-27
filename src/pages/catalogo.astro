@@ -9,6 +9,9 @@ import GerirCategorias from '../components/GerirCategorias.astro';
 // PWAInstallPrompt removido conforme solicitação
 import '../styles/pages/catalogo.css';
 
+import { initCatalogo } from '../scripts/catalogo.js';
+import { optimizeSupabaseImage, getThumbnailUrl } from '../lib/imageOptimizer';
+
 const metaDescription =
   'Explore nossa coleção exclusiva de iPhones novos e seminovos com garantia. Preços competitivos e qualidade certificada.';
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -594,7 +597,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <div class="produto-image">
         ${
           imagemPrincipal
-            ? `<img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" decoding="async" />`
+            ? `<img 
+                src="${imagemPrincipal}" 
+                alt="${utils.escapeHtml(produto.nome)}" 
+                loading="lazy" 
+                decoding="async"
+                fetchpriority="low"
+                width="300" 
+                height="300"
+                style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); object-fit: cover;"
+              />`
             : `
             <div class="image-placeholder">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1336,6 +1348,55 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         }
       });
     }, observerOptions);
+  </script>
+
+  <!-- Otimização de carregamento de imagens - Mobile -->
+  <script>
+    // MOBILE: Intersection Observer para imagens do catálogo
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const img = entry.target as HTMLImageElement;
+          
+          // Adicionar fade-in suave quando carregar
+          if (!img.complete) {
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s ease';
+            
+            img.onload = () => {
+              img.style.opacity = '1';
+              img.classList.add('loaded');
+            };
+          }
+          
+          imageObserver.unobserve(img);
+        }
+      });
+    }, {
+      rootMargin: '100px', // Carregar 100px antes (mobile precisa de mais buffer)
+      threshold: 0.01
+    });
+
+    // Observar imagens quando produtos renderizarem
+    const observeProductImages = () => {
+      document.querySelectorAll('.produto-card img').forEach((img) => {
+        if (!img.classList.contains('loaded') && !img.complete) {
+          imageObserver.observe(img);
+        }
+      });
+    };
+
+    // Chamar após render inicial
+    setTimeout(observeProductImages, 500);
+
+    // Re-observar após mudanças (filtros, ordenação, etc)
+    const originalRenderProdutos = (window as any).renderProdutos;
+    if (originalRenderProdutos) {
+      (window as any).renderProdutos = function(...args: any[]) {
+        originalRenderProdutos.apply(this, args);
+        setTimeout(observeProductImages, 100);
+      };
+    }
   </script>
 
   <!-- PWAInstallPrompt removido -->
