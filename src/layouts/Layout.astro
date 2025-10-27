@@ -19,6 +19,11 @@ const { title, description } = Astro.props;
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    
+    <!-- Preconnect to critical origins -->
+    <link rel="preconnect" href="https://vercel-analytics.com" crossorigin />
+    <link rel="dns-prefetch" href="https://supabase.co" />
+    
     <slot name="head" />
     <Analytics />
     <title>{title}</title>

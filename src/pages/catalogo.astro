@@ -47,7 +47,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             <img
               src="/images/Barbudo.webp"
               alt="Banner catálogo"
-              loading="lazy"
+              fetchpriority="high"
+              decoding="async"
             />
           </picture>
           <span class="eyebrow">NOSSA COLEÇÃO</span>
@@ -345,6 +346,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         bateria: number;
         ordenacao: string;
       };
+      paginacao: {
+        itensPorPagina: number;
+        paginaAtual: number;
+        totalPaginas: number;
+      };
     }
 
     const state: AppState = {
@@ -357,6 +363,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         condicao: '',
         bateria: 0,
         ordenacao: 'recente',
+      },
+      paginacao: {
+        itensPorPagina: 30,
+        paginaAtual: 1,
+        totalPaginas: 1,
       },
     };
 
@@ -584,7 +595,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <div class="produto-image">
         ${
           imagemPrincipal
-            ? `<img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" />`
+            ? `<img src="${imagemPrincipal}" alt="${utils.escapeHtml(produto.nome)}" loading="lazy" decoding="async" />`
             : `
             <div class="image-placeholder">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1033,6 +1044,29 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           if (elementos.produtosContainer)
             elementos.produtosContainer.innerHTML = '';
 
+          // Verificar cache
+          const cacheKey = 'sriphone-produtos-cache';
+          const cacheTimeKey = 'sriphone-produtos-cache-time';
+          const cacheMaxAge = 5 * 60 * 1000; // 5 minutos
+          
+          const cachedData = sessionStorage.getItem(cacheKey);
+          const cacheTime = sessionStorage.getItem(cacheTimeKey);
+          
+          if (cachedData && cacheTime) {
+            const age = Date.now() - parseInt(cacheTime);
+            if (age < cacheMaxAge) {
+              console.log('📦 Carregando produtos do cache');
+              const { produtos, categorias } = JSON.parse(cachedData);
+              state.produtos = produtos;
+              state.categorias = categorias;
+              render.categorias();
+              render.produtos();
+              render.loading(false);
+              return;
+            }
+          }
+
+          console.log('🌐 Carregando produtos da API');
           const [produtosData, categoriasData] = await Promise.all([
             productService.getAll(),
             categoryService.getAll(),
@@ -1040,6 +1074,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
           state.produtos = produtosData;
           state.categorias = categoriasData;
+
+          // Salvar no cache
+          sessionStorage.setItem(cacheKey, JSON.stringify({
+            produtos: produtosData,
+            categorias: categoriasData
+          }));
+          sessionStorage.setItem(cacheTimeKey, Date.now().toString());
 
           render.categorias();
           render.produtos();
@@ -1049,6 +1090,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         } finally {
           render.loading(false);
         }
+      },
+      
+      invalidarCache(): void {
+        sessionStorage.removeItem('sriphone-produtos-cache');
+        sessionStorage.removeItem('sriphone-produtos-cache-time');
       },
     };
 
@@ -1099,6 +1145,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       // Evento customizado para recarregar produtos
       window.addEventListener('produtos-updated', () => {
+        api.invalidarCache();
         api.carregarDados();
       });
     }
