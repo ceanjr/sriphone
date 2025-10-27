@@ -193,15 +193,6 @@ import '../styles/components/modal-produto.css';
   const contadorImagens =
     modalImagemExpandida?.querySelector('.contador-imagens');
 
-  // DEBUG: Verificar se elementos existem
-  console.log('🔍 Debug elementos do modal:');
-  console.log('  - modal:', !!modal);
-  console.log('  - mainImage:', !!mainImage);
-  console.log('  - expandBtn:', !!expandBtn);
-  console.log('  - modalImagemExpandida:', !!modalImagemExpandida);
-  console.log('  - imagemExpandida:', !!imagemExpandida);
-  console.log('  - contadorImagens:', !!contadorImagens);
-
   let currentIndex = 0;
   let imagensAtuais: string[] = [];
   let produtoAtual: Product | null = null;
@@ -223,70 +214,26 @@ import '../styles/components/modal-produto.css';
   // CRITICAL: Detectar mobile PRIMEIRO
   const isMobile = window.innerWidth <= 768;
   
-  // CRITICAL: Cache DESABILITADO no mobile - usa apenas no desktop
-  const imageCache = isMobile ? null : new Map<string, HTMLImageElement>();
-  const loadingImages = isMobile ? null : new Set<string>();
+  // Simplificado: Sem cache complexo
+  const imageCache = new Map<string, HTMLImageElement>();
   
   const navigatorWithConnection = navigator as NavigatorWithConnection;
   const isSlowConnection =
-    (navigatorWithConnection.connection &&
-      navigatorWithConnection.connection.effectiveType === 'slow-2g') ||
-    navigatorWithConnection.connection?.effectiveType === '2g';
+     (navigatorWithConnection.connection &&
+       navigatorWithConnection.connection.effectiveType === 'slow-2g') ||
+     navigatorWithConnection.connection?.effectiveType === '2g';
 
-  // NO MOBILE: Sem preload, sem cache, sem nada!
-  function preloadImage(
-    src: string,
-    priority = false,
-  ): Promise<HTMLImageElement> {
-    // MOBILE: Não fazer nada, retornar Promise rejeitada
-    if (isMobile) {
-      return Promise.reject(new Error('Preload disabled on mobile'));
+  // Função simplificada para carregar imagem
+  function loadImage(img: HTMLImageElement, src: string) {
+    const optimizedSrc = optimizeImageForDevice(src);
+    
+    // Simplesmente carregar a imagem
+    img.src = optimizedSrc;
+    img.loading = 'lazy';
+    
+    if (optimizedSrc.includes('supabase')) {
+      img.crossOrigin = 'anonymous';
     }
-
-    // DESKTOP: Preload normal
-    return new Promise((resolve, reject) => {
-      const optimizedSrc = optimizeImageForDevice(src);
-
-      if (imageCache && imageCache.has(optimizedSrc)) {
-        resolve(imageCache.get(optimizedSrc)!);
-        return;
-      }
-
-      if (loadingImages && loadingImages.has(optimizedSrc)) {
-        const checkLoaded = () => {
-          if (imageCache && imageCache.has(optimizedSrc)) {
-            resolve(imageCache.get(optimizedSrc)!);
-          } else {
-            setTimeout(checkLoaded, 10);
-          }
-        };
-        checkLoaded();
-        return;
-      }
-
-      if (loadingImages) loadingImages.add(optimizedSrc);
-      const img = new Image();
-
-      img.loading = 'lazy';
-
-      img.onload = () => {
-        if (loadingImages) loadingImages.delete(optimizedSrc);
-        if (imageCache) imageCache.set(optimizedSrc, img);
-        resolve(img);
-      };
-
-      img.onerror = () => {
-        if (loadingImages) loadingImages.delete(optimizedSrc);
-        console.error('❌ Erro ao carregar imagem:', src);
-        reject(new Error(`Failed to load image: ${src}`));
-      };
-
-      if (optimizedSrc.includes('supabase')) {
-        img.crossOrigin = 'anonymous';
-      }
-
-      img.src = optimizedSrc;
-    });
   }
 
   // Otimizar imagem baseado no dispositivo
@@ -296,20 +243,11 @@ import '../styles/components/modal-produto.css';
     try {
       const url = new URL(src);
 
-      // Otimizações específicas para mobile
       if (isMobile) {
-        url.searchParams.set('width', '800'); // Máximo 800px em mobile
+        url.searchParams.set('width', '800');
         url.searchParams.set('quality', isSlowConnection ? '70' : '80');
         url.searchParams.set('format', 'webp');
-
-        // Compressão adicional para conexões lentas
-        if (isSlowConnection) {
-          url.searchParams.set('resize', 'fill');
-          url.searchParams.set('width', '600');
-          url.searchParams.set('quality', '60');
-        }
       } else {
-        // Desktop - qualidade maior
         url.searchParams.set('width', '1200');
         url.searchParams.set('quality', '85');
         url.searchParams.set('format', 'webp');
@@ -322,53 +260,9 @@ import '../styles/components/modal-produto.css';
     }
   }
 
-  // CRITICAL: Lazy load otimizado para mobile
-  function lazyLoadImage(
-    img: HTMLImageElement,
-    src: string,
-    showPlaceholder = true,
-    priority = false,
-  ) {
-    // NO MOBILE: Carregar DIRETO sem nenhum processamento
-    if (isMobile) {
-      console.log('📱 Mobile: Carregando imagem diretamente:', src);
-      
-      // Simplesmente definir o src - NADA MAIS!
-      img.src = src;
-      img.style.opacity = '1';
-      return;
-    }
-
-    // DESKTOP: Usar preload normal
-    if (showPlaceholder) {
-      img.style.background = 'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
-      img.style.backgroundSize = '200% 100%';
-      img.style.animation = 'skeleton-loading 1.5s ease-in-out infinite';
-    }
-
-    preloadImage(src, priority)
-      .then((cachedImg) => {
-        img.src = cachedImg.src;
-        img.style.background = '';
-        img.style.animation = '';
-        img.style.opacity = '0';
-
-        requestAnimationFrame(() => {
-          img.style.transition = 'opacity 0.3s ease';
-          img.style.opacity = '1';
-        });
-      })
-      .catch((error) => {
-        console.error('Erro ao carregar imagem:', error);
-        img.style.background = '';
-        img.style.animation = '';
-        img.src = src; // Tentar carregar diretamente
-      });
-  }
-
-  // Função global para abrir o modal - COM PRELOAD ANTECIPADO
+  // Função global para abrir o modal
   (window as any).abrirModalProduto = debounce((produto: any) => {
-    if (isModalOpen) return; // Prevenir múltiplas aberturas
+    if (isModalOpen) return;
 
     if (!modal) {
       console.error('❌ Elemento modal não encontrado!');
@@ -377,17 +271,6 @@ import '../styles/components/modal-produto.css';
 
     produtoAtual = produto;
     isModalOpen = true;
-
-    // CRITICAL: NO MOBILE - Carregar APENAS a primeira imagem
-    if (produto.imagens && produto.imagens.length > 0) {
-      // Carregar apenas a primeira imagem com alta prioridade
-      preloadImage(produto.imagens[0], true).catch((err) => {
-        console.error('❌ Erro ao carregar imagem principal:', err);
-      });
-
-      // NO MOBILE: NÃO precarregar outras imagens
-      // Elas serão carregadas sob demanda quando o usuário navegar
-    }
 
     if (modal) {
       const specBateria = modal?.querySelector(
@@ -492,7 +375,7 @@ import '../styles/components/modal-produto.css';
     }
   }
 
-  // CRITICAL: Renderizar galeria com precarregamento inteligente
+  // CRITICAL: Renderizar galeria simplificada
   function renderGallery(imagens: string[]) {
     if (!mainImage || !thumbnailsTrack) return;
 
@@ -507,23 +390,11 @@ import '../styles/components/modal-produto.css';
     }
 
     mainImage.style.display = 'block';
+    
+    // Carregar imagem principal diretamente
+    loadImage(mainImage, imagens[0]);
 
-    // CRITICAL: Carregar APENAS imagem principal no mobile
-    lazyLoadImage(mainImage, imagens[0], true, true);
-
-    // NO MOBILE: NÃO precarregar outras imagens automaticamente
-    // Apenas quando usuário navegar (via selectImage)
-    if (!isMobile && imagens.length > 1) {
-      // Desktop: precarregar apenas próximas 2 imagens
-      setTimeout(() => {
-        preloadImage(imagens[1]).catch(() => {});
-        if (imagens.length > 2) {
-          setTimeout(() => preloadImage(imagens[2]).catch(() => {}), 200);
-        }
-      }, 300);
-    }
-
-    // CRITICAL: Render thumbnails de forma MUITO SIMPLES  
+    // Renderizar thumbnails
     const fragment = document.createDocumentFragment();
 
     imagens.forEach((img, index) => {
@@ -532,30 +403,14 @@ import '../styles/components/modal-produto.css';
 
       const thumbImg = document.createElement('img');
       thumbImg.alt = `Thumbnail ${index + 1}`;
-      
-      // SIMPLIFICADO: Carregar DIRETO sem Intersection Observer
-      thumbImg.src = img; // Define src diretamente!
+      thumbImg.src = img;
       thumbImg.loading = 'lazy';
-      thumbImg.style.opacity = '0';
-      thumbImg.style.transition = 'opacity 0.3s ease';
-      
-      thumbImg.onload = () => {
-        thumbImg.style.opacity = '1';
-        console.log('✅ Thumbnail carregada:', index);
-      };
-      
-      thumbImg.onerror = (error) => {
-        console.error('❌ Erro thumbnail:', img, error);
-        thumbImg.style.opacity = '0.3';
-      };
 
       const overlay = document.createElement('div');
       overlay.className = 'thumb-overlay';
 
       thumb.appendChild(thumbImg);
       thumb.appendChild(overlay);
-
-      // CRITICAL: Event delegation em vez de listener individual
       thumb.dataset.index = index.toString();
 
       fragment.appendChild(thumb);
@@ -563,29 +418,23 @@ import '../styles/components/modal-produto.css';
 
     thumbnailsTrack.innerHTML = '';
     thumbnailsTrack.appendChild(fragment);
-    
-    console.log(`📸 ${imagens.length} thumbnails renderizadas`);
   }
 
-  // CRITICAL: Throttle para evitar múltiplos cliques rápidos no mobile
+  // CRITICAL: Throttle para evitar múltiplos cliques rápidos
   let isProcessingClick = false;
   
   function throttledSelectImage(index: number) {
-    if (isProcessingClick) {
-      console.log('⚠️ Clique ignorado (throttle)');
-      return;
-    }
+    if (isProcessingClick) return;
     
     isProcessingClick = true;
     selectImage(index);
     
-    // Liberar após delay menor no mobile
     setTimeout(() => {
       isProcessingClick = false;
-    }, isMobile ? 100 : 50);
+    }, 100);
   }
 
-  // CRITICAL: Event delegation para thumbnails - COM THROTTLE
+  // CRITICAL: Event delegation para thumbnails
   thumbnailsTrack?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -597,57 +446,23 @@ import '../styles/components/modal-produto.css';
     throttledSelectImage(index);
   });
 
-  // Selecionar imagem - ULTRA SIMPLIFICADO para mobile
+  // Selecionar imagem - SIMPLIFICADO
   function selectImage(index: number) {
     if (!mainImage || !thumbnailsTrack) return;
 
     currentIndex = index;
     const novaImagem = imagensAtuais[index];
 
-    // NO MOBILE: Apenas trocar src - NADA MAIS!
-    if (isMobile) {
-      console.log('📱 Trocando:', index);
-      
-      // Apenas trocar src - browser cuida do resto
-      mainImage.src = novaImagem;
-      
-      // Atualizar thumbnails
-      thumbnailsTrack.querySelectorAll('.thumbnail').forEach((thumb, i) => {
-        thumb.classList.toggle('active', i === index);
-      });
-      
-      return;
-    }
-
-    // DESKTOP: Pode usar cache e animações
-    if (imageCache.has(novaImagem)) {
-      mainImage.style.opacity = '0';
-      setTimeout(() => {
-        mainImage.src = imageCache.get(novaImagem)!.src;
-        mainImage.style.opacity = '1';
-      }, 150);
-    } else {
-      lazyLoadImage(mainImage, novaImagem, false);
-    }
-
-    // Desktop: precarregar adjacentes
-    const preloadNext = () => {
-      if (index + 1 < imagensAtuais.length) {
-        preloadImage(imagensAtuais[index + 1]).catch(() => {});
-      }
-      if (index - 1 >= 0) {
-        preloadImage(imagensAtuais[index - 1]).catch(() => {});
-      }
-    };
-    setTimeout(preloadNext, 200);
+    // Carregar nova imagem
+    loadImage(mainImage, novaImagem);
 
     // Atualizar thumbnails
-    const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
-    thumbs.forEach((thumb, i) => {
+    thumbnailsTrack.querySelectorAll('.thumbnail').forEach((thumb, i) => {
       thumb.classList.toggle('active', i === index);
     });
 
     // Scroll para thumbnail ativa
+    const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
     const activeThumb = thumbs[index] as HTMLElement;
     if (activeThumb) {
       activeThumb.scrollIntoView({
@@ -658,7 +473,7 @@ import '../styles/components/modal-produto.css';
     }
   }
 
-  // Fechar modal - Limpar tudo no mobile + REMOVER LISTENERS
+  // Fechar modal - Limpar recursos
   function fecharModal() {
     if (!isModalOpen) return;
 
@@ -667,35 +482,21 @@ import '../styles/components/modal-produto.css';
       document.body.classList.remove('modal-open');
       isModalOpen = false;
       currentIndex = 0;
-      isProcessingClick = false; // Reset throttle
-      isExpandingImage = false; // Reset expand throttle
+      isProcessingClick = false;
       
-      // NO MOBILE: Limpar absolutamente tudo
-      if (isMobile && mainImage) {
-        mainImage.src = ''; // Limpar src da imagem
-        mainImage.style.opacity = '0';
-        imagensAtuais = []; // Limpar array
-        
-        // Limpar thumbnails do DOM
-        if (thumbnailsTrack) {
-          thumbnailsTrack.innerHTML = '';
-        }
-        
-        // Limpar imagem expandida também
-        if (imagemExpandida) {
-          imagemExpandida.src = '';
-        }
-        
-        console.log('🧹 Modal fechado - tudo limpo');
-      } else if (imageCache) {
-        // Desktop: limpar cache
-        imageCache.clear();
-        if (loadingImages) loadingImages.clear();
+      // Limpar recursos
+      if (mainImage) {
+        mainImage.src = '';
+      }
+      imagensAtuais = [];
+      
+      if (thumbnailsTrack) {
+        thumbnailsTrack.innerHTML = '';
       }
     });
   }
 
-  // CRITICAL: Usar event delegation
+  // CRITICAL: Event handlers para fechar modal
   modalOverlay?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -708,151 +509,70 @@ import '../styles/components/modal-produto.css';
     fecharModal();
   });
 
-  // CRITICAL: Throttle para expandir imagem
-  let isExpandingImage = false;
+  // ========================================
+  // EXPANSÃO DE IMAGEM - REFATORADO
+  // ========================================
   
+  // Apenas o botão expandir abre a imagem
   expandBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
     
-    console.log('🔍 Botão expandir clicado');
-    console.log('  - imagensAtuais.length:', imagensAtuais.length);
-    console.log('  - currentIndex:', currentIndex);
-    console.log('  - isExpandingImage:', isExpandingImage);
-    
-    if (isExpandingImage) {
-      console.log('⚠️ Expandir ignorado (throttle)');
-      return;
-    }
-    
     if (!imagensAtuais || imagensAtuais.length === 0) {
-      console.log('❌ Nenhuma imagem disponível no array');
+      console.warn('⚠️ Nenhuma imagem disponível para expandir');
       return;
     }
     
-    console.log('📸 Abrindo imagem expandida, total:', imagensAtuais.length);
-    isExpandingImage = true;
-    abrirImagemExpandida(currentIndex);
-    
-    setTimeout(() => {
-      isExpandingImage = false;
-    }, 300);
+    expandirImagem(currentIndex);
   });
 
-  mainImage?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    
-    console.log('🖼️ Imagem principal clicada');
-    console.log('  - imagensAtuais.length:', imagensAtuais.length);
-    console.log('  - currentIndex:', currentIndex);
-    console.log('  - isExpandingImage:', isExpandingImage);
-    
-    if (isExpandingImage) {
-      console.log('⚠️ Expandir ignorado (throttle)');
+  // Função para expandir imagem
+  function expandirImagem(index: number) {
+    if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) {
+      console.error('❌ Elementos do modal expandido não encontrados');
       return;
     }
     
-    if (!imagensAtuais || imagensAtuais.length === 0) {
-      console.log('❌ Nenhuma imagem disponível no array');
-      return;
-    }
-    
-    console.log('📸 Abrindo imagem expandida, índice:', currentIndex);
-    isExpandingImage = true;
-    abrirImagemExpandida(currentIndex);
-    
-    setTimeout(() => {
-      isExpandingImage = false;
-    }, 300);
-  });
-
-  function abrirImagemExpandida(index: number) {
-    console.log('🚀 Função abrirImagemExpandida chamada, index:', index);
-    
-    // Re-capturar elementos se necessário (em caso de problemas de timing)
-    const modal = document.getElementById('modal-imagem-expandida') as HTMLElement | null;
-    const imagem = document.getElementById('imagem-expandida') as HTMLImageElement | null;
-    const contador = modal?.querySelector('.contador-imagens');
-    
-    console.log('🔍 Elementos recapturados:');
-    console.log('  - modal existe?', !!modal);
-    console.log('  - imagem existe?', !!imagem);
-    console.log('  - contador existe?', !!contador);
-    
-    if (!modal || !imagem || !contador) {
-      console.error('❌ Elementos do modal expandido não encontrados!');
-      console.error('   Tentando com variáveis originais...');
-      
-      // Tentar usar variáveis originais
-      if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) {
-        console.error('❌ Variáveis originais também não disponíveis!');
-        return;
-      }
-      
-      // Usar variáveis originais
-      currentIndex = index;
-      const imagemUrl = imagensAtuais[currentIndex];
-      console.log('🖼️ URL da imagem (usando variáveis originais):', imagemUrl);
-
-      if (isMobile) {
-        console.log('📱 Expandindo imagem (mobile):', index);
-        imagemExpandida.src = imagemUrl;
-      } else {
-        console.log('🖥️ Expandindo imagem (desktop):', index);
-        lazyLoadImage(imagemExpandida, imagemUrl);
-      }
-
-      contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
-
-      console.log('✅ Adicionando classe active ao modal expandido (variáveis originais)');
-      requestAnimationFrame(() => {
-        modalImagemExpandida.classList.add('active');
-        console.log('✅ Classe active adicionada, classes:', modalImagemExpandida.className);
-      });
-      
+    if (!imagensAtuais || index >= imagensAtuais.length) {
+      console.error('❌ Índice de imagem inválido');
       return;
     }
 
-    // Usar elementos recapturados
     currentIndex = index;
     const imagemUrl = imagensAtuais[currentIndex];
-    console.log('🖼️ URL da imagem:', imagemUrl);
-
-    if (isMobile) {
-      console.log('📱 Expandindo imagem (mobile):', index);
-      imagem.src = imagemUrl;
-    } else {
-      console.log('🖥️ Expandindo imagem (desktop):', index);
-      lazyLoadImage(imagem, imagemUrl);
-    }
-
-    contador.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
-
-    console.log('✅ Adicionando classe active ao modal expandido');
-    requestAnimationFrame(() => {
-      modal.classList.add('active');
-      console.log('✅ Classe active adicionada, classes:', modal.className);
-    });
-  }
-
-  function fecharImagemExpandida() {
-    isExpandingImage = false; // Reset throttle
     
-    requestAnimationFrame(() => {
-      modalImagemExpandida?.classList.remove('active');
-      
-      // NO MOBILE: Limpar imagem ao fechar
-      if (isMobile && imagemExpandida) {
-        imagemExpandida.src = '';
-      }
-    });
+    // Carregar imagem expandida
+    loadImage(imagemExpandida, imagemUrl);
+    
+    // Atualizar contador
+    contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
+
+    // Mostrar modal expandido
+    modalImagemExpandida.classList.add('active');
+    document.body.style.overflow = 'hidden';
   }
 
+  // Fechar imagem expandida
+  function fecharImagemExpandida() {
+    if (!modalImagemExpandida) return;
+    
+    modalImagemExpandida.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    // Limpar imagem
+    if (imagemExpandida) {
+      imagemExpandida.src = '';
+    }
+  }
+
+  // Botão fechar
   btnCloseExpandido?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     fecharImagemExpandida();
   });
 
+  // Clicar no overlay para fechar
   modalImagemExpandida?.addEventListener('click', (e) => {
     if (e.target === modalImagemExpandida) {
       e.preventDefault();
@@ -861,59 +581,35 @@ import '../styles/components/modal-produto.css';
     }
   });
 
-  // Keyboard navigation - COM THROTTLE no mobile
-  let lastKeyPress = 0;
-  
+  // Navegação com setas no modal expandido
   document.addEventListener('keydown', (e: KeyboardEvent) => {
-    // NO MOBILE: Ignorar teclado (não tem keyboard físico)
-    if (isMobile) return;
-    
-    // Throttle para evitar múltiplos eventos
-    const now = Date.now();
-    if (now - lastKeyPress < 200) return;
-    lastKeyPress = now;
-    
+    // Modal expandido está ativo
     if (modalImagemExpandida?.classList.contains('active')) {
       if (e.key === 'Escape') {
         fecharImagemExpandida();
       } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
-        throttledSelectImage(currentIndex - 1);
-        abrirImagemExpandida(currentIndex);
-      } else if (
-        e.key === 'ArrowRight' &&
-        currentIndex < imagensAtuais.length - 1
-      ) {
-        throttledSelectImage(currentIndex + 1);
-        abrirImagemExpandida(currentIndex);
+        expandirImagem(currentIndex - 1);
+      } else if (e.key === 'ArrowRight' && currentIndex < imagensAtuais.length - 1) {
+        expandirImagem(currentIndex + 1);
       }
-    } else if (modal?.classList.contains('active')) {
+    }
+    // Modal principal está ativo
+    else if (modal?.classList.contains('active')) {
       if (e.key === 'Escape') {
         fecharModal();
       } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
         throttledSelectImage(currentIndex - 1);
-      } else if (
-        e.key === 'ArrowRight' &&
-        currentIndex < imagensAtuais.length - 1
-      ) {
+      } else if (e.key === 'ArrowRight' && currentIndex < imagensAtuais.length - 1) {
         throttledSelectImage(currentIndex + 1);
       }
     }
   });
 
-  // WhatsApp - COM THROTTLE
+  // WhatsApp
   const btnWhatsapp = modal?.querySelector('.btn-whatsapp');
-  let lastWhatsappClick = 0;
   
   btnWhatsapp?.addEventListener('click', (e) => {
     e.preventDefault();
-    
-    // Throttle para evitar múltiplos cliques
-    const now = Date.now();
-    if (now - lastWhatsappClick < 1000) {
-      console.log('⚠️ WhatsApp click ignorado (throttle)');
-      return;
-    }
-    lastWhatsappClick = now;
 
     if (produtoAtual) {
       const telefone = '5577981022246';
