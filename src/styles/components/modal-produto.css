@@ -275,6 +275,8 @@ body.modal-open {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding: 0.25rem 0.125rem 0.5rem; /* Padding para não cortar as thumbnails */
+  pointer-events: auto; /* Garantir que eventos funcionem */
+  touch-action: pan-x; /* Permitir scroll horizontal mas preservar clicks */
 }
 
 .thumbnails-track::-webkit-scrollbar {
@@ -293,6 +295,10 @@ body.modal-open {
   background: #0a0a0a; /* Fundo para evitar transparências estranhas */
   /* will-change removido para prevenir problemas de scroll */
   contain: layout style paint;
+  pointer-events: auto; /* Garantir que seja clicável */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation; /* Otimizar touch no mobile */
 }
 
 .thumbnail img {
@@ -303,6 +309,7 @@ body.modal-open {
   display: block; /* Remove espaço extra embaixo da imagem */
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
+  pointer-events: none; /* A imagem não intercepta o click, passa para o pai */
 }
 
 .thumb-overlay {

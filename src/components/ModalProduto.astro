@@ -431,24 +431,64 @@ import '../styles/components/modal-produto.css';
     
     setTimeout(() => {
       isProcessingClick = false;
-    }, 100);
+    }, 150);
   }
 
   // CRITICAL: Event delegation para thumbnails
   thumbnailsTrack?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const target = e.target as HTMLElement;
+    const thumb = target.closest('.thumbnail') as HTMLElement;
+    
+    if (!thumb || !thumb.dataset.index) {
+      console.warn('⚠️ Thumbnail não encontrado');
+      return;
+    }
+
+    const index = parseInt(thumb.dataset.index);
+    if (isNaN(index)) {
+      console.error('❌ Índice inválido:', thumb.dataset.index);
+      return;
+    }
+    
+    throttledSelectImage(index);
+  });
+  
+  // MOBILE: Adicionar suporte a touch para garantir funcionamento
+  thumbnailsTrack?.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const thumb = (e.target as HTMLElement).closest('.thumbnail');
-    if (!thumb) return;
-
-    const index = parseInt((thumb as HTMLElement).dataset.index || '0');
+    const target = e.target as HTMLElement;
+    const thumb = target.closest('.thumbnail') as HTMLElement;
+    
+    if (!thumb || !thumb.dataset.index) {
+      console.warn('⚠️ Thumbnail não encontrado');
+      return;
+    }
+    
+    const index = parseInt(thumb.dataset.index);
+    if (isNaN(index)) {
+      console.error('❌ Índice inválido:', thumb.dataset.index);
+      return;
+    }
+    
     throttledSelectImage(index);
-  });
+  }, { passive: false });
 
   // Selecionar imagem - SIMPLIFICADO
   function selectImage(index: number) {
-    if (!mainImage || !thumbnailsTrack) return;
+    if (!mainImage || !thumbnailsTrack) {
+      console.error('❌ mainImage ou thumbnailsTrack não encontrado');
+      return;
+    }
+
+    if (!imagensAtuais || index < 0 || index >= imagensAtuais.length) {
+      console.error('❌ Índice inválido ou sem imagens');
+      return;
+    }
 
     currentIndex = index;
     const novaImagem = imagensAtuais[index];
