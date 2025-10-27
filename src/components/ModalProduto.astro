@@ -211,10 +211,13 @@ import '../styles/components/modal-produto.css';
     };
   }
 
+  // CRITICAL: Detectar mobile PRIMEIRO
+  const isMobile = window.innerWidth <= 768;
+  
   // CRITICAL: Cache DESABILITADO no mobile - usa apenas no desktop
   const imageCache = isMobile ? null : new Map<string, HTMLImageElement>();
   const loadingImages = isMobile ? null : new Set<string>();
-  const isMobile = window.innerWidth <= 768;
+  
   const navigatorWithConnection = navigator as NavigatorWithConnection;
   const isSlowConnection =
     (navigatorWithConnection.connection &&
