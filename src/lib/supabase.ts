@@ -1,5 +1,6 @@
 // src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js';
+import { cache } from './cache';
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
@@ -173,19 +174,32 @@ export const productService = {
   },
 };
 
-// Funções de Categorias
+// Funções de Categorias (com cache otimizado)
 export const categoryService = {
   async getAll() {
+    // Tentar buscar do cache primeiro
+    const cacheKey = 'categories:all';
+    const cached = cache.get<Category[]>(cacheKey);
+    
+    if (cached) {
+      return cached;
+    }
+
     const { data, error } = await supabase
       .from('categorias')
-      .select('*')
+      .select('id, nome, created_at') // Otimizado: campos específicos ao invés de *
       .order('nome');
 
     if (error) throw error;
+    
+    // Armazenar no cache por 10 minutos
+    cache.set(cacheKey, data as Category[], 10 * 60 * 1000);
+    
     return data as Category[];
   },
 
   async create(nome: string) {
+    cache.delete('categories:all'); // Limpar cache
     const { data, error } = await supabase
       .from('categorias')
       .insert([{ nome }])
@@ -197,6 +211,7 @@ export const categoryService = {
   },
 
   async update(id: string, nome: string) {
+    cache.delete('categories:all'); // Limpar cache
     const { data, error } = await supabase
       .from('categorias')
       .update({ nome })
@@ -209,6 +224,7 @@ export const categoryService = {
   },
 
   async delete(id: string) {
+    cache.delete('categories:all'); // Limpar cache
     const { error } = await supabase.from('categorias').delete().eq('id', id);
 
     if (error) throw error;

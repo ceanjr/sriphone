@@ -2,6 +2,7 @@
 import Sidebar from '../components/admin/Sidebar.astro';
 import MobileNav from '../components/admin/MobileNav.astro';
 import Toast from '../components/admin/Toast.astro';
+import Analytics from '@vercel/analytics/astro';
 import '../styles/admin.css';
 
 interface Props {
@@ -41,5 +42,8 @@ const { title, description } = Astro.props;
 
     <!-- Toast Notifications -->
     <Toast />
+
+    <!-- Vercel Analytics -->
+    <Analytics />
   </body>
 </html>

@@ -1,5 +1,8 @@
 ---
 // src/pages/index.astro
+// Habilita prerender para melhor performance (SSG)
+export const prerender = true;
+
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
