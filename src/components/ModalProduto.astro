@@ -548,7 +548,7 @@ import '../styles/components/modal-produto.css';
       }, 300);
     }
 
-    // CRITICAL: Render thumbnails com DocumentFragment
+    // CRITICAL: Render thumbnails de forma MUITO SIMPLES  
     const fragment = document.createDocumentFragment();
 
     imagens.forEach((img, index) => {
@@ -557,9 +557,22 @@ import '../styles/components/modal-produto.css';
 
       const thumbImg = document.createElement('img');
       thumbImg.alt = `Thumbnail ${index + 1}`;
+      
+      // SIMPLIFICADO: Carregar DIRETO sem Intersection Observer
+      thumbImg.src = img; // Define src diretamente!
       thumbImg.loading = 'lazy';
       thumbImg.style.opacity = '0';
       thumbImg.style.transition = 'opacity 0.3s ease';
+      
+      thumbImg.onload = () => {
+        thumbImg.style.opacity = '1';
+        console.log('✅ Thumbnail carregada:', index);
+      };
+      
+      thumbImg.onerror = (error) => {
+        console.error('❌ Erro thumbnail:', img, error);
+        thumbImg.style.opacity = '0.3';
+      };
 
       const overlay = document.createElement('div');
       overlay.className = 'thumb-overlay';
@@ -570,45 +583,13 @@ import '../styles/components/modal-produto.css';
       // CRITICAL: Event delegation em vez de listener individual
       thumb.dataset.index = index.toString();
 
-      // NO MOBILE: Thumbnails muito simplificadas
-      const thumbObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const img = entry.target as HTMLImageElement;
-              // NO MOBILE: Carregar direto sem preload
-              if (isMobile) {
-                img.src = img.dataset.src!;
-                img.style.opacity = '1';
-                thumbObserver.unobserve(img);
-              } else {
-                // Desktop: usar preload
-                preloadImage(img.dataset.src!)
-                  .then((cachedImg) => {
-                    img.src = cachedImg.src;
-                    img.style.opacity = '1';
-                    thumbObserver.unobserve(img);
-                  })
-                  .catch(() => {
-                    img.src = img.dataset.src!;
-                    img.style.opacity = '1';
-                    thumbObserver.unobserve(img);
-                  });
-              }
-            }
-          });
-        },
-        { threshold: 0.1 },
-      );
-
-      thumbImg.dataset.src = img;
-      thumbObserver.observe(thumbImg);
-
       fragment.appendChild(thumb);
     });
 
     thumbnailsTrack.innerHTML = '';
     thumbnailsTrack.appendChild(fragment);
+    
+    console.log(`📸 ${imagens.length} thumbnails renderizadas`);
   }
 
   // CRITICAL: Event delegation para thumbnails
