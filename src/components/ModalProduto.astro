@@ -170,13 +170,13 @@ import '../styles/components/modal-produto.css';
   const expandBtn = modal?.querySelector('.expand-btn');
 
   const modalImagemExpandida = document.getElementById(
-    'modal-imagem-expandida'
+    'modal-imagem-expandida',
   ) as HTMLElement | null;
   const imagemExpandida = document.getElementById(
-    'imagem-expandida'
+    'imagem-expandida',
   ) as HTMLImageElement | null;
   const btnCloseExpandido = modalImagemExpandida?.querySelector(
-    '.modal-close-expandido'
+    '.modal-close-expandido',
   ) as HTMLButtonElement | null;
   const contadorImagens =
     modalImagemExpandida?.querySelector('.contador-imagens');
@@ -199,13 +199,88 @@ import '../styles/components/modal-produto.css';
     };
   }
 
-  // CRITICAL: Lazy load de imagens
-  function lazyLoadImage(img: HTMLImageElement, src: string) {
-    const tempImg = new Image();
-    tempImg.onload = () => {
+  // CRITICAL: Cache de imagens
+  const imageCache = new Map<string, HTMLImageElement>();
+  const loadingImages = new Set<string>();
+
+  // CRITICAL: Preload e cache de imagens
+  function preloadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      if (imageCache.has(src)) {
+        resolve(imageCache.get(src)!);
+        return;
+      }
+
+      if (loadingImages.has(src)) {
+        // Se já estamos carregando essa imagem, esperar
+        const checkLoaded = () => {
+          if (imageCache.has(src)) {
+            resolve(imageCache.get(src)!);
+          } else {
+            setTimeout(checkLoaded, 10);
+          }
+        };
+        checkLoaded();
+        return;
+      }
+
+      loadingImages.add(src);
+      const img = new Image();
+
+      img.onload = () => {
+        loadingImages.delete(src);
+        imageCache.set(src, img);
+        resolve(img);
+      };
+
+      img.onerror = () => {
+        loadingImages.delete(src);
+        reject(new Error(`Failed to load image: ${src}`));
+      };
+
+      // Definir crossOrigin se necessário
+      if (src.includes('supabase')) {
+        img.crossOrigin = 'anonymous';
+      }
+
       img.src = src;
-    };
-    tempImg.src = src;
+    });
+  }
+
+  // CRITICAL: Lazy load de imagens com preload
+  function lazyLoadImage(
+    img: HTMLImageElement,
+    src: string,
+    showPlaceholder = true,
+  ) {
+    if (showPlaceholder) {
+      // Mostrar placeholder de loading
+      img.style.background =
+        'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
+      img.style.backgroundSize = '200% 100%';
+      img.style.animation = 'skeleton-loading 1.5s ease-in-out infinite';
+    }
+
+    preloadImage(src)
+      .then((cachedImg) => {
+        img.src = cachedImg.src;
+        img.style.background = '';
+        img.style.animation = '';
+        img.style.opacity = '0';
+
+        // Fade in suave
+        requestAnimationFrame(() => {
+          img.style.transition = 'opacity 0.3s ease';
+          img.style.opacity = '1';
+        });
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar imagem:', error);
+        img.style.background = '';
+        img.style.animation = '';
+        // Mostrar placeholder de erro
+        img.alt = 'Erro ao carregar imagem';
+      });
   }
 
   // Função global para abrir o modal - COM DEBOUNCE
@@ -217,10 +292,10 @@ import '../styles/components/modal-produto.css';
 
     if (modal) {
       const specBateria = modal?.querySelector(
-        '.spec-item:nth-child(1)'
+        '.spec-item:nth-child(1)',
       ) as HTMLElement;
       const specCodigo = modal?.querySelector(
-        '.spec-item:nth-child(2)'
+        '.spec-item:nth-child(2)',
       ) as HTMLElement;
       const modalNome = modal.querySelector('.modal-nome');
       const modalDescricao = modal.querySelector('.modal-descricao');
@@ -308,7 +383,7 @@ import '../styles/components/modal-produto.css';
     }
   }
 
-  // CRITICAL: Renderizar galeria com lazy loading
+  // CRITICAL: Renderizar galeria com precarregamento inteligente
   function renderGallery(imagens: string[]) {
     if (!mainImage || !thumbnailsTrack) return;
 
@@ -324,8 +399,18 @@ import '../styles/components/modal-produto.css';
 
     mainImage.style.display = 'block';
 
-    // CRITICAL: Lazy load da imagem principal
-    lazyLoadImage(mainImage, imagens[0]);
+    // CRITICAL: Carregar imagem principal imediatamente
+    lazyLoadImage(mainImage, imagens[0], true);
+
+    // CRITICAL: Precarregar próximas 2 imagens em background
+    if (imagens.length > 1) {
+      setTimeout(() => {
+        preloadImage(imagens[1]).catch(() => {});
+        if (imagens.length > 2) {
+          setTimeout(() => preloadImage(imagens[2]).catch(() => {}), 100);
+        }
+      }, 200);
+    }
 
     // CRITICAL: Render thumbnails com DocumentFragment
     const fragment = document.createDocumentFragment();
@@ -333,29 +418,52 @@ import '../styles/components/modal-produto.css';
     imagens.forEach((img, index) => {
       const thumb = document.createElement('div');
       thumb.className = `thumbnail ${index === 0 ? 'active' : ''}`;
-      thumb.innerHTML = `
-        <img data-src="${img}" alt="Thumbnail ${index + 1}" loading="lazy" />
-        <div class="thumb-overlay"></div>
-      `;
+
+      const thumbImg = document.createElement('img');
+      thumbImg.alt = `Thumbnail ${index + 1}`;
+      thumbImg.loading = 'lazy';
+      thumbImg.style.opacity = '0';
+      thumbImg.style.transition = 'opacity 0.3s ease';
+
+      const overlay = document.createElement('div');
+      overlay.className = 'thumb-overlay';
+
+      thumb.appendChild(thumbImg);
+      thumb.appendChild(overlay);
 
       // CRITICAL: Event delegation em vez de listener individual
       thumb.dataset.index = index.toString();
+
+      // Lazy load com intersection observer para thumbnails
+      const thumbObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const img = entry.target as HTMLImageElement;
+              preloadImage(img.dataset.src!)
+                .then((cachedImg) => {
+                  img.src = cachedImg.src;
+                  img.style.opacity = '1';
+                  thumbObserver.unobserve(img);
+                })
+                .catch(() => {
+                  img.style.opacity = '1';
+                  thumbObserver.unobserve(img);
+                });
+            }
+          });
+        },
+        { threshold: 0.1 },
+      );
+
+      thumbImg.dataset.src = img;
+      thumbObserver.observe(thumbImg);
 
       fragment.appendChild(thumb);
     });
 
     thumbnailsTrack.innerHTML = '';
     thumbnailsTrack.appendChild(fragment);
-
-    // CRITICAL: Lazy load das thumbnails visíveis
-    const thumbImages = thumbnailsTrack.querySelectorAll('img[data-src]');
-    thumbImages.forEach((img) => {
-      const src = (img as HTMLImageElement).dataset.src;
-      if (src) {
-        lazyLoadImage(img as HTMLImageElement, src);
-        (img as HTMLImageElement).removeAttribute('data-src');
-      }
-    });
   }
 
   // CRITICAL: Event delegation para thumbnails
@@ -367,20 +475,37 @@ import '../styles/components/modal-produto.css';
     selectImage(index);
   });
 
-  // Selecionar imagem - OTIMIZADO
+  // Selecionar imagem - OTIMIZADO com precarregamento
   function selectImage(index: number) {
     if (!mainImage || !thumbnailsTrack) return;
 
     currentIndex = index;
+    const novaImagem = imagensAtuais[index];
 
-    // CRITICAL: Lazy load
-    lazyLoadImage(mainImage, imagensAtuais[index]);
+    // CRITICAL: Verificar se já está no cache
+    if (imageCache.has(novaImagem)) {
+      // Se já está carregada, trocar imediatamente
+      mainImage.style.opacity = '0';
+      setTimeout(() => {
+        mainImage.src = imageCache.get(novaImagem)!.src;
+        mainImage.style.opacity = '1';
+      }, 150);
+    } else {
+      // Se não está carregada, mostrar placeholder e carregar
+      lazyLoadImage(mainImage, novaImagem, false);
+    }
 
-    // Animação suave na troca
-    mainImage.style.opacity = '0';
-    requestAnimationFrame(() => {
-      mainImage.style.opacity = '1';
-    });
+    // CRITICAL: Precarregar imagens adjacentes
+    const preloadNext = () => {
+      if (index + 1 < imagensAtuais.length) {
+        preloadImage(imagensAtuais[index + 1]).catch(() => {});
+      }
+      if (index - 1 >= 0) {
+        preloadImage(imagensAtuais[index - 1]).catch(() => {});
+      }
+    };
+
+    setTimeout(preloadNext, 100);
 
     // Atualizar thumbnails - OTIMIZADO
     const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
@@ -493,7 +618,7 @@ import '../styles/components/modal-produto.css';
     if (produtoAtual) {
       const telefone = '5577981022246';
       const linkProduto = `${window.location.origin}/produto/${encodeURIComponent(
-        produtoAtual.nome.toLowerCase().replace(/\s+/g, '-')
+        produtoAtual.nome.toLowerCase().replace(/\s+/g, '-'),
       )}`;
 
       let mensagem = `Olá! Tenho interesse no *${produtoAtual.nome}*`;

@@ -396,16 +396,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       emptyState: document.getElementById('empty-state'),
       categoriasLista: document.getElementById('categorias-lista'),
       filtroCondicao: document.getElementById(
-        'filtro-condicao'
+        'filtro-condicao',
       ) as HTMLSelectElement,
       filtroBateria: document.getElementById(
-        'filtro-bateria'
+        'filtro-bateria',
       ) as HTMLSelectElement,
       filtroOrdenacao: document.getElementById(
-        'filtro-ordenacao'
+        'filtro-ordenacao',
       ) as HTMLSelectElement,
       categoriaSelect: document.getElementById(
-        'categoria-select'
+        'categoria-select',
       ) as HTMLSelectElement,
       visualizacaoContainer: document.querySelector('.visualizacao-container'),
       visualizacaoBtns: document.querySelectorAll('.visualizacao-btn'),
@@ -632,7 +632,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       categoriaSecao(
         nomeCategoria: string,
-        produtos: (Product & { categoria: Category })[]
+        produtos: (Product & { categoria: Category })[],
       ): string {
         return `
       <div class="categoria-section">
@@ -683,7 +683,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       },
 
       ordenarProdutos(
-        produtos: (Product & { categoria: Category })[]
+        produtos: (Product & { categoria: Category })[],
       ): (Product & { categoria: Category })[] {
         const copia = [...produtos];
 
@@ -698,13 +698,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             return copia.sort(
               (a, b) =>
                 new Date(b.created_at).getTime() -
-                new Date(a.created_at).getTime()
+                new Date(a.created_at).getTime(),
             );
         }
       },
 
       agruparPorCategoria(
-        produtos: (Product & { categoria: Category })[]
+        produtos: (Product & { categoria: Category })[],
       ): Map<string, (Product & { categoria: Category })[]> {
         const grupos = new Map<string, (Product & { categoria: Category })[]>();
 
@@ -735,7 +735,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       .map(
         (cat) => `
         <option value="${cat.id}">${utils.escapeHtml(cat.nome)}</option>
-      `
+      `,
       )
       .join('')}
   `;
@@ -748,7 +748,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         <button class="categoria-btn" data-categoria="${cat.id}">
             ${utils.escapeHtml(cat.nome)}
         </button>
-      `
+      `,
             )
             .join('');
         }
@@ -760,7 +760,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         ).forEach((btn) => {
           btn.classList.toggle(
             'active',
-            btn.dataset.categoria === state.categoriaAtiva
+            btn.dataset.categoria === state.categoriaAtiva,
           );
         });
 
@@ -774,7 +774,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         // Adicionar event listener para o select
         elementos.categoriaSelect.addEventListener(
           'change',
-          handlers.categoriaSelectChange
+          handlers.categoriaSelectChange,
         );
 
         // Definir botão de visualização ativo
@@ -782,9 +782,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           (btn) => {
             btn.classList.toggle(
               'active',
-              btn.dataset.view === state.modoVisualizacao
+              btn.dataset.view === state.modoVisualizacao,
             );
-          }
+          },
         );
       },
 
@@ -795,7 +795,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         elementos.produtosContainer.classList.remove(
           'coluna',
           'grade',
-          'lista'
+          'lista',
         );
         elementos.produtosContainer.classList.add(state.modoVisualizacao);
         document.querySelectorAll('.categoria-grid').forEach((grid) => {
@@ -824,7 +824,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           const categoriasComProdutos = Array.from(grupos.keys()).map(
             (nomeCategoria) => {
               const categoria = state.categorias.find(
-                (c) => c.nome === nomeCategoria
+                (c) => c.nome === nomeCategoria,
               );
               return {
                 nome: nomeCategoria,
@@ -834,11 +834,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
                   created_at: '',
                 },
               };
-            }
+            },
           );
 
           const categoriasOrdenadas = ordenarCategorias(
-            categoriasComProdutos.map((c) => c.categoria)
+            categoriasComProdutos.map((c) => c.categoria),
           );
 
           elementos.produtosContainer.innerHTML = categoriasOrdenadas
@@ -901,7 +901,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         ).forEach((b) => {
           b.classList.toggle(
             'active',
-            b.dataset.categoria === state.categoriaAtiva
+            b.dataset.categoria === state.categoriaAtiva,
           );
         });
 
@@ -993,14 +993,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         (elementos.visualizacaoBtns as NodeListOf<HTMLElement>).forEach(
           (btn) => {
             btn.classList.toggle('active', btn.dataset.view === view);
-          }
+          },
         );
 
         // Atualizar classes no container
         elementos.produtosContainer?.classList.remove(
           'coluna',
           'grade',
-          'lista'
+          'lista',
         );
         elementos.produtosContainer?.classList.add(view);
         document.querySelectorAll('.categoria-grid').forEach((grid) => {
@@ -1016,10 +1016,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         e.preventDefault();
 
         const emailInput = document.getElementById(
-          'login-email'
+          'login-email',
         ) as HTMLInputElement;
         const passwordInput = document.getElementById(
-          'login-password'
+          'login-password',
         ) as HTMLInputElement;
 
         try {
@@ -1058,18 +1058,34 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           // Verificar cache
           const cacheKey = 'sriphone-produtos-cache';
           const cacheTimeKey = 'sriphone-produtos-cache-time';
-          const cacheMaxAge = 5 * 60 * 1000; // 5 minutos
-          
+          const imagesCacheKey = 'sriphone-images-cache';
+          const cacheMaxAge = 10 * 60 * 1000; // 10 minutos
+
           const cachedData = sessionStorage.getItem(cacheKey);
           const cacheTime = sessionStorage.getItem(cacheTimeKey);
-          
+
           if (cachedData && cacheTime) {
             const age = Date.now() - parseInt(cacheTime);
             if (age < cacheMaxAge) {
-              console.log('📦 Carregando produtos do cache');
               const { produtos, categorias } = JSON.parse(cachedData);
               state.produtos = produtos;
               state.categorias = categorias;
+
+              // Precarregar imagens principais em background
+              setTimeout(() => {
+                const imagesToPreload = produtos
+                  .slice(0, 6) // Primeiras 6 imagens
+                  .map((p) => p.imagens?.[0])
+                  .filter(Boolean);
+
+                imagesToPreload.forEach((src, index) => {
+                  setTimeout(() => {
+                    const img = new Image();
+                    img.src = src;
+                  }, index * 100);
+                });
+              }, 500);
+
               render.categorias();
               render.produtos();
               render.loading(false);
@@ -1077,7 +1093,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             }
           }
 
-          console.log('🌐 Carregando produtos da API');
           const [produtosData, categoriasData] = await Promise.all([
             productService.getAll(),
             categoryService.getAll(),
@@ -1087,10 +1102,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           state.categorias = categoriasData;
 
           // Salvar no cache
-          sessionStorage.setItem(cacheKey, JSON.stringify({
-            produtos: produtosData,
-            categorias: categoriasData
-          }));
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              produtos: produtosData,
+              categorias: categoriasData,
+            }),
+          );
           sessionStorage.setItem(cacheTimeKey, Date.now().toString());
 
           render.categorias();
@@ -1109,30 +1127,29 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         try {
           state.paginacao.carregando = true;
-          if (elementos.loadingMore) elementos.loadingMore.style.display = 'flex';
-
-          console.log(`📄 Carregando página ${state.paginacao.paginaAtual + 1}`);
+          if (elementos.loadingMore)
+            elementos.loadingMore.style.display = 'flex';
 
           // Aqui você pode implementar a lógica de carregar mais
           // Por enquanto, vamos usar abordagem client-side (filtrar do state.produtos)
           // Em produção, seria melhor usar productService.getPaginated()
-          
+
           // Simular delay de rede
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
 
           // Por enquanto, marcar como não há mais (já carregamos tudo)
           // Quando implementar paginação no backend, atualizar aqui
           state.paginacao.hasMore = false;
           state.paginacao.paginaAtual++;
-
         } catch (error) {
           console.error('Erro ao carregar mais produtos:', error);
         } finally {
           state.paginacao.carregando = false;
-          if (elementos.loadingMore) elementos.loadingMore.style.display = 'none';
+          if (elementos.loadingMore)
+            elementos.loadingMore.style.display = 'none';
         }
       },
-      
+
       invalidarCache(): void {
         sessionStorage.removeItem('sriphone-produtos-cache');
         sessionStorage.removeItem('sriphone-produtos-cache-time');
@@ -1150,27 +1167,27 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       // Toggle filtros avançados
       elementos.toggleFiltros?.addEventListener(
         'click',
-        handlers.toggleFiltros
+        handlers.toggleFiltros,
       );
 
       // Filtros
       elementos.filtroCondicao?.addEventListener(
         'change',
-        handlers.filtroCondicao
+        handlers.filtroCondicao,
       );
       elementos.filtroBateria?.addEventListener(
         'change',
-        handlers.filtroBateria
+        handlers.filtroBateria,
       );
       elementos.filtroOrdenacao?.addEventListener(
         'change',
-        handlers.filtroOrdenacao
+        handlers.filtroOrdenacao,
       );
 
       // Limpar filtros
       elementos.btnLimparFiltros?.addEventListener(
         'click',
-        handlers.limparFiltros
+        handlers.limparFiltros,
       );
 
       // Visualização
@@ -1198,18 +1215,25 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         const observerOptions = {
           root: null,
           rootMargin: '100px',
-          threshold: 0.1
+          threshold: 0.1,
         };
 
         const observerCallback = (entries: IntersectionObserverEntry[]) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting && !state.paginacao.carregando && state.paginacao.hasMore) {
+          entries.forEach((entry) => {
+            if (
+              entry.isIntersecting &&
+              !state.paginacao.carregando &&
+              state.paginacao.hasMore
+            ) {
               api.carregarMaisProdutos();
             }
           });
         };
 
-        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        const observer = new IntersectionObserver(
+          observerCallback,
+          observerOptions,
+        );
         observer.observe(elementos.scrollSentinel);
       }
     }
@@ -1244,22 +1268,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       const session = await authService.getSession();
       const allEditButtons = document.querySelectorAll('.btn-editar-produto');
 
-      console.log('=== DEBUG BOTÕES EDITAR ===');
-      console.log('Total de botões encontrados:', allEditButtons.length);
-      console.log('Usuário autenticado:', !!session);
-
       allEditButtons.forEach((btn, index) => {
         const card = btn.closest('.produto-card');
         const produtoInfo = card?.querySelector('.produto-info');
 
-        console.log(`Botão ${index + 1}:`, {
-          dentroDeCard: !!card,
-          temProdutoInfo: !!produtoInfo,
-        });
-
         // REMOVER botões órfãos
         if (!card) {
-          console.warn(`Botão ${index + 1} está ÓRFÃO - removendo`);
           btn.remove();
           return;
         }
@@ -1280,8 +1294,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         // Configurar evento de clique
         btn.addEventListener('click', handleEditClick);
       });
-
-      console.log('=== FIM DEBUG ===');
     }
 
     // Handler separado para o clique do botão editar
@@ -1300,7 +1312,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       try {
         const produtoData = JSON.parse(produtoDataStr);
-        console.log('Abrindo modal de edição para:', produtoData.nome);
         (window as any).abrirModalEditarProduto(produtoData);
       } catch (error) {
         console.error('Erro ao parsear dados do produto:', error);
@@ -1311,7 +1322,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     // Função toast para o script principal
     function mostrarToast(
       mensagem: string,
-      tipo: 'success' | 'error' | 'warning' | 'info' = 'info'
+      tipo: 'success' | 'error' | 'warning' | 'info' = 'info',
     ) {
       const toast = document.createElement('div');
       toast.className = `toast toast-${tipo}`;

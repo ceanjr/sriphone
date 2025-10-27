@@ -1,6 +1,5 @@
 // src/scripts/catalogo.js
 import { productService, categoryService, authService } from '../lib/supabase';
-console.log('Catalogo script loaded');
 export function initCatalogo() {
   // ==================== Estado ====================
   const state = {
@@ -236,9 +235,12 @@ export function initCatalogo() {
     <div class="produto-image">
         ${
           imagemPrincipal
-            ? `<img src="${imagemPrincipal}" alt="${utils.escapeHtml(
+            ? `<div class="image-container">
+                <div class="image-skeleton"></div>
+                <img data-src="${imagemPrincipal}" alt="${utils.escapeHtml(
                 produto.nome
-              )}" loading="lazy" />`
+              )}" class="lazy-image" loading="lazy" decoding="async" />
+              </div>`
             : `
             <div class="image-placeholder">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -460,6 +462,7 @@ export function initCatalogo() {
         });
 
       setupEditButtons();
+      setupLazyLoading();
     },
 
     loading(mostrar) {
@@ -702,35 +705,99 @@ export function initCatalogo() {
 
   // ==================== Controle de Botões de Editar ====================
   async function setupEditButtons() {
-    const session = await authService.getSession();
-    const allEditButtons = document.querySelectorAll('.btn-editar-produto');
+    const isAdmin = await authService.isAuthenticated();
 
-    allEditButtons.forEach((btn) => {
-      const card = btn.closest('.produto-card');
-      const produtoInfo = card?.querySelector('.produto-info');
-
-      if (!card) {
-        btn.remove();
-        return;
-      }
-
-      if (session) {
-        btn.classList.add('visible');
-        if (produtoInfo) {
-          produtoInfo.classList.add('com-editar');
-        }
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach((button) => {
+      if (isAdmin) {
+        button.style.display = 'flex';
+        button.addEventListener('click', handleEditClick);
       } else {
-        btn.classList.remove('visible');
-        if (produtoInfo) {
-          produtoInfo.classList.remove('com-editar');
-        }
+        button.style.display = 'none';
       }
-
-      btn.addEventListener('click', handleEditClick);
     });
   }
 
-  function handleEditClick(e) {
+  // ==================== Lazy Loading de Imagens ====================
+  function setupLazyLoading() {
+    const imageObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            const imageContainer = img.closest('.image-container');
+            const skeleton = imageContainer?.querySelector('.image-skeleton');
+            
+            // Preload da imagem
+            const tempImg = new Image();
+            tempImg.onload = () => {
+              img.src = img.dataset.src;
+              img.classList.add('loaded');
+              skeleton?.classList.add('hidden');
+              
+              // Fade in suave
+              setTimeout(() => {
+                skeleton?.remove();
+              }, 300);
+            };
+            
+            tempImg.onerror = () => {
+              img.classList.add('error');
+              skeleton?.classList.add('hidden');
+              
+              // Mostrar placeholder de erro
+              imageContainer.innerHTML = `
+                <div class="image-error">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="9" cy="9" r="1" fill="currentColor"/>
+                    <path d="M21 15L16 10L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+              `;
+            };
+            
+            tempImg.src = img.dataset.src;
+            observer.unobserve(img);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '50px',
+        threshold: 0.1
+      }
+    );
+
+    // Observar todas as imagens lazy
+    document.querySelectorAll('.lazy-image').forEach((img) => {
+      imageObserver.observe(img);
+    });
+
+    // Re-observar quando novos produtos são adicionados
+    const mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              const lazyImages = node.querySelectorAll?.('.lazy-image') || [];
+              lazyImages.forEach((img) => {
+                imageObserver.observe(img);
+              });
+            }
+          });
+        }
+      });
+    });
+
+    const container = elementos.produtosContainer;
+    if (container) {
+      mutationObserver.observe(container, {
+        childList: true,
+        subtree: true
+      });
+    }
+  }  function handleEditClick(e) {
     e.stopPropagation();
     e.preventDefault();
 

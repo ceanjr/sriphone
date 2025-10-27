@@ -1,0 +1,80 @@
+---
+// src/components/ResponsiveImage.astro
+// Componente para imagens responsivas otimizadas
+
+interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  decoding?: 'async' | 'sync' | 'auto';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  class?: string;
+  style?: string;
+  priority?: boolean; // Para imagens críticas (above-the-fold)
+}
+
+const { 
+  src, 
+  alt, 
+  width, 
+  height, 
+  sizes, 
+  loading = 'lazy', 
+  decoding = 'async',
+  fetchpriority,
+  class: className,
+  style,
+  priority = false
+} = Astro.props;
+
+// Se priority=true, forçar loading eager e fetchpriority high
+const finalLoading = priority ? 'eager' : loading;
+const finalFetchPriority = priority ? 'high' : (fetchpriority || 'auto');
+
+// Gerar srcset para Supabase images
+function generateSrcSet(originalSrc: string): string {
+  if (!originalSrc.includes('supabase')) {
+    return '';
+  }
+
+  const breakpoints = [400, 800, 1200, 1600];
+  
+  return breakpoints
+    .map(w => {
+      const url = new URL(originalSrc);
+      url.searchParams.set('width', w.toString());
+      url.searchParams.set('quality', '85');
+      url.searchParams.set('format', 'webp');
+      return `${url.toString()} ${w}w`;
+    })
+    .join(', ');
+}
+
+const srcset = generateSrcSet(src);
+const defaultSizes = sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
+---
+
+<img
+  src={src}
+  srcset={srcset || undefined}
+  sizes={srcset ? (sizes || defaultSizes) : undefined}
+  alt={alt}
+  width={width}
+  height={height}
+  loading={finalLoading}
+  decoding={decoding}
+  fetchpriority={finalFetchPriority}
+  class={className}
+  style={style}
+/>
+
+<style>
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+</style>
