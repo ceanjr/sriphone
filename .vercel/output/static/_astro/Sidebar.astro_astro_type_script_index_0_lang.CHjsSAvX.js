@@ -1,1 +1,0 @@
-import{a as e}from"./supabase.Cm9Ta47n.js";document.getElementById("logout-btn")?.addEventListener("click",async()=>{confirm("Tem certeza que deseja sair?")&&(await e.signOut(),window.location.href="/admin/login")});
