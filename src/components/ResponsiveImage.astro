@@ -16,23 +16,23 @@ interface Props {
   priority?: boolean; // Para imagens críticas (above-the-fold)
 }
 
-const { 
-  src, 
-  alt, 
-  width, 
-  height, 
-  sizes, 
-  loading = 'lazy', 
+const {
+  src,
+  alt,
+  width,
+  height,
+  sizes,
+  loading = 'lazy',
   decoding = 'async',
   fetchpriority,
   class: className,
   style,
-  priority = false
+  priority = false,
 } = Astro.props;
 
 // Se priority=true, forçar loading eager e fetchpriority high
 const finalLoading = priority ? 'eager' : loading;
-const finalFetchPriority = priority ? 'high' : (fetchpriority || 'auto');
+const finalFetchPriority = priority ? 'high' : fetchpriority || 'auto';
 
 // Gerar srcset para Supabase images
 function generateSrcSet(originalSrc: string): string {
@@ -41,9 +41,9 @@ function generateSrcSet(originalSrc: string): string {
   }
 
   const breakpoints = [400, 800, 1200, 1600];
-  
+
   return breakpoints
-    .map(w => {
+    .map((w) => {
       const url = new URL(originalSrc);
       url.searchParams.set('width', w.toString());
       url.searchParams.set('quality', '85');
@@ -54,13 +54,14 @@ function generateSrcSet(originalSrc: string): string {
 }
 
 const srcset = generateSrcSet(src);
-const defaultSizes = sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
+const defaultSizes =
+  sizes || '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
 ---
 
 <img
   src={src}
   srcset={srcset || undefined}
-  sizes={srcset ? (sizes || defaultSizes) : undefined}
+  sizes={srcset ? sizes || defaultSizes : undefined}
   alt={alt}
   width={width}
   height={height}

@@ -41,20 +41,20 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    
+
     <!-- Preconnect to critical origins -->
     <link rel="preconnect" href="https://vercel-analytics.com" crossorigin />
     <link rel="dns-prefetch" href="https://supabase.co" />
-    
+
     <!-- Critical CSS Inline para eliminar render-blocking -->
-    {criticalCSS && <style is:inline set:html={criticalCSS}></style>}
-    
+    {criticalCSS && <style is:inline set:html={criticalCSS} />}
+
     <slot name="head" />
     <Analytics />
-    
+
     <!-- Web Vitals Performance Tracking -->
     <script type="module" src="/src/scripts/webVitals.js"></script>
-    
+
     <title>{title}</title>
   </head>
   <body>
