@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cores da Marca SriPhone VCA */
+    --cor-primaria: #ffffff;      /* Branco - texto principal */
+    --cor-secundaria: #000000;    /* Preto - fundo */
+    --cor-texto: #e0e0e0;         /* Cinza claro para texto */
+    --cor-fundo-escuro: #030303;  /* Preto mais profundo */
+    --cor-destaque: #ffffff;      /* Branco para destaques */
+
+    /* Cores de Fundo Admin */
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-card: #1a1a1a;
+
+    /* Cores de Texto */
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #a0a0a0;
+
+    /* Cores de Borda */
+    --border-primary: #2a2a2a;
+    --border-secondary: #1a1a1a;
+
+    /* Cores de Estado */
+    --color-success: #22c55e;
+    --color-error: #ef4444;
+    --color-warning: #f59e0b;
+    --color-info: #60a5fa;
+  }
+
+  body {
+    @apply bg-black text-white;
+  }
+}

@@ -1,0 +1,195 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import ProductFormDialog from '../../components/admin/ProductFormDialog.astro';
+import { supabase } from '../../lib/supabase';
+
+// Buscar todos os produtos
+const { data: produtos, error } = await supabase
+  .from('produtos')
+  .select('*, categoria:categoria_id(id, nome)')
+  .order('created_at', { ascending: false });
+
+const { data: categorias } = await supabase
+  .from('categorias')
+  .select('*')
+  .order('nome');
+---
+
+<AdminLayout title="Produtos" description="Gerenciar produtos do catálogo">
+  <div class="flex flex-col">
+    <!-- Header -->
+    <div class="flex min-h-[64px] items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 md:px-6">
+      <div class="min-w-0 flex-1">
+        <h1 class="truncate text-lg font-bold text-white md:text-xl">Produtos</h1>
+        <p class="hidden text-sm text-[#a0a0a0] sm:block">Gerenciar produtos do catálogo</p>
+      </div>
+      <button
+        id="add-product-btn"
+        class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
+      >
+        <span class="hidden sm:inline">Adicionar Produto</span>
+        <span class="sm:hidden">Adicionar</span>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 p-4 md:p-6">
+      {!produtos || produtos.length === 0 ? (
+        <div class="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-[#a0a0a0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+          <h3 class="mt-4 text-lg font-medium text-white">Nenhum produto cadastrado</h3>
+          <p class="mt-2 text-sm text-[#a0a0a0]">
+            Comece adicionando seu primeiro produto.
+          </p>
+          <button
+            onclick="window.openProductDialog()"
+            class="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
+          >
+            Adicionar Produto
+          </button>
+        </div>
+      ) : (
+        <div class="overflow-x-auto rounded-lg border border-[#2a2a2a] bg-[#0a0a0a]">
+          <table class="w-full">
+            <thead class="border-b border-[#2a2a2a] bg-[#0a0a0a]">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:px-6">
+                  Produto
+                </th>
+                <th class="hidden px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:table-cell">
+                  Categoria
+                </th>
+                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:px-6">
+                  Preço
+                </th>
+                <th class="hidden px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] sm:table-cell">
+                  Status
+                </th>
+                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:px-6">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#2a2a2a]">
+              {produtos.map((produto) => (
+                <tr class="hover:bg-[#1a1a1a] transition">
+                  <td class="px-4 py-4 md:px-6">
+                    <div class="flex items-center gap-3">
+                      {produto.foto_principal && (
+                        <img
+                          src={produto.foto_principal}
+                          alt={produto.nome}
+                          class="h-10 w-10 flex-shrink-0 rounded-md object-cover"
+                        />
+                      )}
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium text-white truncate">{produto.nome}</p>
+                        <p class="text-xs text-[#a0a0a0]">{produto.codigo}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="hidden px-6 py-4 md:table-cell">
+                    <span class="text-sm text-white">{produto.categoria?.nome || 'Sem categoria'}</span>
+                  </td>
+                  <td class="px-4 py-4 md:px-6">
+                    <span class="text-sm font-medium text-white">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.preco)}
+                    </span>
+                  </td>
+                  <td class="hidden px-6 py-4 sm:table-cell">
+                    <span
+                      class={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                        produto.ativo
+                          ? 'bg-green-500/10 text-green-500'
+                          : 'bg-red-500/10 text-red-500'
+                      }`}
+                    >
+                      {produto.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 md:px-6">
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        class="rounded-lg bg-white/10 p-2 text-white transition hover:bg-white/20"
+                        data-action="edit"
+                        data-produto={JSON.stringify(produto)}
+                        title="Editar"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        class="rounded-lg bg-red-500/10 p-2 text-red-500 transition hover:bg-red-500/20"
+                        data-action="delete"
+                        data-id={produto.id}
+                        data-nome={produto.nome}
+                        title="Deletar"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <!-- Product Form Dialog -->
+  <ProductFormDialog categorias={categorias || []} />
+</AdminLayout>
+
+<script>
+  // Botão adicionar produto
+  document.getElementById('add-product-btn')?.addEventListener('click', () => {
+    window.openProductDialog();
+  });
+
+  // Botões de editar
+  document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const produtoJson = (e.currentTarget as HTMLElement).dataset.produto;
+      if (produtoJson) {
+        const produto = JSON.parse(produtoJson);
+        window.openProductDialog(produto);
+      }
+    });
+  });
+
+  // Botões de deletar
+  document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const element = e.currentTarget as HTMLElement;
+      const id = element.dataset.id;
+      const nome = element.dataset.nome;
+      
+      if (confirm(`Tem certeza que deseja deletar "${nome}"?`)) {
+        try {
+          const response = await fetch(`/api/admin/produtos/${id}`, {
+            method: 'DELETE',
+          });
+          
+          if (response.ok) {
+            window.showToast('Produto deletado com sucesso!', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else {
+            const data = await response.json();
+            throw new Error(data.error || 'Erro ao deletar produto');
+          }
+        } catch (error: any) {
+          window.showToast(error.message || 'Erro ao deletar produto', 'error');
+        }
+      }
+    });
+  });
+</script>

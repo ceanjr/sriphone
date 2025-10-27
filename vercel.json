@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "astro",
+  "outputDirectory": ".vercel/output"
+}

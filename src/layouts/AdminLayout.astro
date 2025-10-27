@@ -1,0 +1,45 @@
+---
+import Sidebar from '../components/admin/Sidebar.astro';
+import MobileNav from '../components/admin/MobileNav.astro';
+import Toast from '../components/admin/Toast.astro';
+import '../styles/admin.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} | Admin - Sr. IPHONE VCA</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  </head>
+  <body>
+    <div class="flex min-h-screen flex-col bg-black lg:flex-row lg:overflow-hidden">
+      <MobileNav />
+      
+      <!-- Sidebar Desktop -->
+      <aside class="hidden w-64 lg:block">
+        <Sidebar />
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 overflow-y-auto">
+        <div class="min-h-screen">
+          <slot />
+        </div>
+      </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <Toast />
+  </body>
+</html>
