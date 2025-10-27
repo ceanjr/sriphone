@@ -2,7 +2,7 @@
   "name": "SriPhone VCA",
   "short_name": "SriPhone",
   "description": "Catálogo de capinhas e acessórios para celular",
-  "start_url": "/",
+  "start_url": "/catalogo",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
