@@ -193,6 +193,15 @@ import '../styles/components/modal-produto.css';
   const contadorImagens =
     modalImagemExpandida?.querySelector('.contador-imagens');
 
+  // DEBUG: Verificar se elementos existem
+  console.log('🔍 Debug elementos do modal:');
+  console.log('  - modal:', !!modal);
+  console.log('  - mainImage:', !!mainImage);
+  console.log('  - expandBtn:', !!expandBtn);
+  console.log('  - modalImagemExpandida:', !!modalImagemExpandida);
+  console.log('  - imagemExpandida:', !!imagemExpandida);
+  console.log('  - contadorImagens:', !!contadorImagens);
+
   let currentIndex = 0;
   let imagensAtuais: string[] = [];
   let produtoAtual: Product | null = null;
@@ -703,61 +712,125 @@ import '../styles/components/modal-produto.css';
   let isExpandingImage = false;
   
   expandBtn?.addEventListener('click', (e) => {
-    e.preventDefault();
     e.stopPropagation();
+    
+    console.log('🔍 Botão expandir clicado');
+    console.log('  - imagensAtuais.length:', imagensAtuais.length);
+    console.log('  - currentIndex:', currentIndex);
+    console.log('  - isExpandingImage:', isExpandingImage);
     
     if (isExpandingImage) {
       console.log('⚠️ Expandir ignorado (throttle)');
       return;
     }
     
-    if (imagensAtuais.length > 0) {
-      isExpandingImage = true;
-      abrirImagemExpandida(currentIndex);
-      
-      setTimeout(() => {
-        isExpandingImage = false;
-      }, 300);
+    if (!imagensAtuais || imagensAtuais.length === 0) {
+      console.log('❌ Nenhuma imagem disponível no array');
+      return;
     }
+    
+    console.log('📸 Abrindo imagem expandida, total:', imagensAtuais.length);
+    isExpandingImage = true;
+    abrirImagemExpandida(currentIndex);
+    
+    setTimeout(() => {
+      isExpandingImage = false;
+    }, 300);
   });
 
   mainImage?.addEventListener('click', (e) => {
-    e.preventDefault();
     e.stopPropagation();
+    
+    console.log('🖼️ Imagem principal clicada');
+    console.log('  - imagensAtuais.length:', imagensAtuais.length);
+    console.log('  - currentIndex:', currentIndex);
+    console.log('  - isExpandingImage:', isExpandingImage);
     
     if (isExpandingImage) {
       console.log('⚠️ Expandir ignorado (throttle)');
       return;
     }
     
-    if (imagensAtuais.length > 0) {
-      isExpandingImage = true;
-      abrirImagemExpandida(currentIndex);
-      
-      setTimeout(() => {
-        isExpandingImage = false;
-      }, 300);
+    if (!imagensAtuais || imagensAtuais.length === 0) {
+      console.log('❌ Nenhuma imagem disponível no array');
+      return;
     }
+    
+    console.log('📸 Abrindo imagem expandida, índice:', currentIndex);
+    isExpandingImage = true;
+    abrirImagemExpandida(currentIndex);
+    
+    setTimeout(() => {
+      isExpandingImage = false;
+    }, 300);
   });
 
   function abrirImagemExpandida(index: number) {
-    if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) return;
+    console.log('🚀 Função abrirImagemExpandida chamada, index:', index);
+    
+    // Re-capturar elementos se necessário (em caso de problemas de timing)
+    const modal = document.getElementById('modal-imagem-expandida') as HTMLElement | null;
+    const imagem = document.getElementById('imagem-expandida') as HTMLImageElement | null;
+    const contador = modal?.querySelector('.contador-imagens');
+    
+    console.log('🔍 Elementos recapturados:');
+    console.log('  - modal existe?', !!modal);
+    console.log('  - imagem existe?', !!imagem);
+    console.log('  - contador existe?', !!contador);
+    
+    if (!modal || !imagem || !contador) {
+      console.error('❌ Elementos do modal expandido não encontrados!');
+      console.error('   Tentando com variáveis originais...');
+      
+      // Tentar usar variáveis originais
+      if (!modalImagemExpandida || !imagemExpandida || !contadorImagens) {
+        console.error('❌ Variáveis originais também não disponíveis!');
+        return;
+      }
+      
+      // Usar variáveis originais
+      currentIndex = index;
+      const imagemUrl = imagensAtuais[currentIndex];
+      console.log('🖼️ URL da imagem (usando variáveis originais):', imagemUrl);
 
-    currentIndex = index;
+      if (isMobile) {
+        console.log('📱 Expandindo imagem (mobile):', index);
+        imagemExpandida.src = imagemUrl;
+      } else {
+        console.log('🖥️ Expandindo imagem (desktop):', index);
+        lazyLoadImage(imagemExpandida, imagemUrl);
+      }
 
-    // NO MOBILE: Carregar imagem direto, sem lazy load complexo
-    if (isMobile) {
-      console.log('📱 Expandindo imagem:', index);
-      imagemExpandida.src = imagensAtuais[currentIndex];
-    } else {
-      // DESKTOP: Usar lazy load
-      lazyLoadImage(imagemExpandida, imagensAtuais[currentIndex]);
+      contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
+
+      console.log('✅ Adicionando classe active ao modal expandido (variáveis originais)');
+      requestAnimationFrame(() => {
+        modalImagemExpandida.classList.add('active');
+        console.log('✅ Classe active adicionada, classes:', modalImagemExpandida.className);
+      });
+      
+      return;
     }
 
-    contadorImagens.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
+    // Usar elementos recapturados
+    currentIndex = index;
+    const imagemUrl = imagensAtuais[currentIndex];
+    console.log('🖼️ URL da imagem:', imagemUrl);
 
+    if (isMobile) {
+      console.log('📱 Expandindo imagem (mobile):', index);
+      imagem.src = imagemUrl;
+    } else {
+      console.log('🖥️ Expandindo imagem (desktop):', index);
+      lazyLoadImage(imagem, imagemUrl);
+    }
+
+    contador.textContent = `${currentIndex + 1} / ${imagensAtuais.length}`;
+
+    console.log('✅ Adicionando classe active ao modal expandido');
     requestAnimationFrame(() => {
-      modalImagemExpandida.classList.add('active');
+      modal.classList.add('active');
+      console.log('✅ Classe active adicionada, classes:', modal.className);
     });
   }
 
