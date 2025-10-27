@@ -9,7 +9,9 @@ O site está retornando 404 na Vercel devido a configurações conflitantes entr
 ## ✅ Soluções Implementadas
 
 ### 1. Criado `vercel.json`
-Arquivo de configuração específico para Vercel com os comandos corretos.
+Arquivo de configuração específico para Vercel com os comandos corretos (schema v2).
+
+**Nota:** A Vercel usa Build Configuration API, não precisa de `version`, `installCommand` é automático.
 
 ### 2. Criado `.vercelignore`
 Ignora arquivos desnecessários no deploy, incluindo `netlify.toml`.
