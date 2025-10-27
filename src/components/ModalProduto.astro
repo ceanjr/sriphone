@@ -394,7 +394,17 @@ import '../styles/components/modal-produto.css';
 
   // Função global para abrir o modal - COM PRELOAD ANTECIPADO
   (window as any).abrirModalProduto = debounce((produto: any) => {
-    if (isModalOpen) return; // Prevenir múltiplas aberturas
+    console.log('🔍 Modal sendo aberto:', { produto, isModalOpen, modal: !!modal });
+    
+    if (isModalOpen) {
+      console.warn('⚠️ Modal já está aberto, ignorando');
+      return; // Prevenir múltiplas aberturas
+    }
+
+    if (!modal) {
+      console.error('❌ Elemento modal não encontrado!');
+      return;
+    }
 
     produtoAtual = produto;
     isModalOpen = true;
@@ -482,8 +492,16 @@ import '../styles/components/modal-produto.css';
 
       // CRITICAL: Usar requestAnimationFrame para abrir modal
       requestAnimationFrame(() => {
+        console.log('✅ Adicionando classe active ao modal');
         modal.classList.add('active');
         document.body.classList.add('modal-open');
+        
+        console.log('📊 Estado do modal:', {
+          hasActiveClass: modal.classList.contains('active'),
+          display: window.getComputedStyle(modal).display,
+          zIndex: window.getComputedStyle(modal).zIndex,
+          visibility: window.getComputedStyle(modal).visibility
+        });
         
         // CRITICAL: Forçar scroll para o topo
         setTimeout(() => {
@@ -493,6 +511,8 @@ import '../styles/components/modal-produto.css';
           window.scrollTo({ top: 0, behavior: 'instant' });
         }, 10);
       });
+    } else {
+      console.error('❌ Modal não encontrado no DOM');
     }
   }, 100); // Debounce de 100ms
 
