@@ -211,60 +211,38 @@ import '../styles/components/modal-produto.css';
     };
   }
 
-  // CRITICAL: Cache de imagens + detecção mobile - SIMPLIFICADO
-  const imageCache = new Map<string, HTMLImageElement>();
-  const loadingImages = new Set<string>();
+  // CRITICAL: Cache DESABILITADO no mobile - usa apenas no desktop
+  const imageCache = isMobile ? null : new Map<string, HTMLImageElement>();
+  const loadingImages = isMobile ? null : new Set<string>();
   const isMobile = window.innerWidth <= 768;
   const navigatorWithConnection = navigator as NavigatorWithConnection;
   const isSlowConnection =
     (navigatorWithConnection.connection &&
       navigatorWithConnection.connection.effectiveType === 'slow-2g') ||
     navigatorWithConnection.connection?.effectiveType === '2g';
-  
-  // CRITICAL: Limitar cache em mobile para evitar crash
-  const MAX_CACHE_SIZE = isMobile ? 3 : 20; // Reduzido de 5 para 3 no mobile
 
-  // CRITICAL: Limpar cache agressivamente no mobile
-  function clearOldCache() {
-    if (isMobile && imageCache.size > MAX_CACHE_SIZE) {
-      console.log('🧹 Limpando cache antigo:', imageCache.size);
-      // Manter apenas as últimas 2 imagens
-      const entries = Array.from(imageCache.entries());
-      const toKeep = entries.slice(-2);
-      imageCache.clear();
-      toKeep.forEach(([key, value]) => imageCache.set(key, value));
-      
-      // Forçar garbage collection (sugestão ao browser)
-      if (window.gc) {
-        window.gc();
-      }
-    }
-  }
-
-  // CRITICAL: Preload MUITO simplificado para mobile
+  // NO MOBILE: Sem preload, sem cache, sem nada!
   function preloadImage(
     src: string,
     priority = false,
   ): Promise<HTMLImageElement> {
-    return new Promise((resolve, reject) => {
-      // NO MOBILE: Não otimizar URL, usar original
-      const optimizedSrc = isMobile ? src : optimizeImageForDevice(src);
+    // MOBILE: Não fazer nada, retornar Promise rejeitada
+    if (isMobile) {
+      return Promise.reject(new Error('Preload disabled on mobile'));
+    }
 
-      if (imageCache.has(optimizedSrc)) {
+    // DESKTOP: Preload normal
+    return new Promise((resolve, reject) => {
+      const optimizedSrc = optimizeImageForDevice(src);
+
+      if (imageCache && imageCache.has(optimizedSrc)) {
         resolve(imageCache.get(optimizedSrc)!);
         return;
       }
 
-      // NO MOBILE: Se já tem muitas imagens em cache, limpar antigas
-      if (isMobile && imageCache.size >= MAX_CACHE_SIZE) {
-        const firstKey = imageCache.keys().next().value;
-        imageCache.delete(firstKey);
-      }
-
-      if (loadingImages.has(optimizedSrc)) {
-        // Se já estamos carregando essa imagem, esperar
+      if (loadingImages && loadingImages.has(optimizedSrc)) {
         const checkLoaded = () => {
-          if (imageCache.has(optimizedSrc)) {
+          if (imageCache && imageCache.has(optimizedSrc)) {
             resolve(imageCache.get(optimizedSrc)!);
           } else {
             setTimeout(checkLoaded, 10);
@@ -274,30 +252,23 @@ import '../styles/components/modal-produto.css';
         return;
       }
 
-      loadingImages.add(optimizedSrc);
+      if (loadingImages) loadingImages.add(optimizedSrc);
       const img = new Image();
 
-      // NO MOBILE: Sempre usar loading lazy, exceto primeira imagem
-      if (priority && !isMobile) {
-        img.fetchPriority = 'high';
-        img.loading = 'eager';
-      } else {
-        img.loading = 'lazy';
-      }
+      img.loading = 'lazy';
 
       img.onload = () => {
-        loadingImages.delete(optimizedSrc);
-        imageCache.set(optimizedSrc, img);
+        if (loadingImages) loadingImages.delete(optimizedSrc);
+        if (imageCache) imageCache.set(optimizedSrc, img);
         resolve(img);
       };
 
       img.onerror = () => {
-        loadingImages.delete(optimizedSrc);
+        if (loadingImages) loadingImages.delete(optimizedSrc);
         console.error('❌ Erro ao carregar imagem:', src);
         reject(new Error(`Failed to load image: ${src}`));
       };
 
-      // Definir crossOrigin se necessário
       if (optimizedSrc.includes('supabase')) {
         img.crossOrigin = 'anonymous';
       }
@@ -346,38 +317,13 @@ import '../styles/components/modal-produto.css';
     showPlaceholder = true,
     priority = false,
   ) {
-    // NO MOBILE: Carregar DIRETO sem cache/preload (evita travamentos)
+    // NO MOBILE: Carregar DIRETO sem nenhum processamento
     if (isMobile) {
       console.log('📱 Mobile: Carregando imagem diretamente:', src);
       
-      if (showPlaceholder) {
-        img.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)';
-        img.style.backgroundSize = '300% 100%';
-        img.style.animation = 'skeleton-loading 1.2s ease-in-out infinite';
-        img.alt = 'Carregando...';
-      }
-
-      // Carregar DIRETO - sem preload, sem cache
-      img.onload = () => {
-        console.log('✅ Imagem carregada com sucesso');
-        img.style.background = '';
-        img.style.animation = '';
-        img.style.opacity = '1';
-      };
-
-      img.onerror = (error) => {
-        console.error('❌ Erro ao carregar imagem:', src, error);
-        img.style.background = '';
-        img.style.animation = '';
-        img.alt = 'Erro ao carregar';
-        // Tentar novamente sem otimização
-        setTimeout(() => {
-          img.src = src;
-        }, 1000);
-      };
-
-      // Definir src diretamente
+      // Simplesmente definir o src - NADA MAIS!
       img.src = src;
+      img.style.opacity = '1';
       return;
     }
 
@@ -625,23 +571,19 @@ import '../styles/components/modal-produto.css';
     currentIndex = index;
     const novaImagem = imagensAtuais[index];
 
-    // NO MOBILE: Troca DIRETA sem cache, sem animações complexas
+    // NO MOBILE: Apenas trocar src - NADA MAIS!
     if (isMobile) {
-      console.log('📱 Mobile: Trocando para imagem', index);
+      console.log('📱 Trocando:', index);
       
-      // Limpar cache antes de trocar
-      clearOldCache();
-      
-      // Troca direta - sem fade, sem cache
+      // Apenas trocar src - browser cuida do resto
       mainImage.src = novaImagem;
       
       // Atualizar thumbnails
-      const thumbs = thumbnailsTrack.querySelectorAll('.thumbnail');
-      thumbs.forEach((thumb, i) => {
+      thumbnailsTrack.querySelectorAll('.thumbnail').forEach((thumb, i) => {
         thumb.classList.toggle('active', i === index);
       });
       
-      return; // Sair - não fazer nada mais no mobile
+      return;
     }
 
     // DESKTOP: Pode usar cache e animações
@@ -683,7 +625,7 @@ import '../styles/components/modal-produto.css';
     }
   }
 
-  // Fechar modal - OTIMIZADO + limpar cache no mobile
+  // Fechar modal - Limpar tudo no mobile
   function fecharModal() {
     if (!isModalOpen) return;
 
@@ -693,11 +635,15 @@ import '../styles/components/modal-produto.css';
       isModalOpen = false;
       currentIndex = 0;
       
-      // NO MOBILE: Limpar cache ao fechar para liberar memória
-      if (isMobile) {
+      // NO MOBILE: Limpar absolutamente tudo
+      if (isMobile && mainImage) {
+        mainImage.src = ''; // Limpar src da imagem
+        imagensAtuais = []; // Limpar array
+        console.log('🧹 Modal fechado - memória liberada');
+      } else if (imageCache) {
+        // Desktop: limpar cache
         imageCache.clear();
-        loadingImages.clear();
-        console.log('🧹 Cache limpo (mobile)');
+        if (loadingImages) loadingImages.clear();
       }
     });
   }
