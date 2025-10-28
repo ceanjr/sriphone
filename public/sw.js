@@ -1,8 +1,9 @@
-// SERVICE WORKER v7 - CORRIGIDO SEM LOOP
-const CACHE_VERSION = 'v7-force-update';
+// SERVICE WORKER v8 - Atualizado 2025-10-28
+const CACHE_VERSION = 'v8-2025-10-28';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
+const API_CACHE = `sriphone-api-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
   '/',
@@ -13,11 +14,13 @@ const STATIC_ASSETS = [
   '/icons/icon-512x512.png',
   '/fonts/Halenoir-Bold.otf',
   '/images/Barbudo.webp',
+  '/images/logo-fundo.webp',
   '/favicon.webp',
   '/favicon.svg'
 ];
 
 const MAX_CACHE_SIZE = 100;
+const API_CACHE_TIME = 5 * 60 * 1000; // 5 minutos
 
 // Instalação - Skip waiting imediato
 self.addEventListener('install', (event) => {
@@ -39,7 +42,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Ativação - Limpa caches antigos
+// Ativação - Limpa caches antigos E notifica clientes
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating:', CACHE_VERSION);
   
@@ -59,6 +62,17 @@ self.addEventListener('activate', (event) => {
         console.log('[SW] Claiming clients');
         return self.clients.claim();
       })
+      .then(() => {
+        // Notificar todos os clientes para recarregar
+        return self.clients.matchAll().then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              type: 'SW_UPDATED',
+              version: CACHE_VERSION
+            });
+          });
+        });
+      })
   );
 });
 
@@ -77,13 +91,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // NUNCA cachear APIs de admin
-  if (url.pathname.startsWith('/api/admin/')) {
-    return;
-  }
-
-  // NUNCA cachear outras APIs
-  if (url.pathname.startsWith('/api/')) {
+  // NUNCA cachear APIs de admin (escrita)
+  if (url.pathname.startsWith('/api/admin/') && request.method !== 'GET') {
     return;
   }
 
@@ -94,6 +103,44 @@ self.addEventListener('fetch', (event) => {
 
   // Apenas GET
   if (request.method !== 'GET') return;
+
+  // API Pública (/api/produtos): Stale-While-Revalidate
+  if (url.pathname === '/api/produtos') {
+    event.respondWith(
+      caches.open(API_CACHE).then((cache) => {
+        return cache.match(request).then((cached) => {
+          const fetchPromise = fetch(request).then((response) => {
+            if (response.ok) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          });
+
+          // Retorna cache se existir, mas atualiza em background
+          return cached || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+
+  // Outras APIs de admin (leitura): Network-First
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok && url.pathname.includes('/produtos')) {
+            return caches.open(API_CACHE).then((cache) => {
+              cache.put(request, response.clone());
+              return response;
+            });
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
   
   // Imagens: Cache-First
   if (request.destination === 'image' || url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
@@ -130,24 +177,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Supabase: Network-First
-  if (url.hostname.includes('supabase')) {
+  // Supabase Storage (imagens): Cache-First com revalidação
+  if (url.hostname.includes('supabase') && url.pathname.includes('/storage/')) {
     event.respondWith(
-      Promise.race([
-        fetch(request).then((response) => {
+      caches.match(request).then((cached) => {
+        const fetchPromise = fetch(request).then((response) => {
           if (response.ok) {
-            return caches.open(DYNAMIC_CACHE).then((cache) => {
+            return caches.open(IMAGE_CACHE).then((cache) => {
               cache.put(request, response.clone());
+              limitCacheSize(IMAGE_CACHE, MAX_CACHE_SIZE);
               return response;
             });
           }
           return response;
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-      ]).catch(() => {
-        return caches.match(request);
+        }).catch(() => cached);
+
+        return cached || fetchPromise;
       })
     );
+    return;
+  }
+
+  // Outras requisições Supabase: Network-Only
+  if (url.hostname.includes('supabase')) {
     return;
   }
 
@@ -173,5 +225,25 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      }).then(() => {
+        console.log('[SW] All caches cleared');
+      })
+    );
+  }
+  
+  if (event.data && event.data.type === 'CLEAR_API_CACHE') {
+    event.waitUntil(
+      caches.delete(API_CACHE).then(() => {
+        console.log('[SW] API cache cleared');
+      })
+    );
   }
 });

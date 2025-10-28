@@ -106,25 +106,99 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <!-- Vercel Analytics -->
     <Analytics />
 
-    <!-- Service Worker para cache agressivo e PWA -->
+    <!-- Service Worker com força de atualização para todos -->
     <script is:inline>
+      // ✅ FORÇA ATUALIZAÇÃO v8 - Limpa cache antigo e força reload
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => {
-              reg.addEventListener('updatefound', () => {
-                const newWorker = reg.installing;
-                newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    if (confirm('Nova versão disponível! Atualizar agora?')) {
-                      newWorker.postMessage({ action: 'SKIP_WAITING' });
-                      window.location.reload();
-                    }
+        const CURRENT_VERSION = 'v8-2025-10-28';
+        const LAST_VERSION_KEY = 'sw-last-version';
+        
+        window.addEventListener('load', async () => {
+          try {
+            // Verificar se é primeira visita após update
+            const lastVersion = localStorage.getItem(LAST_VERSION_KEY);
+            
+            if (lastVersion && lastVersion !== CURRENT_VERSION) {
+              console.log('🔄 Nova versão detectada! Limpando cache...');
+              
+              // Desregistrar todos os SWs antigos
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (const registration of registrations) {
+                await registration.unregister();
+                console.log('✅ SW antigo desregistrado');
+              }
+              
+              // Limpar todos os caches
+              const cacheNames = await caches.keys();
+              for (const cacheName of cacheNames) {
+                await caches.delete(cacheName);
+                console.log('🗑️ Cache deletado:', cacheName);
+              }
+              
+              // Atualizar versão e recarregar
+              localStorage.setItem(LAST_VERSION_KEY, CURRENT_VERSION);
+              console.log('✅ Versão atualizada! Recarregando...');
+              window.location.reload(true);
+              return;
+            }
+            
+            // Registrar novo SW
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            console.log('✅ Service Worker registrado');
+            
+            // Salvar versão atual
+            localStorage.setItem(LAST_VERSION_KEY, CURRENT_VERSION);
+            
+            // Verificar atualizações
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('🆕 Nova versão do SW disponível');
+                  
+                  // Forçar atualização sem perguntar
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  
+                  // Limpar cache da API
+                  if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({ 
+                      type: 'CLEAR_API_CACHE' 
+                    });
                   }
-                });
+                  
+                  // Recarregar após 1 segundo
+                  setTimeout(() => {
+                    console.log('♻️ Recarregando com nova versão...');
+                    window.location.reload();
+                  }, 1000);
+                }
               });
-            })
-            .catch(() => {}); // Silent fail
+            });
+            
+            // Verificar atualizações a cada 30 segundos
+            setInterval(() => {
+              reg.update();
+            }, 30000);
+            
+          } catch (error) {
+            console.warn('Service Worker error:', error);
+          }
+        });
+        
+        // Listener para mensagens do SW
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'RELOAD_PAGE') {
+            window.location.reload();
+          }
+        });
+        
+        // Forçar atualização quando a aba fica visível
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+              if (reg) reg.update();
+            });
+          }
         });
       }
     </script>

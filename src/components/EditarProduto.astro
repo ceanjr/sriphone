@@ -6,31 +6,34 @@ const { data: categorias } = await supabase
   .from('categorias')
   .select('*')
   .order('nome');
+
+// Se não tem produto, renderizar vazio (será preenchido dinamicamente)
+const produtoData = produto || {};
 ---
 
 <form id="editar-produto-form" class="space-y-4 max-w-2xl">
-  <input type="hidden" name="id" value={produto.id} />
+  <input type="hidden" name="id" value={produtoData.id || ''} />
 
   <div>
     <label class="block text-sm font-medium mb-1">Nome *</label>
-    <input type="text" name="nome" required value={produto.nome} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+    <input type="text" name="nome" required value={produtoData.nome || ''} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
   </div>
 
   <div>
     <label class="block text-sm font-medium mb-1">Código *</label>
-    <input type="text" name="codigo" required value={produto.codigo} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+    <input type="text" name="codigo" required value={produtoData.codigo || ''} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
   </div>
 
   <div>
     <label class="block text-sm font-medium mb-1">Preço *</label>
-    <input type="number" name="preco" required step="0.01" value={produto.preco} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+    <input type="number" name="preco" required step="0.01" value={produtoData.preco || ''} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
   </div>
 
   <div>
     <label class="block text-sm font-medium mb-1">Categoria *</label>
     <select name="categoria_id" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">
       {categorias?.map((cat) => (
-        <option value={cat.id} selected={cat.id === produto.categoria_id}>{cat.nome}</option>
+        <option value={cat.id} selected={cat.id === produtoData.categoria_id}>{cat.nome}</option>
       ))}
     </select>
   </div>
@@ -38,25 +41,25 @@ const { data: categorias } = await supabase
   <div>
     <label class="block text-sm font-medium mb-1">Condição *</label>
     <select name="condicao" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">
-      <option value="Novo" selected={produto.condicao === 'Novo'}>Novo</option>
-      <option value="Semi-Novo" selected={produto.condicao === 'Semi-Novo'}>Semi-Novo</option>
-      <option value="Usado" selected={produto.condicao === 'Usado'}>Usado</option>
+      <option value="Novo" selected={produtoData.condicao === 'Novo'}>Novo</option>
+      <option value="Semi-Novo" selected={produtoData.condicao === 'Semi-Novo'}>Semi-Novo</option>
+      <option value="Usado" selected={produtoData.condicao === 'Usado'}>Usado</option>
     </select>
   </div>
 
   <div>
     <label class="block text-sm font-medium mb-1">Bateria (%)</label>
-    <input type="number" name="bateria" min="0" max="100" value={produto.bateria || ''} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+    <input type="number" name="bateria" min="0" max="100" value={produtoData.bateria || ''} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
   </div>
 
   <div>
     <label class="block text-sm font-medium mb-1">Descrição</label>
-    <textarea name="descricao" rows="3" class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">{produto.descricao || ''}</textarea>
+    <textarea name="descricao" rows="3" class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">{produtoData.descricao || ''}</textarea>
   </div>
 
   <div>
     <label class="flex items-center gap-2">
-      <input type="checkbox" name="ativo" checked={produto.ativo !== false} class="rounded" />
+      <input type="checkbox" name="ativo" checked={produtoData.ativo !== false} class="rounded" />
       <span class="text-sm">Produto ativo</span>
     </label>
   </div>

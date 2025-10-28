@@ -208,9 +208,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       </div>
     </div>
 
-    <FormularioProduto />
-    <GerirCategorias />
-    <EditarProduto />
+    <!-- Modais (ocultos por padrão) -->
+    <div style="display: none;">
+      <FormularioProduto />
+      <GerirCategorias />
+      <EditarProduto />
+    </div>
     <Footer />
   </main>
 
@@ -445,10 +448,19 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     // ==================== Renderização ====================
     const render = {
       produtos() {
-        if (!elementos.produtosContainer || !elementos.emptyState) return;
+        console.log('🎨 Rendering products...');
+        if (!elementos.produtosContainer || !elementos.emptyState) {
+          console.error('❌ Containers not found!');
+          return;
+        }
 
         // ✅ Obter estado atualizado
         const currentState = getState();
+        console.log('📊 Current state:', {
+          produtos: currentState.produtos.length,
+          categoria: currentState.categoriaAtiva,
+          modo: currentState.modoVisualizacao
+        });
         
         elementos.produtosContainer.classList.remove('coluna', 'grade', 'lista');
         elementos.produtosContainer.classList.add(currentState.modoVisualizacao);
@@ -459,6 +471,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         let produtosFiltrados = filtrarProdutos(currentState);
         produtosFiltrados = ordenarProdutos(produtosFiltrados, currentState.filtros.ordenacao);
+
+        console.log('✅ Filtered/sorted:', produtosFiltrados.length, 'products');
 
         if (produtosFiltrados.length === 0) {
           elementos.produtosContainer.innerHTML = '';
@@ -513,16 +527,25 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           render.loading(true);
           
           const currentState = getState();
+          console.log('📊 Current state before load:', {
+            produtos: currentState.produtos.length,
+            forceReload
+          });
+          
           if (currentState.produtos.length > 0 && !forceReload) {
+            console.log('✅ Using cached products, rendering...');
             render.produtos();
             render.loading(false);
             return;
           }
           
+          console.log('🌐 Fetching from API...');
           const response = await fetch('/api/produtos?limit=30');
           const data = await response.json();
           
           if (data.error) throw new Error(data.error);
+          
+          console.log('📦 Received from API:', data.produtos?.length, 'products');
           
           updateState({ 
             produtos: data.produtos || [], 
@@ -531,7 +554,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           
           render.produtos();
         } catch (error) {
-          console.error('Erro ao carregar dados:', error);
+          console.error('❌ Erro ao carregar dados:', error);
           if (elementos.emptyState) elementos.emptyState.style.display = 'block';
         } finally {
           render.loading(false);
@@ -735,6 +758,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Inicialização ====================
     function init() {
+      console.log('🚀 Initializing catalog...');
+      const currentState = getState();
+      console.log('📦 Initial state:', {
+        produtos: currentState.produtos.length,
+        categorias: currentState.categorias.length
+      });
+      
       const savedView = localStorage.getItem('modoVisualizacao') as 'coluna' | 'grade' | 'lista';
       const initialMode = savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
       
@@ -749,6 +779,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       });
       
       setupEventListeners();
+      
+      console.log('📡 Loading data...');
       api.carregarDados();
 
       authService.onAuthStateChange((session) => {
