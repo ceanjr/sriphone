@@ -1,58 +1,66 @@
 # 📊 PROGRESSO DA IMPLEMENTAÇÃO - Otimizações de Performance
 
 **Data:** 28/10/2025  
-**Commit:** feat: implementar otimizações de performance (Prioridade 1)
+**Última atualização:** 13:53 UTC  
+**Commits:** 3 | **Tempo gasto:** ~3.5h
 
 ---
 
-## ✅ IMPLEMENTADO (Prioridade 1 - Parcial)
+## ✅ SESSÃO 1 - IMPLEMENTADO (85% da Prioridade 1)
 
-### 1. API Routes ✅
-**Status:** Completo  
-**Tempo:** ~1h  
-**Arquivos:**
-- ✅ `src/pages/api/produtos.ts` - Endpoint com cursor-based pagination
+### 1. API Routes ✅ COMPLETO
+**Status:** 100% Completo  
+**Tempo:** ~1.5h  
+**Arquivos criados:**
+- ✅ `src/pages/api/produtos.ts` - GET com cursor-based pagination
+- ✅ `src/pages/api/admin/categorias.ts` - CRUD completo
+- ✅ `src/pages/api/admin/produtos.ts` - CREATE, UPDATE, DELETE
+- ✅ `src/pages/api/admin/upload.ts` - já existia
 - ✅ `src/lib/supabase.ts` - Métodos `getPaginated()` e `getByCategory()`
 
 **Resultado:**
 - API funcional com cache headers
 - Paginação eficiente (cursor-based)
-- Suporte a filtro por categoria
+- Suporte a filtros e categorias
+- Endpoints admin protegidos
 
-### 2. Hybrid Rendering (SSG) ✅
-**Status:** Completo  
+### 2. SSG (Static Site Generation) ✅ COMPLETO
+**Status:** 100% Completo  
 **Tempo:** ~1h  
-**Arquivos:**
+**Arquivos modificados:**
 - ✅ `astro.config.mjs` - ISR habilitado
 - ✅ `src/pages/catalogo.astro` - `prerender = true` + dados inline
 - ✅ `src/pages/produto/[id].astro` - `getStaticPaths()` implementado
 - ✅ `src/pages/index.astro` - Já tinha `prerender = true`
 
 **Resultado:**
-- 15 páginas de produto pré-renderizadas no build
+- **17 páginas pré-renderizadas** no build
 - Catálogo com SSG + dados iniciais JSON inline
-- Build time: 6.4s
+- Build time: ~5.5s
 - TTFB esperado: 800ms → 50ms (-94%) 🎉
 
-### 3. Cliente Otimizado (Parcial) ⚠️
-**Status:** Parcial  
-**Tempo:** ~30min  
+### 3. Cliente Otimizado ✅ PARCIAL (70%)
+**Status:** Parcialmente completo  
+**Tempo:** ~1h  
 **O que foi feito:**
-- ✅ Removido `productService` e `categoryService` do import no catalogo
+- ✅ `catalogo.astro`: Removido `productService` e `categoryService`
 - ✅ Cliente carrega dados iniciais de JSON inline (SSG)
-- ✅ Função `carregarMais()` usa API `/api/produtos`
-- ✅ Função `carregarDados()` simplificada
+- ✅ Paginação usa API `/api/produtos`
+- ✅ `GerirCategorias.astro`: 100% usando API routes
 
 **O que falta:**
-- ⚠️ Supabase ainda no bundle (168KB) - usado em outros componentes
-- ⚠️ Precisa remover de: EditarProduto, FormularioProduto, GerirCategorias
+- ⚠️ `FormularioProduto.astro`: Ainda usa `productService.create()` e `uploadImage()`
+- ⚠️ `EditarProduto.astro`: Ainda usa `productService.update()`
+- ⚠️ Supabase ainda no bundle: **168KB** (usado pelos 2 componentes acima)
 
-### 4. Otimização de Imagens (Parcial) ⚠️
-**Status:** Parcial  
+**Impacto esperado quando completar:** -165KB JS (-98%)
+
+### 4. Otimização de Imagens ✅ PARCIAL (30%)
+**Status:** Parcialmente completo  
 **Tempo:** ~15min  
 **O que foi feito:**
-- ✅ Hero image com dimensões explícitas (width/height)
-- ✅ Preload do Hero com `fetchpriority="high"`
+- ✅ `Hero.astro`: Dimensões explícitas (width/height)
+- ✅ `Layout.astro`: Preload do Hero com `fetchpriority="high"`
 
 **O que falta:**
 - ⚠️ Aplicar `imageOptimizer` nos cards de produto do catálogo
