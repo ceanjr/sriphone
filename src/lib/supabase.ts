@@ -37,6 +37,35 @@ export interface Category {
 
 // Funções de Produtos
 export const productService = {
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('produtos')
+      .select(
+        `
+        id,
+        codigo,
+        nome,
+        descricao,
+        preco,
+        condicao,
+        bateria,
+        categoria_id,
+        imagens,
+        created_at,
+        categoria:categorias(id, nome)
+      `
+      )
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Erro ao buscar produto por ID:', error);
+      return null;
+    }
+    
+    return data as Product & { categoria: Category };
+  },
+
   async getAll() {
     const { data, error } = await supabase
       .from('produtos')
