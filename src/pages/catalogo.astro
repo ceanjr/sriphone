@@ -343,7 +343,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Carregar Dados Iniciais ====================
     const initialDataEl = document.getElementById('initial-data');
+    console.log('🔍 initialDataEl:', initialDataEl);
     const initialData = initialDataEl ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}') : {};
+    console.log('📦 initialData:', initialData);
+    console.log('📦 Produtos:', initialData.produtos?.length || 0);
+    console.log('📦 Categorias:', initialData.categorias?.length || 0);
 
     // ==================== Estado ====================
     const state = {
@@ -1031,10 +1035,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     const api = {
       async carregarDados() {
         try {
+          console.log('🚀 Iniciando carregarDados...');
           render.loading(true);
           
           // ✅ OTIMIZAÇÃO: Usar dados iniciais (já carregados no SSG)
+          console.log('📊 State produtos:', state.produtos.length);
           if (state.produtos.length > 0) {
+            console.log('✅ Usando dados iniciais');
             render.categorias();
             render.produtos();
             render.loading(false);
