@@ -18,7 +18,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <Layout
-  title="Catálogo | Sr. IPHONE"
+  title="Catálogo | Sr. IPHONE "
   description="Explore nossa seleção exclusiva de iPhones seminovos com garantia e qualidade certificada."
 >
   <fragment slot="head">
@@ -1353,29 +1353,32 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   <!-- Otimização de carregamento de imagens - Mobile -->
   <script>
     // MOBILE: Intersection Observer para imagens do catálogo
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const img = entry.target as HTMLImageElement;
-          
-          // Adicionar fade-in suave quando carregar
-          if (!img.complete) {
-            img.style.opacity = '0';
-            img.style.transition = 'opacity 0.3s ease';
-            
-            img.onload = () => {
-              img.style.opacity = '1';
-              img.classList.add('loaded');
-            };
+    const imageObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const img = entry.target as HTMLImageElement;
+
+            // Adicionar fade-in suave quando carregar
+            if (!img.complete) {
+              img.style.opacity = '0';
+              img.style.transition = 'opacity 0.3s ease';
+
+              img.onload = () => {
+                img.style.opacity = '1';
+                img.classList.add('loaded');
+              };
+            }
+
+            imageObserver.unobserve(img);
           }
-          
-          imageObserver.unobserve(img);
-        }
-      });
-    }, {
-      rootMargin: '100px', // Carregar 100px antes (mobile precisa de mais buffer)
-      threshold: 0.01
-    });
+        });
+      },
+      {
+        rootMargin: '100px', // Carregar 100px antes (mobile precisa de mais buffer)
+        threshold: 0.01,
+      },
+    );
 
     // Observar imagens quando produtos renderizarem
     const observeProductImages = () => {
@@ -1392,7 +1395,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     // Re-observar após mudanças (filtros, ordenação, etc)
     const originalRenderProdutos = (window as any).renderProdutos;
     if (originalRenderProdutos) {
-      (window as any).renderProdutos = function(...args: any[]) {
+      (window as any).renderProdutos = function (...args: any[]) {
         originalRenderProdutos.apply(this, args);
         setTimeout(observeProductImages, 100);
       };
