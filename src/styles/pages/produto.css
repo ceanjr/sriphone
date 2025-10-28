@@ -1,0 +1,410 @@
+/* ========================================
+   PÁGINA DE PRODUTO
+   ======================================== */
+
+.produto-page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  padding: 3rem 0;
+}
+
+.produto-page .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 1rem 0;
+}
+
+.breadcrumbs .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.breadcrumbs ol {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.breadcrumbs li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.breadcrumbs li:not(:last-child)::after {
+  content: '/';
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.breadcrumbs a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumbs a:hover {
+  color: #fff;
+}
+
+.breadcrumbs [aria-current="page"] {
+  color: #fff;
+}
+
+/* Grid Principal */
+.produto-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 968px) {
+  .produto-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* ========================================
+   GALERIA DE IMAGENS
+   ======================================== */
+
+.produto-galeria {
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+}
+
+.main-image-container {
+  position: relative;
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 2rem;
+}
+
+/* Thumbnails */
+.thumbnails-container {
+  margin-top: 1.5rem;
+  overflow: hidden;
+}
+
+.thumbnails-track {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.5rem 0;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.thumbnails-track::-webkit-scrollbar {
+  height: 4px;
+}
+
+.thumbnails-track::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thumbnails-track::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.thumbnail {
+  position: relative;
+  flex: 0 0 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #1a1a1a;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.thumbnail:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.thumbnail.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.5rem;
+}
+
+/* ========================================
+   INFORMAÇÕES DO PRODUTO
+   ======================================== */
+
+.produto-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.produto-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.produto-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.badge-categoria {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.badge-condicao {
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(59, 130, 246);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.badge-bateria {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-bateria svg {
+  width: 20px;
+  height: 20px;
+}
+
+.badge-bateria.bateria-verde {
+  background: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-bateria.bateria-vermelho {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.produto-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.produto-codigo {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+/* Descrição */
+.produto-descricao {
+  padding: 1.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.produto-descricao p {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Especificações */
+.produto-specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.spec-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.spec-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Preço */
+.produto-preco {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.preco-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.preco-valor {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+/* Ações */
+.produto-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btn-whatsapp,
+.btn-voltar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-whatsapp {
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  color: #fff;
+}
+
+.btn-whatsapp:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3);
+}
+
+.btn-whatsapp svg {
+  width: 24px;
+  height: 24px;
+}
+
+.btn-voltar {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-voltar:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-voltar svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 968px) {
+  .produto-galeria {
+    position: static;
+  }
+
+  .produto-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .preco-valor {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .produto-page {
+    padding: 2rem 0;
+  }
+
+  .produto-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .produto-specs {
+    grid-template-columns: 1fr;
+  }
+
+  .preco-valor {
+    font-size: 1.75rem;
+  }
+
+  .btn-whatsapp,
+  .btn-voltar {
+    font-size: 0.875rem;
+    padding: 0.875rem 1.5rem;
+  }
+}

@@ -1,0 +1,196 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { productService } from '../../lib/supabase';
+import '../../styles/pages/produto.css';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/catalogo');
+}
+
+let produto;
+try {
+  produto = await productService.getById(id);
+  
+  if (!produto) {
+    return Astro.redirect('/catalogo');
+  }
+} catch (error) {
+  console.error('Erro ao carregar produto:', error);
+  return Astro.redirect('/catalogo');
+}
+
+const precoFormatado = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+}).format(produto.preco);
+
+const metaDescription = `${produto.nome} - ${produto.descricao}. ${precoFormatado}`;
+const canonicalURL = new URL(`/produto/${id}`, Astro.site);
+
+function getBateriaColor(bateria: number): string {
+  if (bateria >= 80) return 'bateria-verde';
+  return 'bateria-vermelho';
+}
+---
+
+<Layout
+  title={`${produto.nome} | Sr. IPHONE`}
+  description={metaDescription}
+>
+  <fragment slot="head">
+    <link rel="canonical" href={canonicalURL} />
+    <meta property="og:title" content={`${produto.nome} | Sr. IPHONE`} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:image" content={produto.imagens?.[0] || '/og-image.jpg'} />
+    <meta property="og:type" content="product" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </fragment>
+
+  <Header />
+
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <div class="container">
+      <ol>
+        <li><a href="/">Início</a></li>
+        <li><a href="/catalogo">Catálogo</a></li>
+        <li><span aria-current="page">{produto.nome}</span></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main class="produto-page">
+    <div class="container">
+      <div class="produto-grid">
+        <!-- Galeria de Imagens -->
+        <div class="produto-galeria">
+          <div class="main-image-container">
+            <img 
+              id="main-image"
+              src={produto.imagens?.[0] || '/placeholder.jpg'} 
+              alt={produto.nome}
+              class="main-image"
+            />
+          </div>
+
+          {produto.imagens && produto.imagens.length > 1 && (
+            <div class="thumbnails-container">
+              <div class="thumbnails-track">
+                {produto.imagens.map((img, index) => (
+                  <button 
+                    class={`thumbnail ${index === 0 ? 'active' : ''}`}
+                    data-image={img}
+                    aria-label={`Ver imagem ${index + 1}`}
+                  >
+                    <img src={img} alt={`${produto.nome} - Imagem ${index + 1}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <!-- Informações do Produto -->
+        <div class="produto-info">
+          <div class="produto-header">
+            <div class="produto-badges">
+              <span class="badge badge-categoria">{produto.categoria?.nome || 'iPhone'}</span>
+              {produto.bateria && produto.bateria > 0 ? (
+                <span class={`badge badge-bateria ${getBateriaColor(produto.bateria)}`}>
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
+                    <rect x="4" y="9" width={(produto.bateria / 100) * 14} height="6" rx="1" fill="currentColor"/>
+                  </svg>
+                  {produto.bateria}%
+                </span>
+              ) : (
+                <span class="badge badge-condicao">{produto.condicao}</span>
+              )}
+            </div>
+            
+            <h1>{produto.nome}</h1>
+            
+            {produto.codigo && (
+              <p class="produto-codigo">Cód.: {produto.codigo}</p>
+            )}
+          </div>
+
+          <div class="produto-descricao">
+            <p>{produto.descricao}</p>
+          </div>
+
+          <div class="produto-specs">
+            <div class="spec-item">
+              <span class="spec-label">Condição</span>
+              <span class="spec-value">{produto.condicao}</span>
+            </div>
+            
+            {produto.bateria && produto.bateria > 0 && (
+              <div class="spec-item">
+                <span class="spec-label">Bateria</span>
+                <span class="spec-value">{produto.bateria}%</span>
+              </div>
+            )}
+            
+            <div class="spec-item">
+              <span class="spec-label">Categoria</span>
+              <span class="spec-value">{produto.categoria?.nome || 'iPhone'}</span>
+            </div>
+          </div>
+
+          <div class="produto-preco">
+            <span class="preco-label">Preço</span>
+            <span class="preco-valor">{precoFormatado}</span>
+          </div>
+
+          <div class="produto-actions">
+            <a 
+              href={`https://wa.me/5577981022246?text=${encodeURIComponent(`Olá! Tenho interesse no *${produto.nome}*${produto.codigo ? `\nCódigo: ${produto.codigo}` : ''}\n\nLink: ${canonicalURL}`)}`}
+              class="btn-whatsapp"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582" fill="currentColor"/>
+              </svg>
+              Consultar no WhatsApp
+            </a>
+            
+            <a href="/catalogo" class="btn-voltar">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Voltar ao Catálogo
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+</Layout>
+
+<script>
+  // Galeria de imagens
+  const mainImage = document.getElementById('main-image') as HTMLImageElement;
+  const thumbnails = document.querySelectorAll('.thumbnail');
+
+  thumbnails.forEach((thumb) => {
+    thumb.addEventListener('click', () => {
+      const imageUrl = (thumb as HTMLElement).dataset.image;
+      if (imageUrl && mainImage) {
+        mainImage.src = imageUrl;
+        
+        // Atualizar thumbnail ativa
+        thumbnails.forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+      }
+    });
+  });
+</script>

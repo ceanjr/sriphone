@@ -2,11 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import ModalProduto from '../components/ModalProduto.astro';
 import EditarProduto from '../components/EditarProduto.astro';
 import FormularioProduto from '../components/FormularioProduto.astro';
 import GerirCategorias from '../components/GerirCategorias.astro';
-// PWAInstallPrompt removido conforme solicitação
 import '../styles/pages/catalogo.css';
 
 import { initCatalogo } from '../scripts/catalogo.js';
@@ -325,7 +323,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       </div>
     </div>
 
-    <ModalProduto />
     <FormularioProduto />
     <GerirCategorias />
     <EditarProduto />
@@ -513,19 +510,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         const imagemPrincipal = produto.imagens?.[0];
         const temBateria = produto.bateria && produto.bateria > 0;
 
-        // Dados do produto para o modal
-        const produtoModalData = JSON.stringify({
-          id: produto.id,
-          codigo: produto.codigo,
-          nome: produto.nome,
-          descricao: produto.descricao,
-          preco: precoFormatado,
-          condicao: produto.condicao,
-          bateria: produto.bateria,
-          categoria: produto.categoria?.nome || '',
-          imagens: produto.imagens || [],
-        }).replace(/"/g, '&quot;');
-
         // Dados para edição
         const produtoEditData = JSON.stringify({
           id: produto.id,
@@ -560,7 +544,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         if (state.modoVisualizacao === 'lista') {
           return `
-<article class="produto-card" data-produto-id="${produto.id}" data-produto="${produtoModalData}">
+<article class="produto-card" data-produto-id="${produto.id}">
     <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -587,7 +571,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         }
 
         return `
-<article class="produto-card" data-produto-id="${produto.id}" data-produto="${produtoModalData}">
+<article class="produto-card" data-produto-id="${produto.id}">
     <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -901,15 +885,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       produtoClick(e: { currentTarget: any }) {
         const card = e.currentTarget;
-        const produtoData = card.dataset.produto;
+        const produtoId = card.dataset.produtoId;
 
-        if (produtoData) {
-          try {
-            const produto = JSON.parse(produtoData);
-            (window as any).abrirModalProduto(produto);
-          } catch (error) {
-            console.error('Erro ao abrir produto:', error);
-          }
+        if (produtoId) {
+          window.location.href = `/produto/${produtoId}`;
         }
       },
 
