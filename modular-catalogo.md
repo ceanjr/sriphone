@@ -85,17 +85,17 @@ src/
 
 ### 4️⃣ **Dividir Renderização e Templates**
 - [x] Mover `produtoCard` e `categoriaSecao` para `lib/catalog/render/templates.ts`.
-- [ ] Criar `renderer.ts` com funções `renderProdutos()` e `renderCategorias()`.
+- [x] Criar `renderer.ts` com funções `renderProdutos()` e `renderCategorias()`.
 - [ ] Adicionar suporte a *lazy-loading* e placeholders (ProductCardSkeleton).
 
 ### 5️⃣ **Gerenciar UI e Eventos**
-- [ ] Criar `lib/catalog/ui/handlers.ts` e `lib/catalog/ui/events.ts`.
-- [ ] Centralizar listeners de filtros, busca, visualização e login.
+- [x] Criar `lib/catalog/ui/handlers.ts` e `lib/catalog/ui/events.ts`.
+- [x] Centralizar listeners de filtros, busca, visualização e login.
 - [x] Aplicar debounce de 300 ms no input de busca.
 
 ### 6️⃣ **Camada de Performance**
-- [ ] Criar `lib/catalog/performance/imageLoader.ts` e `metrics.ts`.
-- [ ] Usar IntersectionObserver para carregar imagens sob demanda.
+- [x] Criar `lib/catalog/performance/imageLoader.ts` e `metrics.ts`.
+- [x] Usar IntersectionObserver para carregar imagens sob demanda.
 - [ ] Implementar coleta opcional de Web Vitals.
 
 ### 7️⃣ **Componentização Visual**
