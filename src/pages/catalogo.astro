@@ -343,11 +343,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Carregar Dados Iniciais ====================
     const initialDataEl = document.getElementById('initial-data');
-    console.log('🔍 initialDataEl:', initialDataEl);
     const initialData = initialDataEl ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}') : {};
-    console.log('📦 initialData:', initialData);
-    console.log('📦 Produtos:', initialData.produtos?.length || 0);
-    console.log('📦 Categorias:', initialData.categorias?.length || 0);
 
     // ==================== Estado ====================
     const state = {
@@ -496,6 +492,19 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         div.textContent = text;
         return div.innerHTML;
       },
+      
+      // ✅ OTIMIZAÇÃO: Otimizar imagens do Supabase
+      optimizeImage(url: string, width: number = 400, quality: number = 80): string {
+        if (!url || !url.includes('supabase.co')) return url;
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}width=${width}&quality=${quality}&format=webp`;
+      },
+      
+      // ✅ OTIMIZAÇÃO: Gerar srcset responsivo
+      generateSrcSet(url: string, widths: number[] = [400, 600, 800]): string {
+        if (!url || !url.includes('supabase.co')) return '';
+        return widths.map(w => `${this.optimizeImage(url, w)} ${w}w`).join(', ');
+      }
     };
 
     // ==================== Função para calcular cor da bateria ====================
@@ -596,14 +605,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         ${
           imagemPrincipal
             ? `<img 
-                src="${imagemPrincipal}" 
+                src="${utils.optimizeImage(imagemPrincipal, 400, 80)}" 
+                srcset="${utils.generateSrcSet(imagemPrincipal, [400, 600, 800])}"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
                 alt="${utils.escapeHtml(produto.nome)}" 
                 loading="lazy" 
                 decoding="async"
                 fetchpriority="low"
-                width="300" 
-                height="300"
-                style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); object-fit: cover;"
+                width="400" 
+                height="400"
+                style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); object-fit: cover; aspect-ratio: 1;"
               />`
             : `
             <div class="image-placeholder">
@@ -1035,13 +1046,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     const api = {
       async carregarDados() {
         try {
-          console.log('🚀 Iniciando carregarDados...');
           render.loading(true);
           
           // ✅ OTIMIZAÇÃO: Usar dados iniciais (já carregados no SSG)
-          console.log('📊 State produtos:', state.produtos.length);
           if (state.produtos.length > 0) {
-            console.log('✅ Usando dados iniciais');
             render.categorias();
             render.produtos();
             render.loading(false);
