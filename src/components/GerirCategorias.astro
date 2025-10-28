@@ -1,604 +1,104 @@
 ---
-import '../styles/components/gerir-categorias.css';
-// ✅ OTIMIZAÇÃO: Categorias via API
+import { supabase } from '../lib/supabase';
+
+const { data: categorias } = await supabase
+  .from('categorias')
+  .select('*')
+  .order('nome');
 ---
 
-<div id="modal-categorias" class="gc-modal">
-  <div class="gc-modal-overlay"></div>
-  <div class="gc-modal-content">
-    <div class="gc-modal-drag-handle"></div>
-
-    <button type="button" class="gc-modal-close" aria-label="Fechar">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M18 6L6 18M6 6L18 18"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"></path>
-      </svg>
+<div class="mb-8">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-2xl font-bold">Categorias</h2>
+    <button
+      id="nova-categoria-btn"
+      class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black hover:bg-gray-200"
+    >
+      Nova Categoria
     </button>
+  </div>
 
-    <div class="gc-modal-header">
-      <h2>Gerenciar Categorias</h2>
-      <p class="gc-modal-subtitle">Organize suas categorias de produtos</p>
-    </div>
-
-    <div class="gc-modal-body">
-      <!-- Formulário com validação -->
-      <form id="form-nova-categoria" class="gc-add-form">
-        <div class="gc-input-wrapper">
-          <div class="gc-input-group">
-            <input
-              type="text"
-              id="nova-categoria-nome"
-              name="categoria"
-              placeholder="Digite o nome da categoria"
-              minlength="2"
-              maxlength="50"
-              required
-              autocomplete="off"
-            />
-            <span class="gc-error-message"></span>
-          </div>
-          <button type="submit" class="gc-btn-add" disabled>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 5V19M5 12H19"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"></path>
-            </svg>
-            <span class="gc-btn-text">Adicionar</span>
+  <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    {categorias?.map((cat) => (
+      <div class="rounded-lg border border-gray-700 bg-gray-800 p-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-white">{cat.nome}</h3>
+          <button
+            class="text-red-400 hover:text-red-300"
+            data-delete-cat={cat.id}
+          >
+            Deletar
           </button>
         </div>
-      </form>
-
-      <!-- Loading State -->
-      <div class="gc-loading" id="gc-loading">
-        <div class="gc-spinner"></div>
-        <span>Carregando categorias...</span>
       </div>
-
-      <!-- Lista de Categorias -->
-      <div class="gc-categories-list" id="categories-list"></div>
-    </div>
+    ))}
   </div>
+
+  <!-- Dialog -->
+  <dialog id="categoria-dialog" class="rounded-lg bg-gray-800 p-6">
+    <h3 class="text-xl font-bold mb-4">Nova Categoria</h3>
+    <form id="categoria-form" class="space-y-4">
+      <input
+        type="text"
+        id="categoria-nome"
+        placeholder="Nome da categoria"
+        class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white"
+        required
+      />
+      <div class="flex gap-2 justify-end">
+        <button type="button" id="cancel-cat-btn" class="px-4 py-2 rounded-lg border border-gray-600">
+          Cancelar
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-white text-black">
+          Criar
+        </button>
+      </div>
+    </form>
+  </dialog>
 </div>
 
 <script>
-  import { authService } from '../lib/supabase';
+  import { criarCategoria, deletarCategoria } from '../lib/crud';
 
-  // ✅ OTIMIZAÇÃO: Removido import do categoryService
-  // Usando API routes ao invés de Supabase direto no cliente
+  const dialog = document.getElementById('categoria-dialog') as HTMLDialogElement;
+  const form = document.getElementById('categoria-form') as HTMLFormElement;
+  const nomeInput = document.getElementById('categoria-nome') as HTMLInputElement;
 
-  // Initialize session token from Supabase on page load
-  async function initializeSession() {
-    try {
-      const session = await authService.getSession();
-      if (session?.access_token) {
-        localStorage.setItem('sb-access-token', session.access_token);
-      }
-    } catch (error) {
-      console.error('Erro ao inicializar sessão:', error);
-    }
-  }
-
-  // Helper para fazer requisições autenticadas
-  async function fetchWithAuth(url: string, options: RequestInit = {}) {
-    // Buscar o token do Supabase do localStorage
-    const supabaseSession = localStorage.getItem('sb-access-token');
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    };
-
-    // Se temos um token, adicionar ao header
-    if (supabaseSession) {
-      headers['Authorization'] = `Bearer ${supabaseSession}`;
-    }
-
-    return fetch(url, {
-      ...options,
-      credentials: 'include', // Incluir cookies
-      headers,
-    });
-  }
-
-  // Initialize session on load
-  initializeSession();
-
-  // Ordenação de Categorias
-  function ordenarCategorias(categorias: Category[]): Category[] {
-    const ordem: { [key: string]: number } = {
-      'iphone 4': 1,
-      'iphone 4s': 2,
-      'iphone 5': 3,
-      'iphone 5c': 4,
-      'iphone 5s': 5,
-      'iphone 6': 6,
-      'iphone 6 plus': 7,
-      'iphone 6s': 8,
-      'iphone 6s plus': 9,
-      'iphone 7': 10,
-      'iphone 7 plus': 11,
-      'iphone 8': 12,
-      'iphone 8 plus': 13,
-      'iphone x': 14,
-      'iphone xr': 15,
-      'iphone xs': 16,
-      'iphone xs max': 17,
-      'iphone 11': 18,
-      'iphone 11 pro': 19,
-      'iphone 11 pro max': 20,
-      'iphone se': 21,
-      'iphone se 2': 22,
-      'iphone se 3': 23,
-      'iphone 12': 24,
-      'iphone 12 mini': 25,
-      'iphone 12 pro': 26,
-      'iphone 12 pro max': 27,
-      'iphone 13': 28,
-      'iphone 13 mini': 29,
-      'iphone 13 pro': 30,
-      'iphone 13 pro max': 31,
-      'iphone 14': 32,
-      'iphone 14 plus': 33,
-      'iphone 14 pro': 34,
-      'iphone 14 pro max': 35,
-      'iphone 15': 36,
-      'iphone 15 plus': 37,
-      'iphone 15 pro': 38,
-      'iphone 15 pro max': 39,
-      'iphone 16': 40,
-      'iphone 16 plus': 41,
-      'iphone 16 pro': 42,
-      'iphone 16 pro max': 43,
-      'iphone 17': 44,
-      'iphone 17 air': 45,
-      'iphone 17 pro': 46,
-      'iphone 17 pro max': 47,
-    };
-
-    return [...categorias].sort((a, b) => {
-      const nomeA = a.nome.toLowerCase().trim();
-      const nomeB = b.nome.toLowerCase().trim();
-
-      const ordemA = ordem[nomeA];
-      const ordemB = ordem[nomeB];
-
-      // Se ambos têm ordem definida, usa a ordem
-      if (ordemA !== undefined && ordemB !== undefined) {
-        return ordemA - ordemB;
-      }
-
-      // Se apenas A tem ordem, A vem primeiro
-      if (ordemA !== undefined) return -1;
-
-      // Se apenas B tem ordem, B vem primeiro
-      if (ordemB !== undefined) return 1;
-
-      // Se nenhum tem ordem definida, ordena alfabeticamente
-      return nomeA.localeCompare(nomeB, 'pt-BR');
-    });
-  }
-
-  // Tipos
-  interface Category {
-    id: string;
-    nome: string;
-    created_at?: string;
-  }
-
-  // Elements
-  const modal = document.getElementById('modal-categorias') as HTMLDivElement;
-  const overlay = modal?.querySelector('.gc-modal-overlay') as HTMLDivElement;
-  const closeBtn = modal?.querySelector('.gc-modal-close') as HTMLButtonElement;
-  const form = document.getElementById(
-    'form-nova-categoria'
-  ) as HTMLFormElement;
-  const input = document.getElementById(
-    'nova-categoria-nome'
-  ) as HTMLInputElement;
-  const addButton = form?.querySelector('.gc-btn-add') as HTMLButtonElement;
-  const list = document.getElementById('categories-list') as HTMLDivElement;
-  const loading = document.getElementById('gc-loading') as HTMLDivElement;
-  const errorMessage = form?.querySelector(
-    '.gc-error-message'
-  ) as HTMLSpanElement;
-
-  // Estado
-  let isLoading = false;
-  let categories: Category[] = [];
-
-  // Toast notification
-  function mostrarToast(
-    mensagem: string,
-    tipo: 'success' | 'error' | 'warning' | 'info' = 'info'
-  ) {
-    const toast = document.createElement('div');
-    toast.className = `gc-toast gc-toast-${tipo}`;
-    toast.textContent = mensagem;
-    document.body.appendChild(toast);
-
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  }
-
-  // Validação do Input
-  function validateInput(value: string): boolean {
-    const minLength = 2;
-    const maxLength = 50;
-    const pattern = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+$/;
-
-    if (!value || value.length < minLength) {
-      errorMessage.textContent = `Mínimo de ${minLength} caracteres`;
-      return false;
-    }
-
-    if (value.length > maxLength) {
-      errorMessage.textContent = `Máximo de ${maxLength} caracteres`;
-      return false;
-    }
-
-    if (!pattern.test(value)) {
-      errorMessage.textContent = 'Use apenas letras, números e espaços';
-      return false;
-    }
-
-    const exists = categories.some(
-      (cat) => cat.nome.toLowerCase() === value.toLowerCase()
-    );
-
-    if (exists) {
-      errorMessage.textContent = 'Esta categoria já existe';
-      return false;
-    }
-
-    errorMessage.textContent = '';
-    return true;
-  }
-
-  // Input Handler
-  input?.addEventListener('input', (e) => {
-    const value = (e.target as HTMLInputElement).value.trim();
-    const isValid = validateInput(value);
-    addButton.disabled = !isValid;
+  document.getElementById('nova-categoria-btn')?.addEventListener('click', () => {
+    dialog?.showModal();
   });
 
-  // Render Categories
-  async function renderCategories() {
-    if (!list || !loading || isLoading) return;
+  document.getElementById('cancel-cat-btn')?.addEventListener('click', () => {
+    dialog?.close();
+  });
 
-    try {
-      isLoading = true;
-      loading.classList.add('active');
-      list.innerHTML = '';
-
-      // ✅ OTIMIZAÇÃO: Usar API ao invés de Supabase direto
-      const response = await fetchWithAuth('/api/admin/categorias');
-      if (!response.ok) throw new Error('Erro ao carregar categorias');
-      const data = await response.json();
-
-      // ORDENAR CATEGORIAS - a API retorna { categorias: [...] }
-      categories = ordenarCategorias(data.categorias || []);
-
-      if (categories.length === 0) {
-        list.innerHTML = `
-                <div class="gc-empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <p>Nenhuma categoria cadastrada</p>
-                    <small>Adicione sua primeira categoria acima</small>
-                </div>`;
-        return;
-      }
-
-      const fragment = document.createDocumentFragment();
-
-      categories.forEach((cat) => {
-        const item = createCategoryItem(cat);
-        fragment.appendChild(item);
-      });
-
-      list.appendChild(fragment);
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
-      list.innerHTML = `
-            <div class="gc-empty-state gc-error">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                <p>Erro ao carregar categorias</p>
-                <button type="button" class="gc-btn-retry" onclick="window.location.reload()">
-                    Tentar novamente
-                </button>
-            </div>`;
-      mostrarToast('Erro ao carregar categorias', 'error');
-    } finally {
-      isLoading = false;
-      loading.classList.remove('active');
-    }
-  }
-
-  // Create Category Item
-  function createCategoryItem(cat: Category): HTMLDivElement {
-    const item = document.createElement('div');
-    item.classList.add('gc-category-item');
-    item.dataset.id = cat.id;
-
-    const name = document.createElement('span');
-    name.classList.add('gc-category-name');
-    name.textContent = cat.nome;
-
-    const actions = document.createElement('div');
-    actions.classList.add('gc-category-actions');
-
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'gc-btn-icon edit';
-    editBtn.setAttribute('aria-label', 'Editar categoria');
-    editBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
-
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'gc-btn-icon delete';
-    delBtn.setAttribute('aria-label', 'Excluir categoria');
-    delBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
-
-    actions.append(editBtn, delBtn);
-    item.append(name, actions);
-
-    editBtn.addEventListener('click', () => startEditing(item, cat));
-    delBtn.addEventListener('click', () => deleteCategory(cat.id));
-
-    return item;
-  }
-
-  // Delete Category
-  async function deleteCategory(id: string) {
-    if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
-
-    const item = list?.querySelector(`[data-id="${id}"]`);
-    if (!item) return;
-
-    try {
-      item.classList.add('gc-deleting');
-      
-      // ✅ OTIMIZAÇÃO: Usar API
-      const response = await fetchWithAuth(`/api/admin/categorias/${id}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) throw new Error('Erro ao deletar categoria');
-
-      categories = categories.filter((c) => c.id !== id);
-      item.addEventListener(
-        'transitionend',
-        () => {
-          item.remove();
-          if (categories.length === 0) renderCategories();
-        },
-        { once: true }
-      );
-
-      window.dispatchEvent(new Event('produtos-updated'));
-      mostrarToast('Categoria excluída com sucesso!', 'success');
-    } catch (error) {
-      console.error('Erro ao excluir categoria:', error);
-      item.classList.remove('gc-deleting');
-      mostrarToast('Erro ao excluir categoria. Tente novamente.', 'error');
-    }
-  }
-
-  // Edit Category
-  function startEditing(item: HTMLDivElement, cat: Category) {
-    const nameSpan = item.querySelector('.gc-category-name');
-    const actions = item.querySelector('.gc-category-actions');
-    if (!nameSpan || !actions) return;
-
-    const originalContent = item.innerHTML;
-
-    nameSpan.innerHTML = `
-        <input type="text" 
-            class="gc-category-input" 
-            value="${cat.nome}"
-            minlength="2"
-            maxlength="50"
-            pattern="[A-Za-zÀ-ÖØ-öø-ÿ0-9\s]+"
-            required
-        />
-    `;
-
-    actions.innerHTML = `
-        <button type="button" class="gc-btn-icon save" aria-label="Salvar">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-        <button type="button" class="gc-btn-icon cancel" aria-label="Cancelar">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-        </button>
-    `;
-
-    const editInput = nameSpan.querySelector('input') as HTMLInputElement;
-    const saveBtn = actions.querySelector('.save');
-    const cancelBtn = actions.querySelector('.cancel');
-
-    if (editInput) {
-      editInput.focus();
-      editInput.select();
-    }
-
-    const handleSave = async () => {
-      const newName = editInput?.value.trim();
-      if (!newName || newName === cat.nome) {
-        handleCancel();
-        return;
-      }
-
-      if (!validateInput(newName)) {
-        editInput?.focus();
-        return;
-      }
-
-      try {
-        item.classList.add('gc-saving');
-        
-        // ✅ OTIMIZAÇÃO: Usar API
-        const response = await fetchWithAuth(`/api/admin/categorias/${cat.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome: newName })
-        });
-        if (!response.ok) throw new Error('Erro ao atualizar categoria');
-
-        const index = categories.findIndex((c) => c.id === cat.id);
-        if (index !== -1) categories[index].nome = newName;
-
-        window.dispatchEvent(new Event('produtos-updated'));
-        renderCategories();
-        mostrarToast('Categoria atualizada!', 'success');
-      } catch (error) {
-        console.error('Erro ao atualizar categoria:', error);
-        item.classList.remove('gc-saving');
-        item.innerHTML = originalContent;
-        mostrarToast('Erro ao atualizar categoria. Tente novamente.', 'error');
-      }
-    };
-
-    const handleCancel = () => {
-      item.innerHTML = originalContent;
-      // Re-adicionar event listeners
-      const newEditBtn = item.querySelector('.edit');
-      const newDelBtn = item.querySelector('.delete');
-      newEditBtn?.addEventListener('click', () => startEditing(item, cat));
-      newDelBtn?.addEventListener('click', () => deleteCategory(cat.id));
-    };
-
-    saveBtn?.addEventListener('click', handleSave);
-    cancelBtn?.addEventListener('click', handleCancel);
-
-    editInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        handleCancel();
-      }
-    });
-  }
-
-  // Form Submit
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!input || input.disabled) return;
+    
+    const result = await criarCategoria(nomeInput.value);
+    
+    if (result.success) {
+      alert('Categoria criada!');
+      location.reload();
+    } else {
+      alert(result.error || 'Erro ao criar');
+    }
+  });
 
-    const nome = input.value.trim();
-    if (!nome || !validateInput(nome)) return;
-
-    try {
-      input.disabled = true;
-      addButton.disabled = true;
-      form.classList.add('gc-submitting');
-
-      // ✅ OTIMIZAÇÃO: Usar API
-      const response = await fetchWithAuth('/api/admin/categorias', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome })
-      });
+  document.querySelectorAll('[data-delete-cat]').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const id = (e.target as HTMLElement).dataset.deleteCat;
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao criar categoria');
+      if (!id || !confirm('Deletar categoria?')) return;
+      
+      const result = await deletarCategoria(id);
+      
+      if (result.success) {
+        alert('Categoria deletada!');
+        location.reload();
+      } else {
+        alert(result.error || 'Erro ao deletar');
       }
-      
-      const newCategory = await response.json();
-
-      input.value = '';
-      input.disabled = false;
-      addButton.disabled = true;
-      form.classList.remove('gc-submitting');
-
-      renderCategories();
-      window.dispatchEvent(new Event('produtos-updated'));
-      mostrarToast('Categoria criada com sucesso!', 'success');
-    } catch (error) {
-      console.error('Erro ao criar categoria:', error);
-      input.disabled = false;
-      addButton.disabled = false;
-      form.classList.remove('gc-submitting');
-      mostrarToast(error.message || 'Erro ao criar categoria. Tente novamente.', 'error');
-    }
+    });
   });
-
-  // Modal Controls
-  async function abrirModal() {
-    if (!modal) return;
-    modal.classList.add('active');
-
-    // PREVENIR SCROLL DO BODY
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.top = `-${window.scrollY}px`;
-
-    // Focus no input em desktop
-    if (window.innerWidth >= 768) {
-      setTimeout(() => input?.focus(), 300);
-    }
-
-    // Garantir que a sessão está inicializada antes de carregar
-    await initializeSession();
-    renderCategories();
-  }
-
-  function fecharModal() {
-    if (!modal || isLoading) return;
-
-    // RESTAURAR SCROLL DO BODY
-    const scrollY = document.body.style.top;
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-    document.body.style.top = '';
-    window.scrollTo(0, parseInt(scrollY || '0') * -1);
-
-    modal.classList.remove('active');
-
-    if (input) {
-      input.value = '';
-      input.disabled = false;
-    }
-    if (addButton) addButton.disabled = true;
-    if (errorMessage) errorMessage.textContent = '';
-  }
-
-  // Event Listeners
-  closeBtn?.addEventListener('click', fecharModal);
-  overlay?.addEventListener('click', fecharModal);
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal?.classList.contains('active')) {
-      fecharModal();
-    }
-  });
-
-  // Expose to window
-  (window as any).abrirGerirCategorias = abrirModal;
 </script>

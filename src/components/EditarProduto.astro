@@ -1,753 +1,100 @@
 ---
-import '../styles/components/editar-produto.css';
+const { produto } = Astro.props;
+import { supabase } from '../lib/supabase';
+
+const { data: categorias } = await supabase
+  .from('categorias')
+  .select('*')
+  .order('nome');
 ---
 
-<div id="modal-editar-produto" class="modal-editar">
-  <div class="modal-overlay"></div>
-  <div class="modal-content">
-    <div class="modal-drag-handle"></div>
+<form id="editar-produto-form" class="space-y-4 max-w-2xl">
+  <input type="hidden" name="id" value={produto.id} />
 
-    <button type="button" class="modal-close" aria-label="Fechar">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M18 6L6 18M6 6L18 18"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"></path>
-      </svg>
-    </button>
-
-    <div class="modal-header">
-      <h2>Editar Produto</h2>
-      <p class="modal-subtitle">Atualize as informações do produto</p>
-    </div>
-
-    <form id="form-editar-produto" class="product-form">
-      <input type="hidden" id="editar-produto-id" name="id" />
-
-      <!-- Upload de Imagens -->
-      <div class="form-section">
-        <label class="section-label">
-          Imagens do Produto *
-          <span class="label-hint">Adicione até 5 fotos</span>
-        </label>
-        <div class="image-upload-area" id="editar-image-upload-area">
-          <input
-            type="file"
-            id="editar-product-images"
-            accept="image/*"
-            multiple
-            hidden
-          />
-          <div class="upload-placeholder" id="editar-upload-placeholder">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"></path>
-            </svg>
-            <span class="upload-title">Adicionar Fotos</span>
-            <small>Toque para tirar foto ou escolher da galeria</small>
-          </div>
-          <div class="image-preview-grid" id="editar-image-preview-grid"></div>
-        </div>
-        <div id="editar-upload-progress" class="upload-progress">
-          <div class="progress-bar">
-            <div class="progress-fill"></div>
-          </div>
-          <span class="progress-text">Enviando imagens...</span>
-        </div>
-      </div>
-
-      <!-- Nome -->
-      <div class="form-group">
-        <label for="editar-produto-nome">
-          Nome do Produto *
-          <span class="label-required">obrigatório</span>
-        </label>
-        <input
-          type="text"
-          id="editar-produto-nome"
-          name="nome"
-          required
-          placeholder="Ex: iPhone 14 Pro Max"
-          autocomplete="off"
-        />
-      </div>
-
-      <!-- Código -->
-      <div class="form-group">
-        <label for="editar-produto-codigo"> Código do Produto </label>
-        <input
-          type="text"
-          id="editar-produto-codigo"
-          name="codigo"
-          placeholder="Ex: IP14PM256"
-          autocomplete="off"
-        />
-      </div>
-
-      <!-- Preço e Bateria -->
-      <div class="form-row-mobile">
-        <div class="form-group">
-          <label for="editar-produto-preco">
-            Preço (R$) *
-            <span class="label-required">obrigatório</span>
-          </label>
-          <input
-            type="number"
-            id="editar-produto-preco"
-            name="preco"
-            required
-            step="0.01"
-            min="0"
-            placeholder="5499.00"
-            inputmode="decimal"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="editar-produto-bateria"> Bateria (%) </label>
-          <input
-            type="number"
-            id="editar-produto-bateria"
-            name="bateria"
-            min="0"
-            max="100"
-            placeholder="95"
-            inputmode="numeric"
-          />
-        </div>
-      </div>
-
-      <!-- Condição -->
-      <div class="form-group">
-        <label for="editar-produto-condicao">
-          Condição *
-          <span class="label-required">obrigatório</span>
-        </label>
-        <select id="editar-produto-condicao" name="condicao" required>
-          <option value="">Selecione a condição...</option>
-          <option value="Novo">Novo</option>
-          <option value="Seminovo">Seminovo</option>
-        </select>
-      </div>
-
-      <!-- Categoria -->
-      <div class="form-group">
-        <label for="editar-produto-categoria">
-          Categoria *
-          <span class="label-required">obrigatório</span>
-        </label>
-        <select id="editar-produto-categoria" name="categoria" required>
-          <option value="">Selecione a categoria...</option>
-        </select>
-      </div>
-
-      <!-- Descrição -->
-      <div class="form-group">
-        <label for="editar-produto-descricao"> Descrição </label>
-        <textarea
-          id="editar-produto-descricao"
-          name="descricao"
-          rows="4"
-          placeholder="Descreva os detalhes do produto (estado, acessórios inclusos, etc.)"
-        ></textarea>
-      </div>
-
-      <!-- Botões -->
-      <div class="form-actions">
-        <button type="submit" class="btn-submit">
-          <span class="btn-text">Salvar Alterações</span>
-          <span class="btn-spinner" style="display: none;">
-            <svg class="spinner-icon" viewBox="0 0 24 24">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="3"
-                fill="none"
-                stroke-dasharray="31.4 31.4"></circle>
-            </svg>
-          </span>
-        </button>
-        <button type="button" class="btn-delete">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"></path>
-          </svg>
-          Excluir
-        </button>
-      </div>
-    </form>
+  <div>
+    <label class="block text-sm font-medium mb-1">Nome *</label>
+    <input type="text" name="nome" required value={produto.nome} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
   </div>
-</div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Código *</label>
+    <input type="text" name="codigo" required value={produto.codigo} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Preço *</label>
+    <input type="number" name="preco" required step="0.01" value={produto.preco} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Categoria *</label>
+    <select name="categoria_id" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">
+      {categorias?.map((cat) => (
+        <option value={cat.id} selected={cat.id === produto.categoria_id}>{cat.nome}</option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Condição *</label>
+    <select name="condicao" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">
+      <option value="Novo" selected={produto.condicao === 'Novo'}>Novo</option>
+      <option value="Semi-Novo" selected={produto.condicao === 'Semi-Novo'}>Semi-Novo</option>
+      <option value="Usado" selected={produto.condicao === 'Usado'}>Usado</option>
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Bateria (%)</label>
+    <input type="number" name="bateria" min="0" max="100" value={produto.bateria || ''} class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Descrição</label>
+    <textarea name="descricao" rows="3" class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">{produto.descricao || ''}</textarea>
+  </div>
+
+  <div>
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="ativo" checked={produto.ativo !== false} class="rounded" />
+      <span class="text-sm">Produto ativo</span>
+    </label>
+  </div>
+
+  <button type="submit" class="w-full rounded-lg bg-white px-4 py-3 font-medium text-black hover:bg-gray-200">
+    Salvar Alterações
+  </button>
+</form>
 
 <script>
-  import { authService } from '../lib/supabase';
+  import { editarProduto } from '../lib/crud';
 
-  // ✅ OTIMIZAÇÃO: Removido imports do Supabase
+  const form = document.getElementById('editar-produto-form') as HTMLFormElement;
 
-  // Initialize session token from Supabase on page load
-  async function initializeSession() {
-    try {
-      const session = await authService.getSession();
-      if (session?.access_token) {
-        localStorage.setItem('sb-access-token', session.access_token);
-      }
-    } catch (error) {
-      console.error('Erro ao inicializar sessão:', error);
-    }
-  }
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  // Helper para fazer requisições autenticadas
-  async function fetchWithAuth(url: string, options: RequestInit = {}) {
-    const supabaseSession = localStorage.getItem('sb-access-token');
+    const formData = new FormData(form);
+    const id = formData.get('id') as string;
     
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
+    const produto = {
+      nome: formData.get('nome') as string,
+      codigo: formData.get('codigo') as string,
+      preco: parseFloat(formData.get('preco') as string),
+      categoria_id: formData.get('categoria_id') as string,
+      condicao: formData.get('condicao') as string,
+      bateria: formData.get('bateria') ? parseInt(formData.get('bateria') as string) : null,
+      descricao: formData.get('descricao') as string || null,
+      ativo: formData.get('ativo') === 'on',
     };
 
-    if (supabaseSession) {
-      headers['Authorization'] = `Bearer ${supabaseSession}`;
-    }
+    const result = await editarProduto(id, produto);
 
-    return fetch(url, {
-      ...options,
-      credentials: 'include',
-      headers,
-    });
-  }
-
-  // Initialize session on load
-  initializeSession();
-
-  const modalEditar = document.getElementById('modal-editar-produto');
-  const formEditar = document.getElementById(
-    'form-editar-produto'
-  ) as HTMLFormElement;
-  const imageUploadArea = document.getElementById('editar-image-upload-area');
-  const imageInput = document.getElementById(
-    'editar-product-images'
-  ) as HTMLInputElement;
-  const imagePreviewGrid = document.getElementById('editar-image-preview-grid');
-  const uploadProgress = document.getElementById('editar-upload-progress');
-  const btnCancel = modalEditar?.querySelector('.btn-cancel');
-  const modalClose = modalEditar?.querySelector('.modal-close');
-  const selectCategoria = document.getElementById(
-    'editar-produto-categoria'
-  ) as HTMLSelectElement;
-  const btnSubmit = formEditar?.querySelector(
-    '.btn-submit'
-  ) as HTMLButtonElement;
-
-  const MAX_IMAGES = 5;
-  let arquivosImagem: File[] = [];
-  let imagensExistentes: string[] = [];
-  let produtoAtualId: string = '';
-
-  // Toast notification
-  function mostrarToast(
-    mensagem: string,
-    tipo: 'success' | 'error' | 'warning' | 'info' = 'info'
-  ) {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${tipo}`;
-    toast.textContent = mensagem;
-    document.body.appendChild(toast);
-
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  }
-
-  // Carregar categorias
-  async function carregarCategorias() {
-    if (!selectCategoria) return;
-    try {
-      const response = await fetchWithAuth('/api/admin/categorias');
-      if (!response.ok) throw new Error('Erro ao carregar categorias');
-      const data = await response.json();
-      const categorias = data.categorias || [];
-      selectCategoria.innerHTML =
-        '<option value="">Selecione a categoria...</option>';
-      categorias.forEach((cat) => {
-        const option = document.createElement('option');
-        option.value = cat.id;
-        option.textContent = cat.nome;
-        selectCategoria.appendChild(option);
-      });
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
-      mostrarToast('Erro ao carregar categorias', 'error');
-    }
-  }
-
-  // Upload de imagens
-  imageUploadArea?.addEventListener('click', () => {
-    const totalImagens = arquivosImagem.length + imagensExistentes.length;
-    if (totalImagens >= MAX_IMAGES) {
-      mostrarToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning');
-      return;
-    }
-    imageInput?.click();
-  });
-
-  imageUploadArea?.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    imageUploadArea.style.borderColor = '#fff';
-  });
-
-  imageUploadArea?.addEventListener('dragleave', () => {
-    imageUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-  });
-
-  imageUploadArea?.addEventListener('drop', (e) => {
-    e.preventDefault();
-    imageUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-    const files = e.dataTransfer?.files;
-    if (files) {
-      handleFiles(files);
-    }
-  });
-
-  imageInput?.addEventListener('change', (e) => {
-    const target = e.target as HTMLInputElement;
-    const files = target.files;
-    if (files) {
-      handleFiles(files);
-    }
-    target.value = '';
-  });
-
-  function handleFiles(files: FileList) {
-    const placeholder = document.getElementById('editar-upload-placeholder');
-    const totalAtual = arquivosImagem.length + imagensExistentes.length;
-    const espacoDisponivel = MAX_IMAGES - totalAtual;
-
-    if (espacoDisponivel <= 0) {
-      mostrarToast(`Máximo de ${MAX_IMAGES} imagens atingido`, 'warning');
-      return;
-    }
-
-    let adicionados = 0;
-    Array.from(files).forEach((file) => {
-      if (
-        file.type.startsWith('image/') &&
-        totalAtual + adicionados < MAX_IMAGES
-      ) {
-        arquivosImagem.push(file);
-        adicionados++;
-      }
-    });
-
-    if (adicionados > 0) {
-      renderAllPreviews();
-      if (totalAtual + adicionados >= MAX_IMAGES) {
-        mostrarToast(`Limite de ${MAX_IMAGES} imagens atingido`, 'info');
-      }
-    }
-
-    if (imagensExistentes.length + arquivosImagem.length > 0 && placeholder) {
-      placeholder.classList.add('hidden');
-    }
-  }
-
-  function renderPreview(
-    item: File | string,
-    index: number,
-    isExisting: boolean
-  ) {
-    if (!imagePreviewGrid) return;
-
-    const div = document.createElement('div');
-    div.className = 'image-preview-item';
-
-    if (isExisting) {
-      div.innerHTML = `
-        <img src="${item}" alt="Preview ${index + 1}" loading="lazy">
-        <button type="button" class="remove-image" data-index="${index}" data-existing="true" aria-label="Remover imagem">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-        <span class="image-number">${index + 1}</span>
-      `;
+    if (result.success) {
+      alert('Produto atualizado!');
+      location.href = '/admin/produtos';
     } else {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        div.innerHTML = `
-          <img src="${e.target?.result}" alt="Preview ${index + 1}" loading="lazy">
-          <button type="button" class="remove-image" data-index="${index}" data-existing="false" aria-label="Remover imagem">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <span class="image-number">${index + 1}</span>
-        `;
-
-        const removeBtn = div.querySelector('.remove-image');
-        removeBtn?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const idx = parseInt(
-            (e.currentTarget as HTMLElement).dataset.index || '0'
-          );
-          const existing =
-            (e.currentTarget as HTMLElement).dataset.existing === 'true';
-          if (existing) {
-            imagensExistentes.splice(idx, 1);
-          } else {
-            arquivosImagem.splice(idx - imagensExistentes.length, 1);
-          }
-          renderAllPreviews();
-          mostrarToast('Imagem removida', 'info');
-        });
-      };
-      reader.readAsDataURL(item as File);
-      return;
-    }
-
-    const removeBtn = div.querySelector('.remove-image');
-    removeBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const idx = parseInt(
-        (e.currentTarget as HTMLElement).dataset.index || '0'
-      );
-      const existing =
-        (e.currentTarget as HTMLElement).dataset.existing === 'true';
-      if (existing) {
-        imagensExistentes.splice(idx, 1);
-      } else {
-        arquivosImagem.splice(idx - imagensExistentes.length, 1);
-      }
-      renderAllPreviews();
-      mostrarToast('Imagem removida', 'info');
-    });
-
-    imagePreviewGrid.appendChild(div);
-  }
-
-  function renderAllPreviews() {
-    if (!imagePreviewGrid) return;
-    const placeholder = document.getElementById('editar-upload-placeholder');
-
-    imagePreviewGrid.innerHTML = '';
-
-    // Renderizar imagens existentes
-    imagensExistentes.forEach((img, index) => {
-      renderPreview(img, index, true);
-    });
-
-    // Renderizar novas imagens
-    arquivosImagem.forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const div = document.createElement('div');
-        div.className = 'image-preview-item';
-        const globalIndex = imagensExistentes.length + index;
-        div.innerHTML = `
-          <img src="${e.target?.result}" alt="Preview ${globalIndex + 1}" loading="lazy">
-          <button type="button" class="remove-image" data-index="${globalIndex}" data-existing="false" aria-label="Remover imagem">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <span class="image-number">${globalIndex + 1}</span>
-        `;
-
-        const removeBtn = div.querySelector('.remove-image');
-        removeBtn?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          arquivosImagem.splice(index, 1);
-          renderAllPreviews();
-          mostrarToast('Imagem removida', 'info');
-        });
-
-        imagePreviewGrid.appendChild(div);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    const totalImagens = imagensExistentes.length + arquivosImagem.length;
-    if (totalImagens > 0 && placeholder) {
-      placeholder.classList.add('hidden');
-    } else if (placeholder) {
-      placeholder.classList.remove('hidden');
-    }
-  }
-
-  // Validação
-  function validarFormulario(): boolean {
-    const totalImagens = imagensExistentes.length + arquivosImagem.length;
-    if (totalImagens === 0) {
-      mostrarToast('Adicione pelo menos uma imagem do produto', 'warning');
-      imageUploadArea?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return false;
-    }
-
-    const preco = parseFloat(
-      (document.getElementById('editar-produto-preco') as HTMLInputElement)
-        .value
-    );
-    if (preco <= 0) {
-      mostrarToast('O preço deve ser maior que zero', 'warning');
-      return false;
-    }
-
-    const bateriaInput = document.getElementById(
-      'editar-produto-bateria'
-    ) as HTMLInputElement;
-    if (bateriaInput.value) {
-      const bateria = parseInt(bateriaInput.value);
-      if (bateria < 0 || bateria > 100) {
-        mostrarToast('A bateria deve estar entre 0 e 100%', 'warning');
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  // Submit do formulário
-  formEditar?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    if (!validarFormulario()) return;
-
-    try {
-      if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.querySelector('.btn-text')!.textContent = 'Salvando...';
-        btnSubmit
-          .querySelector('.btn-spinner')!
-          .setAttribute('style', 'display: inline-block');
-      }
-
-      document.body.style.overflow = 'hidden';
-
-      // Upload de novas imagens
-      const progressBar = uploadProgress?.querySelector(
-        '.progress-fill'
-      ) as HTMLElement;
-
-      if (arquivosImagem.length > 0) {
-        uploadProgress?.classList.add('active');
-      }
-
-      // Upload novas imagens via API
-      const novasUrls: string[] = [];
-      for (let i = 0; i < arquivosImagem.length; i++) {
-        const formData = new FormData();
-        formData.append('file', arquivosImagem[i]);
-        
-        // Usar token de autenticação
-        const token = localStorage.getItem('sb-access-token');
-        const uploadResponse = await fetch('/api/admin/upload', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-          headers: token ? {
-            'Authorization': `Bearer ${token}`
-          } : {}
-        });
-        
-        if (!uploadResponse.ok) throw new Error('Erro ao fazer upload');
-        const uploadData = await uploadResponse.json();
-        novasUrls.push(uploadData.url);
-
-        if (progressBar && arquivosImagem.length > 0) {
-          const progresso = ((i + 1) / arquivosImagem.length) * 100;
-          progressBar.style.width = `${progresso}%`;
-        }
-      }
-
-      uploadProgress?.classList.remove('active');
-
-      // Combinar imagens existentes com novas
-      const todasImagens = [...imagensExistentes, ...novasUrls];
-
-      // Atualizar produto via API
-      const formData2 = new FormData(formEditar);
-      const bateriaValue = formData2.get('bateria') as string;
-
-      const produto = {
-        codigo: formData2.get('codigo') as string,
-        nome: formData2.get('nome') as string,
-        descricao: formData2.get('descricao') as string,
-        preco: parseFloat(formData2.get('preco') as string),
-        condicao: formData2.get('condicao') as 'Novo' | 'Seminovo',
-        bateria: bateriaValue ? parseInt(bateriaValue) : 0,
-        categoria_id: formData2.get('categoria') as string,
-        imagens: todasImagens,
-      };
-
-      const updateResponse = await fetchWithAuth(`/api/admin/produtos/${produtoAtualId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(produto)
-      });
-      
-      if (!updateResponse.ok) throw new Error('Erro ao atualizar produto');
-
-      fecharModal();
-      mostrarToast('Produto atualizado com sucesso!', 'success');
-      
-      // Aguardar um pouco antes de recarregar
-      setTimeout(() => {
-        window.dispatchEvent(new Event('produtos-updated'));
-      }, 300);
-    } catch (error: any) {
-      const mensagemErro =
-        error?.message || JSON.stringify(error) || 'Erro desconhecido';
-      console.error('Erro ao atualizar produto:', mensagemErro);
-      mostrarToast(`Erro ao atualizar produto: ${mensagemErro}`, 'error');
-    } finally {
-      if (btnSubmit) {
-        btnSubmit.disabled = false;
-        btnSubmit.querySelector('.btn-text')!.textContent = 'Salvar Alterações';
-        btnSubmit
-          .querySelector('.btn-spinner')!
-          .setAttribute('style', 'display: none');
-      }
-      uploadProgress?.classList.remove('active');
-      document.body.style.overflow = '';
+      alert(result.error || 'Erro ao atualizar');
     }
   });
-
-  // Abrir modal
-  async function abrirModal(produto: any) {
-    produtoAtualId = produto.id;
-    imagensExistentes = [...(produto.imagens || [])];
-    arquivosImagem = [];
-
-    // Preencher formulário
-    (document.getElementById('editar-produto-id') as HTMLInputElement).value =
-      produto.id;
-    (document.getElementById('editar-produto-nome') as HTMLInputElement).value =
-      produto.nome;
-    (
-      document.getElementById('editar-produto-codigo') as HTMLInputElement
-    ).value = produto.codigo || '';
-    (
-      document.getElementById('editar-produto-preco') as HTMLInputElement
-    ).value = produto.preco.toString();
-    (
-      document.getElementById('editar-produto-bateria') as HTMLInputElement
-    ).value = produto.bateria ? produto.bateria.toString() : '';
-    (
-      document.getElementById('editar-produto-condicao') as HTMLSelectElement
-    ).value = produto.condicao;
-    (
-      document.getElementById('editar-produto-descricao') as HTMLTextAreaElement
-    ).value = produto.descricao || '';
-
-    // Garantir que a sessão está inicializada antes de carregar
-    await initializeSession();
-    
-    // Carregar categorias e selecionar a atual
-    carregarCategorias().then(() => {
-      (
-        document.getElementById('editar-produto-categoria') as HTMLSelectElement
-      ).value = produto.categoria_id;
-    });
-
-    // Renderizar imagens existentes
-    renderAllPreviews();
-
-    modalEditar?.classList.add('active');
-    document.body.style.overflow = 'hidden';
-
-    if (window.innerWidth >= 768) {
-      setTimeout(() => {
-        (
-          document.getElementById('editar-produto-nome') as HTMLInputElement
-        )?.focus();
-      }, 300);
-    }
-  }
-
-  // Fechar modal
-  function fecharModal() {
-    const placeholder = document.getElementById('editar-upload-placeholder');
-
-    modalEditar?.classList.remove('active');
-    document.body.style.overflow = '';
-    formEditar?.reset();
-    arquivosImagem = [];
-    imagensExistentes = [];
-    produtoAtualId = '';
-    if (imagePreviewGrid) imagePreviewGrid.innerHTML = '';
-    if (placeholder) placeholder.classList.remove('hidden');
-    if (uploadProgress) {
-      uploadProgress.classList.remove('active');
-      const progressBar = uploadProgress.querySelector(
-        '.progress-fill'
-      ) as HTMLElement;
-      if (progressBar) progressBar.style.width = '0%';
-    }
-  }
-
-  btnCancel?.addEventListener('click', fecharModal);
-  modalClose?.addEventListener('click', fecharModal);
-  modalEditar
-    ?.querySelector('.modal-overlay')
-    ?.addEventListener('click', fecharModal);
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modalEditar?.classList.contains('active')) {
-      fecharModal();
-    }
-  });
-
-  // Em EditarProduto.astro, adicione este handler
-  const btnDelete = modalEditar?.querySelector('.btn-delete');
-
-  btnDelete?.addEventListener('click', async () => {
-    if (
-      !confirm(
-        'Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.'
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const deleteResponse = await fetchWithAuth(`/api/admin/produtos/${produtoAtualId}`, {
-        method: 'DELETE'
-      });
-      
-      if (!deleteResponse.ok) throw new Error('Erro ao excluir produto');
-      
-      fecharModal();
-      mostrarToast('Produto excluído com sucesso!', 'success');
-      
-      // Aguardar um pouco antes de recarregar para garantir que o backend processou
-      setTimeout(() => {
-        window.dispatchEvent(new Event('produtos-updated'));
-      }, 300);
-    } catch (error) {
-      console.error('Erro ao excluir produto:', error);
-      mostrarToast('Erro ao excluir produto', 'error');
-    }
-  });
-
-  (window as any).abrirModalEditarProduto = abrirModal;
 </script>

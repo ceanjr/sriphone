@@ -1,581 +1,98 @@
 ---
-import '../styles/components/formulario-produto.css';
-// ✅ OTIMIZAÇÃO: Categorias carregadas via API
+import { supabase } from '../lib/supabase';
+
+const { data: categorias } = await supabase
+  .from('categorias')
+  .select('*')
+  .order('nome');
 ---
 
-<div id="modal-form-produto" class="modal-form">
-  <div class="modal-overlay"></div>
-  <div class="modal-content">
-    <div class="modal-drag-handle"></div>
-
-    <button type="button" class="modal-close" aria-label="Fechar">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M18 6L6 18M6 6L18 18"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"></path>
-      </svg>
-    </button>
-
-    <div class="modal-header">
-      <h2>Criar Novo Produto</h2>
-      <p class="modal-subtitle">Preencha os dados abaixo</p>
-    </div>
-
-    <form id="form-produto" class="product-form">
-      <!-- Upload de Imagens -->
-      <div class="form-section">
-        <label class="section-label">
-          Imagens do Produto *
-          <span class="label-hint">Adicione até 5 fotos</span>
-        </label>
-        <div class="image-upload-area" id="image-upload-area">
-          <input
-            type="file"
-            id="product-images"
-            accept="image/*"
-            multiple
-            hidden
-          />
-          <div class="upload-placeholder" id="upload-placeholder">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"></path>
-            </svg>
-            <span class="upload-title">Adicionar Fotos</span>
-            <small>Toque para tirar foto ou escolher da galeria</small>
-          </div>
-          <div class="image-preview-grid" id="image-preview-grid"></div>
-        </div>
-        <div id="upload-progress" class="upload-progress">
-          <div class="progress-bar">
-            <div class="progress-fill"></div>
-          </div>
-          <span class="progress-text">Enviando imagens...</span>
-        </div>
-      </div>
-
-      <!-- Nome -->
-      <div class="form-group">
-        <label for="produto-nome">
-          Nome do Produto *
-          <span class="label-required">obrigatório</span>
-        </label>
-        <input
-          type="text"
-          id="produto-nome"
-          name="nome"
-          required
-          placeholder="Ex: iPhone 14 Pro Max"
-          autocomplete="off"
-        />
-      </div>
-
-      <!-- Código -->
-      <div class="form-group">
-        <label for="produto-codigo"> Código do Produto </label>
-        <input
-          type="text"
-          id="produto-codigo"
-          name="codigo"
-          placeholder="Ex: IP14PM256"
-          autocomplete="off"
-        />
-      </div>
-
-      <!-- Preço e Bateria -->
-      <div class="form-row-mobile">
-        <div class="form-group">
-          <label for="produto-preco">
-            Preço (R$) *
-            <span class="label-required">obrigatório</span>
-          </label>
-          <input
-            type="number"
-            id="produto-preco"
-            name="preco"
-            required
-            step="0.01"
-            min="0"
-            placeholder="5499.00"
-            inputmode="decimal"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="produto-bateria"> Bateria (%) </label>
-          <input
-            type="number"
-            id="produto-bateria"
-            name="bateria"
-            min="0"
-            max="100"
-            placeholder="95"
-            inputmode="numeric"
-          />
-        </div>
-      </div>
-
-      <!-- Condição -->
-      <div class="form-group">
-        <label for="produto-condicao">
-          Condição *
-          <span class="label-required">obrigatório</span>
-        </label>
-        <select id="produto-condicao" name="condicao" required>
-          <option value="">Selecione a condição...</option>
-          <option value="Novo">Novo</option>
-          <option value="Seminovo">Seminovo</option>
-        </select>
-      </div>
-
-      <!-- Categoria -->
-      <div class="form-group">
-        <label for="produto-categoria">
-          Categoria *
-          <span class="label-required">obrigatório</span>
-        </label>
-        <select id="produto-categoria" name="categoria" required>
-          <option value="">Selecione a categoria...</option>
-        </select>
-      </div>
-
-      <!-- Descrição -->
-      <div class="form-group">
-        <label for="produto-descricao"> Descrição </label>
-        <textarea
-          id="produto-descricao"
-          name="descricao"
-          rows="4"
-          placeholder="Descreva os detalhes do produto (estado, acessórios inclusos, etc.)"
-        ></textarea>
-      </div>
-
-      <!-- Botões Fixos no Mobile -->
-      <div class="form-actions">
-        <button type="submit" class="btn-submit">
-          <span class="btn-text">Criar Produto</span>
-          <span class="btn-spinner" style="display: none;">
-            <svg class="spinner-icon" viewBox="0 0 24 24">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="3"
-                fill="none"
-                stroke-dasharray="31.4 31.4"></circle>
-            </svg>
-          </span>
-        </button>
-      </div>
-    </form>
+<form id="produto-form" class="space-y-4 max-w-2xl">
+  <div>
+    <label class="block text-sm font-medium mb-1">Nome *</label>
+    <input type="text" name="nome" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
   </div>
-</div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Código *</label>
+    <input type="text" name="codigo" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Preço *</label>
+    <input type="number" name="preco" required step="0.01" class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Categoria *</label>
+    <select name="categoria_id" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">
+      <option value="">Selecione...</option>
+      {categorias?.map((cat) => (
+        <option value={cat.id}>{cat.nome}</option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Condição *</label>
+    <select name="condicao" required class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white">
+      <option value="Novo">Novo</option>
+      <option value="Semi-Novo">Semi-Novo</option>
+      <option value="Usado">Usado</option>
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Bateria (%)</label>
+    <input type="number" name="bateria" min="0" max="100" class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white" />
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium mb-1">Descrição</label>
+    <textarea name="descricao" rows="3" class="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white"></textarea>
+  </div>
+
+  <div>
+    <label class="flex items-center gap-2">
+      <input type="checkbox" name="ativo" checked class="rounded" />
+      <span class="text-sm">Produto ativo</span>
+    </label>
+  </div>
+
+  <button type="submit" class="w-full rounded-lg bg-white px-4 py-3 font-medium text-black hover:bg-gray-200">
+    Criar Produto
+  </button>
+</form>
 
 <script>
-  import { authService } from '../lib/supabase';
+  import { criarProduto } from '../lib/crud';
 
-  // ✅ OTIMIZAÇÃO: Removido imports do Supabase
+  const form = document.getElementById('produto-form') as HTMLFormElement;
 
-  // Initialize session token from Supabase on page load
-  async function initializeSession() {
-    try {
-      const session = await authService.getSession();
-      if (session?.access_token) {
-        localStorage.setItem('sb-access-token', session.access_token);
-      }
-    } catch (error) {
-      console.error('Erro ao inicializar sessão:', error);
-    }
-  }
-
-  const modalForm = document.getElementById('modal-form-produto');
-  const form = document.getElementById('form-produto') as HTMLFormElement;
-  const imageUploadArea = document.getElementById('image-upload-area');
-  const imageInput = document.getElementById(
-    'product-images'
-  ) as HTMLInputElement;
-  const imagePreviewGrid = document.getElementById('image-preview-grid');
-  const uploadProgress = document.getElementById('upload-progress');
-  const btnCancel = modalForm?.querySelector('.btn-cancel');
-  const modalClose = modalForm?.querySelector('.modal-close');
-  const selectCategoria = document.getElementById(
-    'produto-categoria'
-  ) as HTMLSelectElement;
-  const btnSubmit = form?.querySelector('.btn-submit') as HTMLButtonElement;
-
-  const MAX_IMAGES = 5;
-  let arquivosImagem: File[] = [];
-
-  // Initialize session on load
-  initializeSession();
-
-  // Helper para fazer requisições autenticadas
-  async function fetchWithAuth(url: string, options: RequestInit = {}) {
-    // Buscar o token do Supabase do localStorage
-    const supabaseSession = localStorage.getItem('sb-access-token');
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    };
-
-    // Se temos um token, adicionar ao header
-    if (supabaseSession) {
-      headers['Authorization'] = `Bearer ${supabaseSession}`;
-    }
-
-    return fetch(url, {
-      ...options,
-      credentials: 'include', // Incluir cookies
-      headers,
-    });
-  }
-
-  // Carregar categorias via API
-  async function carregarCategorias() {
-    if (!selectCategoria) return;
-    try {
-      const response = await fetchWithAuth('/api/admin/categorias');
-      if (!response.ok) throw new Error('Erro ao carregar categorias');
-      const data = await response.json();
-      const categorias = data.categorias || [];
-      selectCategoria.innerHTML =
-        '<option value="">Selecione a categoria...</option>';
-      categorias.forEach((cat) => {
-        const option = document.createElement('option');
-        option.value = cat.id;
-        option.textContent = cat.nome;
-        selectCategoria.appendChild(option);
-      });
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
-      mostrarToast('Erro ao carregar categorias', 'error');
-    }
-  }
-
-  // Upload de imagens
-  imageUploadArea?.addEventListener('click', () => {
-    if (arquivosImagem.length >= MAX_IMAGES) {
-      mostrarToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning');
-      return;
-    }
-    imageInput?.click();
-  });
-
-  // Drag and drop (mantido para desktop)
-  imageUploadArea?.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    imageUploadArea.style.borderColor = '#fff';
-  });
-
-  imageUploadArea?.addEventListener('dragleave', () => {
-    imageUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-  });
-
-  imageUploadArea?.addEventListener('drop', (e) => {
-    e.preventDefault();
-    imageUploadArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-    const files = e.dataTransfer?.files;
-    if (files) {
-      handleFiles(files);
-    }
-  });
-
-  imageInput?.addEventListener('change', (e) => {
-    const target = e.target as HTMLInputElement;
-    const files = target.files;
-    if (files) {
-      handleFiles(files);
-    }
-    target.value = ''; // Reset para permitir selecionar mesma imagem
-  });
-
-  function handleFiles(files: FileList) {
-    const placeholder = document.getElementById('upload-placeholder');
-    const arquivosRestantes = MAX_IMAGES - arquivosImagem.length;
-
-    if (arquivosRestantes <= 0) {
-      mostrarToast(`Máximo de ${MAX_IMAGES} imagens atingido`, 'warning');
-      return;
-    }
-
-    let adicionados = 0;
-    const filesToAdd: File[] = [];
-
-    Array.from(files).forEach((file) => {
-      if (
-        file.type.startsWith('image/') &&
-        arquivosImagem.length + adicionados < MAX_IMAGES
-      ) {
-        filesToAdd.push(file);
-        adicionados++;
-      }
-    });
-
-    // Adiciona todos os arquivos de uma vez
-    arquivosImagem.push(...filesToAdd);
-
-    if (adicionados > 0) {
-      renderAllPreviews();
-      if (arquivosImagem.length >= MAX_IMAGES) {
-        mostrarToast(`Limite de ${MAX_IMAGES} imagens atingido`, 'info');
-      }
-    }
-
-    if (arquivosImagem.length > 0 && placeholder) {
-      placeholder.classList.add('hidden');
-    }
-  }
-
-  function renderPreview(file: File, index: number) {
-    if (!imagePreviewGrid) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const item = document.createElement('div');
-      item.className = 'image-preview-item';
-      item.innerHTML = `
-                <img src="${e.target?.result}" alt="Preview ${index + 1}" loading="lazy">
-                <button type="button" class="remove-image" data-index="${index}" aria-label="Remover imagem">
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </button>
-                <span class="image-number">${index + 1}</span>
-            `;
-
-      const removeBtn = item.querySelector('.remove-image');
-      removeBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        arquivosImagem.splice(index, 1);
-        renderAllPreviews();
-        mostrarToast('Imagem removida', 'info');
-      });
-
-      imagePreviewGrid.appendChild(item);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function renderAllPreviews() {
-    if (!imagePreviewGrid) return;
-    const placeholder = document.getElementById('upload-placeholder');
-
-    imagePreviewGrid.innerHTML = '';
-    arquivosImagem.forEach((file, index) => {
-      renderPreview(file, index);
-    });
-
-    if (arquivosImagem.length > 0 && placeholder) {
-      placeholder.classList.add('hidden');
-    } else if (placeholder) {
-      placeholder.classList.remove('hidden');
-    }
-  }
-
-  // Toast notification
-  function mostrarToast(
-    mensagem: string,
-    tipo: 'success' | 'error' | 'warning' | 'info' = 'info'
-  ) {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${tipo}`;
-    toast.textContent = mensagem;
-    document.body.appendChild(toast);
-
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  }
-
-  // Validação aprimorada
-  function validarFormulario(): boolean {
-    if (arquivosImagem.length === 0) {
-      mostrarToast('Adicione pelo menos uma imagem do produto', 'warning');
-      imageUploadArea?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return false;
-    }
-
-    const preco = parseFloat(
-      (document.getElementById('produto-preco') as HTMLInputElement).value
-    );
-    if (preco <= 0) {
-      mostrarToast('O preço deve ser maior que zero', 'warning');
-      return false;
-    }
-
-    const bateria = parseInt(
-      (document.getElementById('produto-bateria') as HTMLInputElement).value
-    );
-    if (bateria < 0 || bateria > 100) {
-      mostrarToast('A bateria deve estar entre 0 e 100%', 'warning');
-      return false;
-    }
-
-    return true;
-  }
-
-  // Submit do formulário
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    if (!validarFormulario()) return;
-
-    try {
-      // Desabilitar botão e scroll
-      if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.querySelector('.btn-text')!.textContent = 'Criando...';
-        btnSubmit
-          .querySelector('.btn-spinner')!
-          .setAttribute('style', 'display: inline-block');
-      }
-
-      // Prevenir scroll durante upload
-      document.body.style.overflow = 'hidden';
-
-      // Upload de imagens
-      const progressBar = uploadProgress?.querySelector(
-        '.progress-fill'
-      ) as HTMLElement;
-      uploadProgress?.classList.add('active');
-
-      // Upload imagens via API
-      const urlsImagens: string[] = [];
-      for (let i = 0; i < arquivosImagem.length; i++) {
-        const formData = new FormData();
-        formData.append('file', arquivosImagem[i]);
-        
-        // Usar fetchWithAuth mas sem Content-Type (FormData define automaticamente)
-        const token = localStorage.getItem('sb-access-token');
-        const uploadResponse = await fetch('/api/admin/upload', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-          headers: token ? {
-            'Authorization': `Bearer ${token}`
-          } : {}
-        });
-        
-        if (!uploadResponse.ok) throw new Error('Erro ao fazer upload');
-        const uploadData = await uploadResponse.json();
-        urlsImagens.push(uploadData.url);
-
-        if (progressBar) {
-          const progresso = ((i + 1) / arquivosImagem.length) * 100;
-          progressBar.style.width = `${progresso}%`;
-        }
-      }
-
-      uploadProgress?.classList.remove('active');
-
-      // Criar produto via API
-      const formData2 = new FormData(form);
-      const produto = {
-        codigo: formData2.get('codigo') as string,
-        nome: formData2.get('nome') as string,
-        descricao: formData2.get('descricao') as string,
-        preco: parseFloat(formData2.get('preco') as string),
-        condicao: formData2.get('condicao') as 'Novo' | 'Seminovo',
-        bateria: parseInt(formData2.get('bateria') as string),
-        categoria_id: formData2.get('categoria') as string,
-        imagens: urlsImagens,
-      };
-
-      const createResponse = await fetchWithAuth('/api/admin/produtos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(produto)
-      });
-      
-      if (!createResponse.ok) throw new Error('Erro ao criar produto');
-
-      fecharModal();
-      mostrarToast('Produto criado com sucesso!', 'success');
-      
-      // Aguardar um pouco antes de recarregar
-      setTimeout(() => {
-        window.dispatchEvent(new Event('produtos-updated'));
-      }, 300);
-    } catch (error: any) {
-      const mensagemErro =
-        error?.message || JSON.stringify(error) || 'Erro desconhecido';
-      console.error('Erro ao criar produto:', mensagemErro);
-      mostrarToast(`Erro ao criar produto: ${mensagemErro}`, 'error');
-    } finally {
-      if (btnSubmit) {
-        btnSubmit.disabled = false;
-        btnSubmit.querySelector('.btn-text')!.textContent = 'Criar Produto';
-        btnSubmit
-          .querySelector('.btn-spinner')!
-          .setAttribute('style', 'display: none');
-      }
-      uploadProgress?.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-  });
-
-  // Funções de controle do modal
-  async function abrirModal() {
-    modalForm?.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    const formData = new FormData(form);
     
-    // Garantir que a sessão está inicializada antes de carregar
-    await initializeSession();
-    carregarCategorias();
+    const produto = {
+      nome: formData.get('nome') as string,
+      codigo: formData.get('codigo') as string,
+      preco: parseFloat(formData.get('preco') as string),
+      categoria_id: formData.get('categoria_id') as string,
+      condicao: formData.get('condicao') as string,
+      bateria: formData.get('bateria') ? parseInt(formData.get('bateria') as string) : null,
+      descricao: formData.get('descricao') as string || null,
+      ativo: formData.get('ativo') === 'on',
+    };
 
-    // Focus no primeiro campo em desktop
-    if (window.innerWidth >= 768) {
-      setTimeout(() => {
-        (document.getElementById('produto-nome') as HTMLInputElement)?.focus();
-      }, 300);
-    }
-  }
+    const result = await criarProduto(produto);
 
-  function fecharModal() {
-    const placeholder = document.getElementById('upload-placeholder');
-
-    modalForm?.classList.remove('active');
-    document.body.style.overflow = '';
-    form?.reset();
-    arquivosImagem = [];
-    if (imagePreviewGrid) imagePreviewGrid.innerHTML = '';
-    if (placeholder) placeholder.classList.remove('hidden');
-    if (uploadProgress) {
-      uploadProgress.classList.remove('active');
-      const progressBar = uploadProgress.querySelector(
-        '.progress-fill'
-      ) as HTMLElement;
-      if (progressBar) progressBar.style.width = '0%';
-    }
-  }
-
-  btnCancel?.addEventListener('click', fecharModal);
-  modalClose?.addEventListener('click', fecharModal);
-  modalForm
-    ?.querySelector('.modal-overlay')
-    ?.addEventListener('click', fecharModal);
-
-  // Fechar com ESC
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modalForm?.classList.contains('active')) {
-      fecharModal();
+    if (result.success) {
+      alert('Produto criado com sucesso!');
+      form.reset();
+      location.reload();
+    } else {
+      alert(result.error || 'Erro ao criar produto');
     }
   });
-
-  // Expor função globalmente
-  (window as any).abrirFormProduto = abrirModal;
 </script>
