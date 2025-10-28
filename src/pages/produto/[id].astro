@@ -5,26 +5,20 @@ import Footer from '../../components/Footer.astro';
 import { productService } from '../../lib/supabase';
 import '../../styles/pages/produto.css';
 
-console.log('🔍 PÁGINA PRODUTO - Iniciando');
 
 const { id } = Astro.params;
 
-console.log('  - ID recebido:', id);
 
 if (!id) {
-  console.log('  ❌ ID não fornecido, redirecionando');
   return Astro.redirect('/catalogo');
 }
 
 let produto;
 try {
-  console.log('  - Buscando produto...');
   produto = await productService.getById(id);
   
-  console.log('  - Produto encontrado:', produto ? produto.nome : 'NÃO ENCONTRADO');
   
   if (!produto) {
-    console.log('  ❌ Produto não existe, redirecionando');
     return Astro.redirect('/catalogo');
   }
 } catch (error) {
@@ -32,7 +26,6 @@ try {
   return Astro.redirect('/catalogo');
 }
 
-console.log('  ✅ Produto carregado, renderizando página');
 
 const precoFormatado = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -184,6 +177,23 @@ function getBateriaColor(bateria: number): string {
     </div>
   </main>
 
+  <!-- Modal de Imagem Expandida -->
+  <div id="modal-expandido" class="modal-expandido">
+    <button class="modal-close-expandido" aria-label="Fechar">×</button>
+    <img id="imagem-expandida" src="" alt="Imagem expandida" />
+    <div class="contador-imagens"></div>
+    <button class="nav-btn-expanded nav-prev-expanded" aria-label="Imagem anterior">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <button class="nav-btn-expanded nav-next-expanded" aria-label="Próxima imagem">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
   <Footer />
 </Layout>
 
@@ -191,12 +201,32 @@ function getBateriaColor(bateria: number): string {
   // Galeria de imagens
   const mainImage = document.getElementById('main-image') as HTMLImageElement;
   const thumbnails = document.querySelectorAll('.thumbnail');
+  const modalExpandido = document.getElementById('modal-expandido') as HTMLElement;
+  const imagemExpandida = document.getElementById('imagem-expandida') as HTMLImageElement;
+  const btnCloseExpandido = modalExpandido?.querySelector('.modal-close-expandido');
+  const contadorImagens = modalExpandido?.querySelector('.contador-imagens');
+  const navPrevExpanded = modalExpandido?.querySelector('.nav-prev-expanded');
+  const navNextExpanded = modalExpandido?.querySelector('.nav-next-expanded');
 
-  thumbnails.forEach((thumb) => {
+  let currentIndex = 0;
+  let imagens: string[] = [];
+  
+  // Coletar todas as imagens
+  thumbnails.forEach((thumb, index) => {
+    const imageUrl = (thumb as HTMLElement).dataset.image;
+    if (imageUrl) {
+      imagens.push(imageUrl);
+      if (index === 0) currentIndex = 0;
+    }
+  });
+
+  // Trocar imagem principal
+  thumbnails.forEach((thumb, index) => {
     thumb.addEventListener('click', () => {
       const imageUrl = (thumb as HTMLElement).dataset.image;
       if (imageUrl && mainImage) {
         mainImage.src = imageUrl;
+        currentIndex = index;
         
         // Atualizar thumbnail ativa
         thumbnails.forEach(t => t.classList.remove('active'));
@@ -204,4 +234,93 @@ function getBateriaColor(bateria: number): string {
       }
     });
   });
+
+  // Expandir imagem ao clicar
+  mainImage?.addEventListener('click', () => {
+    if (imagens.length > 0) {
+      expandirImagem(currentIndex);
+    }
+  });
+
+  function expandirImagem(index: number) {
+    if (!imagemExpandida || !modalExpandido) return;
+    
+    currentIndex = index;
+    imagemExpandida.src = imagens[currentIndex];
+    
+    if (contadorImagens) {
+      contadorImagens.textContent = `${currentIndex + 1} / ${imagens.length}`;
+    }
+    
+    updateNavButtonsExpanded();
+    modalExpandido.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function fecharExpandido() {
+    if (!modalExpandido) return;
+    modalExpandido.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function navegarExpandida(direction: number) {
+    const newIndex = currentIndex + direction;
+    if (newIndex >= 0 && newIndex < imagens.length) {
+      expandirImagem(newIndex);
+    }
+  }
+
+  function updateNavButtonsExpanded() {
+    if (navPrevExpanded) {
+      (navPrevExpanded as HTMLElement).style.display = currentIndex > 0 ? 'flex' : 'none';
+    }
+    if (navNextExpanded) {
+      (navNextExpanded as HTMLElement).style.display = currentIndex < imagens.length - 1 ? 'flex' : 'none';
+    }
+  }
+
+  // Event listeners do modal expandido
+  btnCloseExpandido?.addEventListener('click', fecharExpandido);
+  modalExpandido?.addEventListener('click', (e) => {
+    if (e.target === modalExpandido) fecharExpandido();
+  });
+  navPrevExpanded?.addEventListener('click', () => navegarExpandida(-1));
+  navNextExpanded?.addEventListener('click', () => navegarExpandida(1));
+
+  // Navegação por teclado
+  document.addEventListener('keydown', (e) => {
+    if (!modalExpandido?.classList.contains('active')) return;
+    
+    if (e.key === 'Escape') fecharExpandido();
+    else if (e.key === 'ArrowLeft') navegarExpandida(-1);
+    else if (e.key === 'ArrowRight') navegarExpandida(1);
+  });
+
+  // SWIPE para mobile
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const minSwipeDistance = 50;
+
+  modalExpandido?.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  modalExpandido?.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+
+  function handleSwipe() {
+    const swipeDistance = touchEndX - touchStartX;
+    
+    if (Math.abs(swipeDistance) < minSwipeDistance) return;
+    
+    if (swipeDistance > 0) {
+      // Swipe right - imagem anterior
+      navegarExpandida(-1);
+    } else {
+      // Swipe left - próxima imagem
+      navegarExpandida(1);
+    }
+  }
 </script>
