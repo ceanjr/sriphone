@@ -104,8 +104,8 @@ src/
 - [ ] `ProductCard` deve usar `ProgressiveImage` com fade-in.
 
 ### 8️⃣ **Inicialização e Orquestração**
-- [ ] Criar `scripts/catalog/init.ts` para centralizar inicialização.
-- [ ] Importar `state`, `handlers` e `render` para bootstrap da página.
+- [x] Criar `scripts/catalog/init.ts` para centralizar inicialização.
+- [x] Importar `state`, `handlers` e `render` para bootstrap da página.
 - [ ] Adicionar `client:load` em `catalogo.astro` apenas nesse script.
 
 ### 9️⃣ **CSS Modular**
