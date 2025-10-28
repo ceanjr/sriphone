@@ -70,7 +70,8 @@ import { categoryService } from '../lib/supabase';
 </div>
 
 <script>
-  import { categoryService } from '../lib/supabase';
+  // ✅ OTIMIZAÇÃO: Removido import do categoryService
+  // Usando API routes ao invés de Supabase direto no cliente
 
   // Ordenação de Categorias
   function ordenarCategorias(categorias: Category[]): Category[] {
@@ -242,10 +243,13 @@ import { categoryService } from '../lib/supabase';
       loading.classList.add('active');
       list.innerHTML = '';
 
-      const categoriasData = (await categoryService.getAll()) || [];
+      // ✅ OTIMIZAÇÃO: Usar API ao invés de Supabase direto
+      const response = await fetch('/api/admin/categorias');
+      if (!response.ok) throw new Error('Erro ao carregar categorias');
+      const categoriasData = await response.json();
 
       // ORDENAR CATEGORIAS
-      categories = ordenarCategorias(categoriasData);
+      categories = ordenarCategorias(categoriasData || []);
 
       if (categories.length === 0) {
         list.innerHTML = `
@@ -334,7 +338,12 @@ import { categoryService } from '../lib/supabase';
 
     try {
       item.classList.add('gc-deleting');
-      await categoryService.delete(id);
+      
+      // ✅ OTIMIZAÇÃO: Usar API
+      const response = await fetch(`/api/admin/categorias?id=${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Erro ao deletar categoria');
 
       categories = categories.filter((c) => c.id !== id);
       item.addEventListener(
@@ -410,7 +419,14 @@ import { categoryService } from '../lib/supabase';
 
       try {
         item.classList.add('gc-saving');
-        await categoryService.update(cat.id, newName);
+        
+        // ✅ OTIMIZAÇÃO: Usar API
+        const response = await fetch('/api/admin/categorias', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: cat.id, nome: newName })
+        });
+        if (!response.ok) throw new Error('Erro ao atualizar categoria');
 
         const index = categories.findIndex((c) => c.id === cat.id);
         if (index !== -1) categories[index].nome = newName;
@@ -461,7 +477,14 @@ import { categoryService } from '../lib/supabase';
       addButton.disabled = true;
       form.classList.add('gc-submitting');
 
-      await categoryService.create(nome);
+      // ✅ OTIMIZAÇÃO: Usar API
+      const response = await fetch('/api/admin/categorias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome })
+      });
+      if (!response.ok) throw new Error('Erro ao criar categoria');
+      const newCategory = await response.json();
 
       input.value = '';
       input.disabled = false;
