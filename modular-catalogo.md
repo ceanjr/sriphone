@@ -115,7 +115,7 @@ src/
 
 ### 🔟 **Otimizações Finais**
 - [ ] Habilitar `Astro.split = true` e partial hydration.
-- [ ] Implementar `prefetch` das primeiras imagens.
+- [x] Implementar `prefetch` das primeiras imagens.
 - [ ] Analisar bundle com `npm run astro build --analyze`.
 
 ---
