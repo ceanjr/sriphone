@@ -28,6 +28,10 @@ export const CATALOG_CONFIG = {
     mobile: 768,
     tablet: 1024,
   },
+  
+  performance: {
+    enableWebVitals: true,
+  },
 } as const;
 
 export const CATEGORY_ORDER = [

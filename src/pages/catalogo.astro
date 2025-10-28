@@ -20,7 +20,10 @@ import ProductCardSkeleton from '../components/catalog/ProductCardSkeleton.astro
 // ✅ CSS modular - Critical CSS inline, resto lazy load
 // Apenas o CSS essencial é carregado inicialmente
 import '../styles/catalog/variables.css'; // Tokens CSS (crítico)
-// CSS não-crítico será carregado após o load
+import '../styles/pages/catalogo.css';
+import '../styles/catalog/grid.css';
+import '../styles/catalog/card.css';
+import '../styles/catalog/animations.css';
 
 // ✅ OTIMIZAÇÃO: Buscar dados no servidor para SSG
 import { productService, categoryService } from '../lib/supabase';
@@ -44,23 +47,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta name="twitter:card" content="summary_large_image" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
-    
-    <!-- ✅ OTIMIZAÇÃO: Preload critical CSS -->
-    <link rel="preload" href="/src/styles/catalog/variables.css" as="style" />
-    
-    <!-- ✅ OTIMIZAÇÃO: Lazy load non-critical CSS -->
-    <link rel="preload" href="/src/styles/pages/catalogo.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <link rel="preload" href="/src/styles/catalog/grid.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <link rel="preload" href="/src/styles/catalog/card.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <link rel="preload" href="/src/styles/catalog/animations.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    
-    <!-- Fallback for no-JS -->
-    <noscript>
-      <link rel="stylesheet" href="/src/styles/pages/catalogo.css" />
-      <link rel="stylesheet" href="/src/styles/catalog/grid.css" />
-      <link rel="stylesheet" href="/src/styles/catalog/card.css" />
-      <link rel="stylesheet" href="/src/styles/catalog/animations.css" />
-    </noscript>
   </fragment>
 
   <Header />
