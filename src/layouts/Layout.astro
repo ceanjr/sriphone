@@ -98,90 +98,36 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
   </head>
 
   <body>
-    <!-- FORÇA ATUALIZAÇÃO - CRÍTICO -->
-    <script src="/force-update.js" is:inline></script>
-
     <slot />
 
     <!-- Vercel Analytics -->
     <Analytics />
 
-    <!-- Service Worker com atualização controlada -->
+    <!-- Service Worker - SIMPLES E SEGURO -->
     <script is:inline>
-      // ✅ Service Worker com verificação de versão segura
+      // Service Worker simples sem auto-reload
       if ('serviceWorker' in navigator) {
-        const CURRENT_VERSION = 'v8-2025-10-28';
-        const LAST_VERSION_KEY = 'sw-last-version';
-        const UPDATE_IN_PROGRESS_KEY = 'sw-updating';
-        
         window.addEventListener('load', async () => {
           try {
-            // Verificar se já está em processo de atualização (evitar loop)
-            const isUpdating = sessionStorage.getItem(UPDATE_IN_PROGRESS_KEY);
-            if (isUpdating === 'true') {
-              console.log('⏸️ Atualização já em progresso, pulando...');
-              sessionStorage.removeItem(UPDATE_IN_PROGRESS_KEY);
-              return;
-            }
-            
-            // Verificar versão
-            const lastVersion = localStorage.getItem(LAST_VERSION_KEY);
-            
-            // Se versão diferente E não é a primeira visita, limpar cache
-            if (lastVersion && lastVersion !== CURRENT_VERSION) {
-              console.log('🔄 Nova versão detectada:', lastVersion, '→', CURRENT_VERSION);
-              
-              // Marcar como atualizando
-              sessionStorage.setItem(UPDATE_IN_PROGRESS_KEY, 'true');
-              
-              // Desregistrar SWs antigos
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              for (const registration of registrations) {
-                await registration.unregister();
-              }
-              
-              // Limpar caches
-              const cacheNames = await caches.keys();
-              for (const cacheName of cacheNames) {
-                await caches.delete(cacheName);
-              }
-              
-              // Atualizar versão e recarregar UMA VEZ
-              localStorage.setItem(LAST_VERSION_KEY, CURRENT_VERSION);
-              console.log('✅ Cache limpo! Recarregando...');
-              window.location.reload(true);
-              return;
-            }
-            
-            // Primeira visita ou mesma versão - registrar SW normalmente
             const reg = await navigator.serviceWorker.register('/sw.js');
             console.log('✅ Service Worker registrado');
             
-            // Salvar versão
-            localStorage.setItem(LAST_VERSION_KEY, CURRENT_VERSION);
-            
-            // Verificar atualizações (mas não recarregar automaticamente)
+            // Atualizar quando disponível, mas SEM reload automático
             reg.addEventListener('updatefound', () => {
               const newWorker = reg.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('🆕 Nova versão do SW disponível');
-                  // Apenas enviar mensagem, sem recarregar
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                }
-              });
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🆕 Nova versão disponível');
+                    // Mostrar notificação mas não recarregar
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                });
+              }
             });
             
           } catch (error) {
             console.warn('Service Worker error:', error);
-          }
-        });
-        
-        // Listener para mensagens do SW
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'SW_UPDATED') {
-            console.log('📢 SW atualizado para:', event.data.version);
-            // Não recarregar automaticamente
           }
         });
       }

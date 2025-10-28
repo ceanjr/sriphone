@@ -91,6 +91,11 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Ignorar chrome-extension e outros protocolos não-http
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   // NUNCA cachear APIs de admin (escrita)
   if (url.pathname.startsWith('/api/admin/') && request.method !== 'GET') {
     return;
