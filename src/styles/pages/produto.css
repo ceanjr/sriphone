@@ -14,54 +14,6 @@
   padding: 0 1.5rem;
 }
 
-/* Breadcrumbs */
-.breadcrumbs {
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 1rem 0;
-}
-
-.breadcrumbs .container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
-.breadcrumbs ol {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  list-style: none;
-  flex-wrap: wrap;
-}
-
-.breadcrumbs li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.breadcrumbs li:not(:last-child)::after {
-  content: '/';
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.breadcrumbs a {
-  color: rgba(255, 255, 255, 0.7);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.breadcrumbs a:hover {
-  color: #fff;
-}
-
-.breadcrumbs [aria-current="page"] {
-  color: #fff;
-}
-
 /* Grid Principal */
 .produto-grid {
   display: grid;

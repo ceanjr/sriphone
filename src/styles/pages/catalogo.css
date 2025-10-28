@@ -1559,30 +1559,3 @@
   position: relative;
 }
 
-.breadcrumbs {
-  padding: 0.5rem 1.5rem;
-  border-bottom: 1px solid #1a1a1a;
-}
-
-.breadcrumbs ol {
-  display: flex;
-  gap: 0.5rem;
-  list-style: none;
-  font-size: 0.875rem;
-}
-
-.breadcrumbs li:not(:last-child)::after {
-  content: '/';
-  margin-left: 0.5rem;
-  color: #666;
-}
-
-.breadcrumbs a {
-  color: #999;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.breadcrumbs a:hover {
-  color: #fff;
-}
