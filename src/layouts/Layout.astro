@@ -39,15 +39,21 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content={description} />
+    <title>{title}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/webp" href="/favicon.webp" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.webp" />
+    
     <meta name="generator" content={Astro.generator} />
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="SriPhone" />
-    <meta name="application-name" content="SriPhone" />
+    <meta name="apple-mobile-web-app-title" content="Sr. IPHONE" />
+    <meta name="application-name" content="Sr. IPHONE" />
     <meta name="theme-color" content="#000000" />
     <meta name="msapplication-TileColor" content="#000000" />
     <meta name="msapplication-tap-highlight" content="no" />
@@ -73,7 +79,7 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <!-- Preload recursos críticos que existem -->
     <link rel="preload" href="/fonts/Halenoir-Bold.otf" as="font" type="font/otf" crossorigin />
     <link rel="preload" href="/images/Barbudo.webp" as="image" />
-    <link rel="preload" href="/favicon.svg" as="image" />
+    <link rel="preload" href="/favicon.webp" as="image" />
 
     <!-- Critical CSS Inline para eliminar render-blocking -->
     {criticalCSS && <style is:inline set:html={criticalCSS} />}
