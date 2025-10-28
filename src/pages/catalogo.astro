@@ -817,6 +817,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         elementos.emptyState.style.display = 'none';
 
+        // ✅ OTIMIZAÇÃO: Priorizar primeiras 6 imagens
+        let imageIndex = 0;
+
         // Renderizar agrupado ou não
         if (state.categoriaAtiva === 'todos') {
           const grupos = business.agruparPorCategoria(produtosFiltrados);
@@ -845,7 +848,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           elementos.produtosContainer.innerHTML = categoriasOrdenadas
             .map((cat) => {
               const prods = grupos.get(cat.nome);
-              return prods ? templates.categoriaSecao(cat.nome, prods) : '';
+              return prods ? templates.categoriaSecao(cat.nome, prods, imageIndex++) : '';
             })
             .filter((html) => html !== '')
             .join('');
