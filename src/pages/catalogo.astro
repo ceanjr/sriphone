@@ -304,13 +304,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     </section>
 
     <!-- ✅ OTIMIZAÇÃO: Dados iniciais inline para SSG -->
-    <script type="application/json" id="initial-data">
-      {JSON.stringify({
-        produtos: produtosIniciais.produtos,
-        nextCursor: produtosIniciais.nextCursor,
-        categorias: categorias
-      })}
-    </script>
+    <script type="application/json" id="initial-data" set:html={JSON.stringify({
+      produtos: produtosIniciais.produtos,
+      nextCursor: produtosIniciais.nextCursor,
+      categorias: categorias
+    })} />
 
     <!-- Modal de Login -->
     <div id="modal-login" class="modal-login">
@@ -345,7 +343,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Carregar Dados Iniciais ====================
     const initialDataEl = document.getElementById('initial-data');
-    const initialData = initialDataEl ? JSON.parse(initialDataEl.textContent || '{}') : {};
+    const initialData = initialDataEl ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}') : {};
 
     // ==================== Estado ====================
     const state = {
