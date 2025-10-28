@@ -1,6 +1,6 @@
----
-// ✅ OTIMIZAÇÃO: SSG - Gerar páginas de produto no build
-export const prerender = true;
+--- 
+// ✅ MUDANÇA: SSR - Gerar página de produto dinamicamente
+export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
@@ -9,23 +9,9 @@ import { productService } from '../../lib/supabase';
 import { utils } from '../../lib/catalog/utils';
 import '../../styles/pages/produto.css';
 
-// Gerar todas as páginas de produto no build
-export async function getStaticPaths() {
-  try {
-    const produtos = await productService.getAll();
-    
-    return produtos.map(produto => ({
-      params: { id: produto.id },
-      props: { produto }
-    }));
-  } catch (error) {
-    console.error('Erro ao gerar páginas de produto:', error);
-    return [];
-  }
-}
-
-// Receber produto via props (já buscado no build)
-const { produto } = Astro.props;
+// Buscar o produto em tempo real usando o ID da URL
+const { id } = Astro.params;
+const produto = id ? await productService.getById(id) : null;
 
 // Se o produto não existir, redirecionar
 if (!produto) {
@@ -36,7 +22,6 @@ const precoFormatado = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 }).format(produto.preco);
-
 const metaDescription = `${produto.nome} - ${produto.descricao}. ${precoFormatado}`;
 const canonicalURL = new URL(`/produto/${produto.id}`, Astro.site);
 
