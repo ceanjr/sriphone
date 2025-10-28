@@ -1,4 +1,4 @@
-// VERSÃO CRÍTICA - FORÇA ATUALIZAÇÃO IMEDIATA
+// SERVICE WORKER v7 - CORRIGIDO SEM LOOP
 const CACHE_VERSION = 'v7-force-update';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
@@ -18,11 +18,10 @@ const STATIC_ASSETS = [
 ];
 
 const MAX_CACHE_SIZE = 100;
-const MAX_CACHE_AGE = 30 * 24 * 60 * 60 * 1000;
 
-// INSTALAÇÃO - Força skip waiting imediato
+// Instalação - Skip waiting imediato
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing version:', CACHE_VERSION);
+  console.log('[SW] Installing:', CACHE_VERSION);
   
   event.waitUntil(
     caches.open(STATIC_CACHE)
@@ -34,20 +33,19 @@ self.addEventListener('install', (event) => {
         );
       })
       .then(() => {
-        console.log('[SW] Skip waiting - force activation');
-        return self.skipWaiting(); // FORÇA ativação imediata
+        console.log('[SW] Skip waiting');
+        return self.skipWaiting();
       })
   );
 });
 
-// ATIVAÇÃO - Limpa tudo e assume controle imediatamente
+// Ativação - Limpa caches antigos
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating version:', CACHE_VERSION);
+  console.log('[SW] Activating:', CACHE_VERSION);
   
   event.waitUntil(
-    Promise.all([
-      // Limpar TODOS os caches antigos
-      caches.keys().then((cacheNames) => {
+    caches.keys()
+      .then((cacheNames) => {
         return Promise.all(
           cacheNames
             .filter((name) => name.startsWith('sriphone-') && !name.includes(CACHE_VERSION))
@@ -56,27 +54,14 @@ self.addEventListener('activate', (event) => {
               return caches.delete(name);
             })
         );
-      }),
-      // Assume controle de TODAS as páginas imediatamente
-      self.clients.claim()
-    ]).then(() => {
-      console.log('[SW] Activated and claimed all clients');
-      
-      // Notifica TODOS os clientes para recarregar
-      return self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          console.log('[SW] Sending reload message to client');
-          client.postMessage({
-            type: 'FORCE_RELOAD',
-            version: CACHE_VERSION
-          });
-        });
-      });
-    })
+      })
+      .then(() => {
+        console.log('[SW] Claiming clients');
+        return self.clients.claim();
+      })
   );
 });
 
-// Limitar tamanho do cache
 const limitCacheSize = (cacheName, maxItems) => {
   caches.open(cacheName).then((cache) => {
     cache.keys().then((keys) => {
@@ -87,27 +72,27 @@ const limitCacheSize = (cacheName, maxItems) => {
   });
 };
 
-// FETCH - Com exclusões críticas
+// FETCH - Estratégia inteligente
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // ❌ NUNCA cachear APIs de admin
+  // NUNCA cachear APIs de admin
   if (url.pathname.startsWith('/api/admin/')) {
-    return; // Bypass - vai direto pro servidor
+    return;
   }
 
-  // ❌ NUNCA cachear outras APIs
+  // NUNCA cachear outras APIs
   if (url.pathname.startsWith('/api/')) {
-    return; // Bypass
+    return;
   }
 
-  // ❌ NUNCA cachear páginas de admin
+  // NUNCA cachear páginas de admin
   if (url.pathname.startsWith('/admin/')) {
-    return; // Bypass
+    return;
   }
 
-  // Apenas GET requests
+  // Apenas GET
   if (request.method !== 'GET') return;
   
   // Imagens: Cache-First
@@ -145,7 +130,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Supabase: Network-First com timeout
+  // Supabase: Network-First
   if (url.hostname.includes('supabase')) {
     event.respondWith(
       Promise.race([
@@ -184,7 +169,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Mensagens dos clientes
+// Mensagens
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

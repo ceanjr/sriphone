@@ -1,70 +1,70 @@
-// SISTEMA DE FORÇA DE ATUALIZAÇÃO
-// Garante que TODOS os usuários atualizem para a versão mais recente
-
-const CURRENT_VERSION = '7.0.0'; // Incrementar a cada deploy crítico
+// SISTEMA DE ATUALIZAÇÃO - VERSÃO CORRIGIDA (SEM LOOP)
+const CURRENT_VERSION = '7.0.0';
 const VERSION_KEY = 'app-version';
 const LAST_CHECK_KEY = 'last-version-check';
-const CHECK_INTERVAL = 5 * 60 * 1000; // Verificar a cada 5 minutos
+const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutos
 
-// Verificar versão no localStorage
+let isUpdating = false; // Prevenir múltiplas atualizações
+
 function checkVersion() {
+  if (isUpdating) {
+    console.log('⏸️ Atualização já em andamento, ignorando...');
+    return;
+  }
+
   try {
     const storedVersion = localStorage.getItem(VERSION_KEY);
-    const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
-    const now = Date.now();
-
-    // Se versão diferente, forçar atualização
-    if (storedVersion && storedVersion !== CURRENT_VERSION) {
-      console.log(`🔄 Versão desatualizada: ${storedVersion} → ${CURRENT_VERSION}`);
-      forceUpdate();
+    
+    // Se versão já está correta, não fazer nada
+    if (storedVersion === CURRENT_VERSION) {
+      console.log(`✓ Versão atual: ${CURRENT_VERSION}`);
       return;
     }
 
-    // Se nunca verificou ou passou do intervalo, verificar novamente
-    if (!lastCheck || (now - parseInt(lastCheck)) > CHECK_INTERVAL) {
-      localStorage.setItem(LAST_CHECK_KEY, now.toString());
-      
-      // Verificar se há nova versão no servidor
-      fetch('/version.json?t=' + now, { cache: 'no-store' })
-        .then(r => r.json())
-        .then(data => {
-          if (data.version !== CURRENT_VERSION) {
-            console.log(`🔄 Nova versão disponível: ${data.version}`);
-            forceUpdate();
-          } else {
-            localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-          }
-        })
-        .catch(err => {
-          console.warn('Erro ao verificar versão:', err);
-          // Se não conseguiu verificar, atualiza mesmo assim por segurança
-          localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-        });
+    // Se nunca foi definida, definir agora
+    if (!storedVersion) {
+      console.log(`📝 Definindo versão inicial: ${CURRENT_VERSION}`);
+      localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+      localStorage.setItem(LAST_CHECK_KEY, Date.now().toString());
+      return;
     }
+
+    // Versão diferente - precisa atualizar
+    console.log(`🔄 Versão desatualizada: ${storedVersion} → ${CURRENT_VERSION}`);
+    forceUpdate();
   } catch (error) {
     console.error('Erro no checkVersion:', error);
+    // Em caso de erro, define a versão atual para evitar loops
+    try {
+      localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+    } catch {}
   }
 }
 
-// Forçar atualização completa
 async function forceUpdate() {
-  console.log('🔄 Forçando atualização...');
+  if (isUpdating) return;
+  
+  isUpdating = true;
+  console.log('🔄 Forçando atualização completa...');
 
   try {
-    // 1. Limpar todo o localStorage (exceto auth)
+    // Salvar tokens de autenticação
     const authToken = localStorage.getItem('sb-access-token');
     const authRefresh = localStorage.getItem('sb-refresh-token');
     
+    // Limpar localStorage
     localStorage.clear();
     
+    // Restaurar auth e definir nova versão
     if (authToken) localStorage.setItem('sb-access-token', authToken);
     if (authRefresh) localStorage.setItem('sb-refresh-token', authRefresh);
     localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+    localStorage.setItem(LAST_CHECK_KEY, Date.now().toString());
 
-    // 2. Limpar sessionStorage
+    // Limpar sessionStorage
     sessionStorage.clear();
 
-    // 3. Desregistrar service workers antigos
+    // Desregistrar service workers
     if ('serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
@@ -73,19 +73,23 @@ async function forceUpdate() {
       }
     }
 
-    // 4. Limpar todos os caches
+    // Limpar caches
     const cacheNames = await caches.keys();
     for (const cacheName of cacheNames) {
       await caches.delete(cacheName);
       console.log('✓ Cache deletado:', cacheName);
     }
 
-    // 5. Recarregar sem cache
     console.log('✓ Recarregando...');
-    window.location.reload(true);
+    
+    // Aguardar um momento antes de recarregar
+    setTimeout(() => {
+      window.location.reload(true);
+    }, 500);
   } catch (error) {
     console.error('Erro ao forçar atualização:', error);
-    // Mesmo com erro, tenta recarregar
+    // Mesmo com erro, define versão para evitar loop
+    localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
     window.location.reload(true);
   }
 }
@@ -94,30 +98,41 @@ async function forceUpdate() {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'FORCE_RELOAD') {
-      console.log('📨 Mensagem do SW: FORCE_RELOAD');
-      forceUpdate();
+      const storedVersion = localStorage.getItem(VERSION_KEY);
+      if (storedVersion !== CURRENT_VERSION) {
+        console.log('📨 Mensagem do SW: FORCE_RELOAD');
+        forceUpdate();
+      }
     }
   });
 
-  // Detectar quando há novo SW esperando
+  // Detectar controller change apenas se versão diferente
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('📨 Controller change detectado');
-    forceUpdate();
+    const storedVersion = localStorage.getItem(VERSION_KEY);
+    if (storedVersion !== CURRENT_VERSION) {
+      console.log('📨 Controller change detectado');
+      forceUpdate();
+    }
   });
 }
 
-// Verificar versão na inicialização
+// Verificar versão apenas uma vez na inicialização
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', checkVersion);
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(checkVersion, 100);
+  });
 } else {
-  checkVersion();
+  setTimeout(checkVersion, 100);
 }
 
-// Verificar periodicamente
-setInterval(checkVersion, CHECK_INTERVAL);
-
-// Expor função global para debug
+// Expor funções para debug
 window.forceUpdate = forceUpdate;
 window.checkVersion = checkVersion;
+window.getAppVersion = () => localStorage.getItem(VERSION_KEY);
+window.resetVersion = () => {
+  localStorage.removeItem(VERSION_KEY);
+  localStorage.removeItem(LAST_CHECK_KEY);
+  console.log('✓ Versão resetada');
+};
 
 console.log(`✓ Sistema de atualização ativo - Versão ${CURRENT_VERSION}`);
