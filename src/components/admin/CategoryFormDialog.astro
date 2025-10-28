@@ -12,7 +12,6 @@ const isEdit = !!categoria;
   class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm"
 >
   <div class="relative w-full max-w-md rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-6 m-4">
-    <!-- Header -->
     <div class="mb-6 flex items-center justify-between">
       <h2 class="text-xl font-bold text-white">
         {isEdit ? 'Editar Categoria' : 'Nova Categoria'}
@@ -21,7 +20,6 @@ const isEdit = !!categoria;
         type="button"
         id="close-category-dialog"
         class="rounded-lg p-2 text-[#a0a0a0] transition hover:bg-[#1a1a1a] hover:text-white"
-        aria-label="Fechar"
       >
         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -29,11 +27,9 @@ const isEdit = !!categoria;
       </button>
     </div>
 
-    <!-- Form -->
     <form id="category-form" class="space-y-4">
       <input type="hidden" id="category-id" name="id" value={categoria?.id || ''} />
 
-      <!-- Nome -->
       <div>
         <label for="category-nome" class="block text-sm font-medium text-[#e0e0e0]">
           Nome da Categoria *
@@ -49,7 +45,6 @@ const isEdit = !!categoria;
         />
       </div>
 
-      <!-- Botões -->
       <div class="flex items-center justify-end gap-3 pt-4">
         <button
           type="button"
@@ -71,13 +66,14 @@ const isEdit = !!categoria;
 </div>
 
 <script>
+  import { criarCategoria, editarCategoria } from '../../lib/api';
+
   const dialog = document.getElementById('category-dialog');
   const form = document.getElementById('category-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-category-btn') as HTMLButtonElement;
   const closeBtn = document.getElementById('close-category-dialog');
   const cancelBtn = document.getElementById('cancel-category-btn');
 
-  // Abrir dialog
   window.openCategoryDialog = (categoria?: any) => {
     if (categoria) {
       (document.getElementById('category-id') as HTMLInputElement).value = categoria.id || '';
@@ -88,7 +84,6 @@ const isEdit = !!categoria;
     dialog?.classList.add('flex');
   };
 
-  // Fechar dialog
   const closeDialog = () => {
     dialog?.classList.add('hidden');
     dialog?.classList.remove('flex');
@@ -98,74 +93,35 @@ const isEdit = !!categoria;
   closeBtn?.addEventListener('click', closeDialog);
   cancelBtn?.addEventListener('click', closeDialog);
 
-  // Submit do formulário
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = new FormData(form);
     const categoryId = formData.get('id') as string;
+    const nome = formData.get('nome') as string;
     const isEdit = !!categoryId;
-
-    const categoria = {
-      nome: formData.get('nome'),
-    };
-
-    console.log('📤 Enviando categoria:', categoria, 'isEdit:', isEdit);
 
     submitBtn.disabled = true;
     submitBtn.textContent = isEdit ? 'Salvando...' : 'Criando...';
 
     try {
-      const url = isEdit ? `/api/admin/categorias/${categoryId}` : '/api/admin/categorias';
-      const method = isEdit ? 'PUT' : 'POST';
+      const result = isEdit 
+        ? await editarCategoria(categoryId, nome)
+        : await criarCategoria(nome);
 
-      console.log(`📤 ${method} ${url}`);
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoria),
-        cache: 'no-store',
-      });
-
-      console.log('📥 Response status:', response.status, response.statusText);
-      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
-
-      let data;
-      try {
-        const text = await response.text();
-        console.log('📥 Response text:', text);
-        if (text) {
-          data = JSON.parse(text);
-          console.log('📥 Parsed data:', data);
-        } else {
-          console.error('❌ Resposta vazia!');
-          data = { error: 'Resposta vazia do servidor' };
-        }
-      } catch (parseError) {
-        console.error('❌ Erro ao fazer parse do JSON:', parseError);
-        data = { error: 'Resposta inválida do servidor' };
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao salvar categoria');
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || `Erro ${response.status}: ${response.statusText}`);
-      }
-
-      console.log('✅ Sucesso!', data);
       window.showToast(
         isEdit ? 'Categoria atualizada!' : 'Categoria criada!',
         'success'
       );
 
       closeDialog();
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      setTimeout(() => window.location.reload(), 500);
     } catch (error: any) {
-      console.error('❌ Erro ao salvar categoria:', error);
+      console.error('Erro:', error);
       window.showToast(error.message || 'Erro ao salvar categoria', 'error');
     } finally {
       submitBtn.disabled = false;
@@ -173,7 +129,6 @@ const isEdit = !!categoria;
     }
   });
 
-  // Expor função globalmente
   declare global {
     interface Window {
       openCategoryDialog: (categoria?: any) => void;

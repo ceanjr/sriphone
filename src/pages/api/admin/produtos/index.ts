@@ -3,21 +3,27 @@ import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../../lib/auth
 
 export const prerender = false;
 
-// GET - Listar todos os produtos
+const headers = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+};
+
+function jsonResponse(data: any, status: number = 200) {
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+function errorResponse(error: string, status: number = 500) {
+  console.error(`[API Error ${status}]:`, error);
+  return jsonResponse({ error }, status);
+}
+
 export const GET: APIRoute = async ({ request, cookies }) => {
-  const headers = { 
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-  };
-  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
+    
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
-        status: 401,
-        headers,
-      });
+      return errorResponse('Não autenticado', 401);
     }
 
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
@@ -27,60 +33,49 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Erro Supabase ao listar produtos:', error);
-      return new Response(JSON.stringify({ error: error.message || 'Erro ao listar produtos' }), {
-        status: 500,
-        headers,
-      });
+      console.error('[Supabase Error]:', error);
+      return errorResponse(error.message || 'Erro ao buscar produtos', 500);
     }
 
-    return new Response(JSON.stringify({ produtos: data || [] }), {
-      status: 200,
-      headers,
-    });
+    return jsonResponse({ produtos: data || [] });
   } catch (error: any) {
-    console.error('Erro ao listar produtos:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Erro ao listar produtos' }), {
-      status: 500,
-      headers,
-    });
+    return errorResponse(error.message || 'Erro interno do servidor', 500);
   }
 };
 
-// POST - Criar novo produto
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const headers = { 
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-  };
-  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
+    
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
-        status: 401,
-        headers,
-      });
+      return errorResponse('Não autenticado', 401);
     }
 
     let body;
     try {
       body = await request.json();
     } catch {
-      return new Response(JSON.stringify({ error: 'JSON inválido' }), {
-        status: 400,
-        headers,
-      });
+      return errorResponse('JSON inválido', 400);
     }
 
-    if (!body || !body.nome || typeof body.nome !== 'string' || body.nome.trim() === '') {
-      return new Response(JSON.stringify({ error: 'O nome do produto é obrigatório.' }), {
-        status: 400,
-        headers,
-      });
+    // Validações
+    if (!body.nome || typeof body.nome !== 'string' || body.nome.trim() === '') {
+      return errorResponse('O nome do produto é obrigatório', 400);
     }
-    
+
+    if (!body.codigo || typeof body.codigo !== 'string' || body.codigo.trim() === '') {
+      return errorResponse('O código do produto é obrigatório', 400);
+    }
+
+    if (!body.preco || isNaN(parseFloat(body.preco)) || parseFloat(body.preco) <= 0) {
+      return errorResponse('O preço do produto é obrigatório e deve ser maior que zero', 400);
+    }
+
+    if (!body.categoria_id) {
+      return errorResponse('A categoria do produto é obrigatória', 400);
+    }
+
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('produtos')
@@ -89,37 +84,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .single();
 
     if (error) {
-      console.error('Erro Supabase ao criar produto:', error);
+      console.error('[Supabase Error]:', error);
       
-      if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
-        return new Response(JSON.stringify({ error: 'Um produto com este nome já existe.' }), {
-          status: 409,
-          headers,
-        });
+      if (error.code === '23505') {
+        return errorResponse('Um produto com este código já existe', 409);
       }
 
       if (error.code === '23503') {
-        return new Response(JSON.stringify({ error: 'Categoria inválida.' }), {
-          status: 400,
-          headers,
-        });
+        return errorResponse('Categoria inválida', 400);
       }
 
-      return new Response(JSON.stringify({ error: error.message || 'Erro ao criar produto' }), {
-        status: 500,
-        headers,
-      });
+      return errorResponse(error.message || 'Erro ao criar produto', 500);
     }
 
-    return new Response(JSON.stringify({ produto: data }), {
-      status: 201,
-      headers,
-    });
+    return jsonResponse({ produto: data }, 201);
   } catch (error: any) {
-    console.error('Erro ao criar produto:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Erro ao criar produto' }), {
-      status: 500,
-      headers,
-    });
+    return errorResponse(error.message || 'Erro interno do servidor', 500);
   }
 };

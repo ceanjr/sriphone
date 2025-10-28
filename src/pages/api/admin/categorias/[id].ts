@@ -3,42 +3,45 @@ import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../../lib/auth
 
 export const prerender = false;
 
-// PUT - Atualizar categoria
+const headers = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+};
+
+function jsonResponse(data: any, status: number = 200) {
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+function errorResponse(error: string, status: number = 500) {
+  console.error(`[API Error ${status}]:`, error);
+  return jsonResponse({ error }, status);
+}
+
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
-  const headers = { 
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-  };
-  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
+    
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
-        status: 401,
-        headers,
-      });
+      return errorResponse('Não autenticado', 401);
     }
 
     const { id } = params;
-    
+    if (!id) {
+      return errorResponse('ID não fornecido', 400);
+    }
+
     let body;
     try {
       body = await request.json();
     } catch {
-      return new Response(JSON.stringify({ error: 'JSON inválido' }), {
-        status: 400,
-        headers,
-      });
+      return errorResponse('JSON inválido', 400);
     }
 
-    if (!body || !body.nome || typeof body.nome !== 'string' || body.nome.trim() === '') {
-      return new Response(JSON.stringify({ error: 'O nome da categoria é obrigatório.' }), {
-        status: 400,
-        headers,
-      });
+    if (!body.nome || typeof body.nome !== 'string' || body.nome.trim() === '') {
+      return errorResponse('O nome da categoria é obrigatório', 400);
     }
-    
+
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('categorias')
@@ -48,67 +51,39 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       .single();
 
     if (error) {
-      console.error('Erro Supabase ao atualizar categoria:', error);
+      console.error('[Supabase Error]:', error);
       
-      if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
-        return new Response(JSON.stringify({ error: 'Uma categoria com este nome já existe.' }), {
-          status: 409,
-          headers,
-        });
+      if (error.code === '23505') {
+        return errorResponse('Uma categoria com este nome já existe', 409);
       }
 
-      return new Response(JSON.stringify({ error: error.message || 'Erro ao atualizar categoria' }), {
-        status: 500,
-        headers,
-      });
+      return errorResponse(error.message || 'Erro ao atualizar categoria', 500);
     }
 
     if (!data) {
-      return new Response(JSON.stringify({ error: 'Categoria não encontrada' }), {
-        status: 404,
-        headers,
-      });
+      return errorResponse('Categoria não encontrada', 404);
     }
 
-    return new Response(JSON.stringify({ categoria: data }), {
-      status: 200,
-      headers,
-    });
+    return jsonResponse({ categoria: data });
   } catch (error: any) {
-    console.error('Erro ao atualizar categoria:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Erro ao atualizar categoria' }), {
-      status: 500,
-      headers,
-    });
+    return errorResponse(error.message || 'Erro interno do servidor', 500);
   }
 };
 
-// DELETE - Deletar categoria
 export const DELETE: APIRoute = async ({ params, request, cookies }) => {
-  const headers = { 
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-  };
-  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
+    
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
-        status: 401,
-        headers,
-      });
+      return errorResponse('Não autenticado', 401);
     }
 
     const { id } = params;
-    
     if (!id) {
-      return new Response(JSON.stringify({ error: 'ID da categoria não fornecido' }), {
-        status: 400,
-        headers,
-      });
+      return errorResponse('ID não fornecido', 400);
     }
-    
+
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('categorias')
@@ -117,41 +92,21 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       .select();
 
     if (error) {
-      console.error('Erro Supabase ao deletar categoria:', error);
+      console.error('[Supabase Error]:', error);
       
       if (error.code === '23503') {
-        return new Response(JSON.stringify({ 
-          error: 'Esta categoria não pode ser deletada pois está sendo usada por produtos.' 
-        }), {
-          status: 409,
-          headers,
-        });
+        return errorResponse('Esta categoria não pode ser deletada pois está sendo usada por produtos', 409);
       }
 
-      return new Response(JSON.stringify({ error: error.message || 'Erro ao deletar categoria' }), {
-        status: 500,
-        headers,
-      });
+      return errorResponse(error.message || 'Erro ao deletar categoria', 500);
     }
 
     if (!data || data.length === 0) {
-      return new Response(JSON.stringify({ 
-        error: 'Categoria não encontrada' 
-      }), {
-        status: 404,
-        headers,
-      });
+      return errorResponse('Categoria não encontrada', 404);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers,
-    });
+    return jsonResponse({ success: true });
   } catch (error: any) {
-    console.error('Erro ao deletar categoria:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Erro ao deletar categoria' }), {
-      status: 500,
-      headers,
-    });
+    return errorResponse(error.message || 'Erro interno do servidor', 500);
   }
 };

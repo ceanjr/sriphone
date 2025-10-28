@@ -3,13 +3,11 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import CategoryFormDialog from '../../components/admin/CategoryFormDialog.astro';
 import { supabase } from '../../lib/supabase';
 
-// Buscar todas as categorias com contagem de produtos
 const { data: categorias, error } = await supabase
   .from('categorias')
   .select('*')
   .order('nome');
 
-// Para cada categoria, buscar contagem de produtos
 const categoriasComContagem = await Promise.all(
   (categorias || []).map(async (cat) => {
     const { count } = await supabase
@@ -23,7 +21,6 @@ const categoriasComContagem = await Promise.all(
 
 <AdminLayout title="Categorias" description="Gerenciar categorias de produtos">
   <div class="flex flex-col">
-    <!-- Header -->
     <div class="flex min-h-[64px] items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 md:px-6">
       <div class="min-w-0 flex-1">
         <h1 class="truncate text-lg font-bold text-white md:text-xl">Categorias</h1>
@@ -38,7 +35,6 @@ const categoriasComContagem = await Promise.all(
       </button>
     </div>
 
-    <!-- Content -->
     <div class="flex-1 p-4 md:p-6">
       {!categoriasComContagem || categoriasComContagem.length === 0 ? (
         <div class="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-12 text-center">
@@ -46,9 +42,7 @@ const categoriasComContagem = await Promise.all(
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
           <h3 class="mt-4 text-lg font-medium text-white">Nenhuma categoria cadastrada</h3>
-          <p class="mt-2 text-sm text-[#a0a0a0]">
-            Comece criando sua primeira categoria.
-          </p>
+          <p class="mt-2 text-sm text-[#a0a0a0]">Comece criando sua primeira categoria.</p>
           <button
             onclick="window.openCategoryDialog()"
             class="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
@@ -72,7 +66,6 @@ const categoriasComContagem = await Promise.all(
                     class="rounded-lg bg-white/10 p-2 text-white transition hover:bg-white/20"
                     data-action="edit"
                     data-categoria={JSON.stringify(categoria)}
-                    title="Editar"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -84,7 +77,6 @@ const categoriasComContagem = await Promise.all(
                     data-id={categoria.id}
                     data-nome={categoria.nome}
                     data-count={categoria.produtos_count}
-                    title="Deletar"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -99,17 +91,16 @@ const categoriasComContagem = await Promise.all(
     </div>
   </div>
 
-  <!-- Category Form Dialog -->
   <CategoryFormDialog />
 </AdminLayout>
 
 <script>
-  // Botão adicionar categoria
+  import { deletarCategoria } from '../../lib/api';
+
   document.getElementById('add-category-btn')?.addEventListener('click', () => {
     window.openCategoryDialog();
   });
 
-  // Botões de editar
   document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const categoriaJson = (e.currentTarget as HTMLElement).dataset.categoria;
@@ -120,7 +111,6 @@ const categoriasComContagem = await Promise.all(
     });
   });
 
-  // Botões de deletar
   document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const element = e.currentTarget as HTMLElement;
@@ -128,6 +118,8 @@ const categoriasComContagem = await Promise.all(
       const nome = element.dataset.nome;
       const count = parseInt(element.dataset.count || '0');
       
+      if (!id) return;
+
       let confirmMsg = `Tem certeza que deseja deletar a categoria "${nome}"?`;
       if (count > 0) {
         confirmMsg += `\n\nAtenção: Esta categoria possui ${count} produto(s) associado(s).`;
@@ -135,34 +127,16 @@ const categoriasComContagem = await Promise.all(
       
       if (confirm(confirmMsg)) {
         try {
-          const response = await fetch(`/api/admin/categorias/${id}`, {
-            method: 'DELETE',
-            cache: 'no-store',
-          });
-          
-          let data;
-          try {
-            const text = await response.text();
-            if (text) {
-              data = JSON.parse(text);
-            } else {
-              data = { error: 'Resposta vazia do servidor' };
-            }
-          } catch (parseError) {
-            console.error('Erro ao fazer parse do JSON:', parseError);
-            data = { error: 'Resposta inválida do servidor' };
+          const result = await deletarCategoria(id);
+
+          if (!result.success) {
+            throw new Error(result.error || 'Erro ao deletar categoria');
           }
 
-          if (response.ok) {
-            window.showToast('Categoria deletada com sucesso!', 'success');
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          } else {
-            throw new Error(data.error || `Erro ${response.status}: ${response.statusText}`);
-          }
+          window.showToast('Categoria deletada com sucesso!', 'success');
+          setTimeout(() => window.location.reload(), 500);
         } catch (error: any) {
-          console.error('Erro ao deletar categoria:', error);
+          console.error('Erro:', error);
           window.showToast(error.message || 'Erro ao deletar categoria', 'error');
         }
       }

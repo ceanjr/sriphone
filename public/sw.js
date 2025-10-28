@@ -1,9 +1,9 @@
-const CACHE_VERSION = 'v6-pwa';
+// VERSÃO CRÍTICA - FORÇA ATUALIZAÇÃO IMEDIATA
+const CACHE_VERSION = 'v7-force-update';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
 
-// Assets críticos para cache agressivo (apenas arquivos que existem)
 const STATIC_ASSETS = [
   '/',
   '/catalogo',
@@ -17,37 +17,62 @@ const STATIC_ASSETS = [
   '/favicon.svg'
 ];
 
-const MAX_CACHE_SIZE = 100; // Aumentado para performance
-const MAX_CACHE_AGE = 30 * 24 * 60 * 60 * 1000; // 30 dias - mais agressivo
+const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_AGE = 30 * 24 * 60 * 60 * 1000;
 
-// Instalação - cachear assets estáticos (com tratamento de erro)
+// INSTALAÇÃO - Força skip waiting imediato
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing version:', CACHE_VERSION);
+  
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
-        // Cachear individualmente para evitar falha total
         return Promise.allSettled(
           STATIC_ASSETS.map(url => 
-            cache.add(url).catch(err => console.warn(`Failed to cache ${url}:`, err))
+            cache.add(url).catch(err => console.warn(`[SW] Failed to cache ${url}:`, err))
           )
         );
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('[SW] Skip waiting - force activation');
+        return self.skipWaiting(); // FORÇA ativação imediata
+      })
   );
 });
 
-// Ativação - limpar caches antigos
+// ATIVAÇÃO - Limpa tudo e assume controle imediatamente
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating version:', CACHE_VERSION);
+  
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
+    Promise.all([
+      // Limpar TODOS os caches antigos
+      caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames
-            .filter((name) => name.startsWith('sriphone-') && name !== STATIC_CACHE && name !== DYNAMIC_CACHE && name !== IMAGE_CACHE)
-            .map((name) => caches.delete(name))
+            .filter((name) => name.startsWith('sriphone-') && !name.includes(CACHE_VERSION))
+            .map((name) => {
+              console.log('[SW] Deleting old cache:', name);
+              return caches.delete(name);
+            })
         );
-      })
-      .then(() => self.clients.claim())
+      }),
+      // Assume controle de TODAS as páginas imediatamente
+      self.clients.claim()
+    ]).then(() => {
+      console.log('[SW] Activated and claimed all clients');
+      
+      // Notifica TODOS os clientes para recarregar
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          console.log('[SW] Sending reload message to client');
+          client.postMessage({
+            type: 'FORCE_RELOAD',
+            version: CACHE_VERSION
+          });
+        });
+      });
+    })
   );
 });
 
@@ -62,25 +87,30 @@ const limitCacheSize = (cacheName, maxItems) => {
   });
 };
 
-// Fetch - estratégias diferentes por tipo de recurso
+// FETCH - Com exclusões críticas
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // NUNCA cachear rotas de API do admin (POST, PUT, DELETE, GET)
+  // ❌ NUNCA cachear APIs de admin
   if (url.pathname.startsWith('/api/admin/')) {
-    return; // Deixa passar direto, sem cache
+    return; // Bypass - vai direto pro servidor
   }
 
-  // NUNCA cachear outras APIs internas
+  // ❌ NUNCA cachear outras APIs
   if (url.pathname.startsWith('/api/')) {
-    return; // Deixa passar direto, sem cache
+    return; // Bypass
   }
 
-  // Ignorar requisições não-GET
+  // ❌ NUNCA cachear páginas de admin
+  if (url.pathname.startsWith('/admin/')) {
+    return; // Bypass
+  }
+
+  // Apenas GET requests
   if (request.method !== 'GET') return;
   
-  // Estratégia para imagens: Cache-First
+  // Imagens: Cache-First
   if (request.destination === 'image' || url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -98,7 +128,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estratégia para CSS/JS: Cache-First com fallback
+  // CSS/JS: Cache-First
   if (request.destination === 'style' || request.destination === 'script' || url.pathname.match(/\.(css|js)$/)) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -115,7 +145,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estratégia para API Supabase: Network-First com timeout
+  // Supabase: Network-First com timeout
   if (url.hostname.includes('supabase')) {
     event.respondWith(
       Promise.race([
@@ -136,7 +166,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Estratégia padrão para páginas: Network-First
+  // Páginas: Network-First
   event.respondWith(
     fetch(request)
       .then((response) => {
@@ -152,4 +182,11 @@ self.addEventListener('fetch', (event) => {
         });
       })
   );
+});
+
+// Mensagens dos clientes
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

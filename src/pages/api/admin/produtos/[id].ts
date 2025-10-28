@@ -3,42 +3,41 @@ import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../../lib/auth
 
 export const prerender = false;
 
-// PUT - Atualizar produto
+const headers = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+};
+
+function jsonResponse(data: any, status: number = 200) {
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
+function errorResponse(error: string, status: number = 500) {
+  console.error(`[API Error ${status}]:`, error);
+  return jsonResponse({ error }, status);
+}
+
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
-  const headers = { 
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-  };
-  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
+    
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
-        status: 401,
-        headers,
-      });
+      return errorResponse('Não autenticado', 401);
     }
 
     const { id } = params;
-    
+    if (!id) {
+      return errorResponse('ID não fornecido', 400);
+    }
+
     let body;
     try {
       body = await request.json();
     } catch {
-      return new Response(JSON.stringify({ error: 'JSON inválido' }), {
-        status: 400,
-        headers,
-      });
+      return errorResponse('JSON inválido', 400);
     }
 
-    if (!body || !body.nome || typeof body.nome !== 'string' || body.nome.trim() === '') {
-      return new Response(JSON.stringify({ error: 'O nome do produto é obrigatório.' }), {
-        status: 400,
-        headers,
-      });
-    }
-    
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('produtos')
@@ -48,74 +47,43 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
       .single();
 
     if (error) {
-      console.error('Erro Supabase ao atualizar produto:', error);
+      console.error('[Supabase Error]:', error);
       
-      if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
-        return new Response(JSON.stringify({ error: 'Um produto com este nome já existe.' }), {
-          status: 409,
-          headers,
-        });
+      if (error.code === '23505') {
+        return errorResponse('Um produto com este código já existe', 409);
       }
 
       if (error.code === '23503') {
-        return new Response(JSON.stringify({ error: 'Categoria inválida.' }), {
-          status: 400,
-          headers,
-        });
+        return errorResponse('Categoria inválida', 400);
       }
 
-      return new Response(JSON.stringify({ error: error.message || 'Erro ao atualizar produto' }), {
-        status: 500,
-        headers,
-      });
+      return errorResponse(error.message || 'Erro ao atualizar produto', 500);
     }
 
     if (!data) {
-      return new Response(JSON.stringify({ error: 'Produto não encontrado' }), {
-        status: 404,
-        headers,
-      });
+      return errorResponse('Produto não encontrado', 404);
     }
 
-    return new Response(JSON.stringify({ produto: data }), {
-      status: 200,
-      headers,
-    });
+    return jsonResponse({ produto: data });
   } catch (error: any) {
-    console.error('Erro ao atualizar produto:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Erro ao atualizar produto' }), {
-      status: 500,
-      headers,
-    });
+    return errorResponse(error.message || 'Erro interno do servidor', 500);
   }
 };
 
-// DELETE - Deletar produto
 export const DELETE: APIRoute = async ({ params, request, cookies }) => {
-  const headers = { 
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
-  };
-  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
+    
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
-        status: 401,
-        headers,
-      });
+      return errorResponse('Não autenticado', 401);
     }
 
     const { id } = params;
-    
     if (!id) {
-      return new Response(JSON.stringify({ error: 'ID do produto não fornecido' }), {
-        status: 400,
-        headers,
-      });
+      return errorResponse('ID não fornecido', 400);
     }
-    
+
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('produtos')
@@ -124,31 +92,16 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       .select();
 
     if (error) {
-      console.error('Erro Supabase ao deletar produto:', error);
-      return new Response(JSON.stringify({ error: error.message || 'Erro ao deletar produto' }), {
-        status: 500,
-        headers,
-      });
+      console.error('[Supabase Error]:', error);
+      return errorResponse(error.message || 'Erro ao deletar produto', 500);
     }
 
     if (!data || data.length === 0) {
-      return new Response(JSON.stringify({ 
-        error: 'Produto não encontrado' 
-      }), {
-        status: 404,
-        headers,
-      });
+      return errorResponse('Produto não encontrado', 404);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers,
-    });
+    return jsonResponse({ success: true });
   } catch (error: any) {
-    console.error('Erro ao deletar produto:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Erro ao deletar produto' }), {
-      status: 500,
-      headers,
-    });
+    return errorResponse(error.message || 'Erro interno do servidor', 500);
   }
 };
