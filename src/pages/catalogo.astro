@@ -875,6 +875,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             debugEl.log(`🖱️ CLICK: ${id}`);
             debugEl.log(`  href: ${href}`);
             debugEl.log(`  tag: ${(e.target as HTMLElement).tagName}`);
+            
+            // Verificar se vai navegar
+            setTimeout(() => {
+              debugEl.log(`✈️ Navegando para: ${href}`);
+            }, 100);
           });
         });
 

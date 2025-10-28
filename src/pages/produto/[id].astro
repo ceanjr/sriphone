@@ -5,23 +5,34 @@ import Footer from '../../components/Footer.astro';
 import { productService } from '../../lib/supabase';
 import '../../styles/pages/produto.css';
 
+console.log('🔍 PÁGINA PRODUTO - Iniciando');
+
 const { id } = Astro.params;
 
+console.log('  - ID recebido:', id);
+
 if (!id) {
+  console.log('  ❌ ID não fornecido, redirecionando');
   return Astro.redirect('/catalogo');
 }
 
 let produto;
 try {
+  console.log('  - Buscando produto...');
   produto = await productService.getById(id);
   
+  console.log('  - Produto encontrado:', produto ? produto.nome : 'NÃO ENCONTRADO');
+  
   if (!produto) {
+    console.log('  ❌ Produto não existe, redirecionando');
     return Astro.redirect('/catalogo');
   }
 } catch (error) {
-  console.error('Erro ao carregar produto:', error);
+  console.error('  ❌ Erro ao carregar produto:', error);
   return Astro.redirect('/catalogo');
 }
+
+console.log('  ✅ Produto carregado, renderizando página');
 
 const precoFormatado = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
