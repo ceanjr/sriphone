@@ -214,6 +214,29 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       <GerirCategorias />
       <EditarProduto />
     </div>
+    
+    <!-- Script para funções globais dos modais -->
+    <script>
+      // Definir funções globais para abrir modais (sem jQuery)
+      (window as any).abrirFormProduto = () => {
+        console.log('Abrindo formulário de produto...');
+        // Implementação será adicionada depois
+        alert('Formulário de produto - Em desenvolvimento');
+      };
+      
+      (window as any).abrirGerirCategorias = () => {
+        console.log('Abrindo gestão de categorias...');
+        // Implementação será adicionada depois
+        alert('Gestão de categorias - Em desenvolvimento');
+      };
+      
+      (window as any).abrirModalEditarProduto = (produtoData: any) => {
+        console.log('Abrindo edição de produto:', produtoData);
+        // Implementação será adicionada depois
+        alert('Edição de produto - Em desenvolvimento');
+      };
+    </script>
+    
     <Footer />
   </main>
 

@@ -1,5 +1,4 @@
-// SERVICE WORKER v8 - Atualizado 2025-10-28
-const CACHE_VERSION = 'v8-2025-10-28';
+const CACHE_VERSION = 'v9-2025-10-28';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
