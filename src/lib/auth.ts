@@ -11,13 +11,29 @@ export async function verifyAuth(cookies: AstroCookies, authHeader?: string | nu
     token = cookies.get('sb-access-token')?.value;
   }
   
-  if (!token) return false;
+  if (!token) {
+    console.log('[Auth] No token found');
+    return false;
+  }
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Adicionar timeout de 5 segundos
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Auth timeout')), 5000)
+    );
     
-    return !error && !!user;
-  } catch {
+    const authPromise = supabase.auth.getUser(token);
+    
+    const { data: { user }, error } = await Promise.race([authPromise, timeoutPromise]);
+    
+    if (error) {
+      console.log('[Auth] Error:', error.message);
+      return false;
+    }
+    
+    return !!user;
+  } catch (error: any) {
+    console.log('[Auth] Exception:', error.message);
     return false;
   }
 }

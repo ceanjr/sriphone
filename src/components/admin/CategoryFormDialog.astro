@@ -110,12 +110,16 @@ const isEdit = !!categoria;
       nome: formData.get('nome'),
     };
 
+    console.log('📤 Enviando categoria:', categoria, 'isEdit:', isEdit);
+
     submitBtn.disabled = true;
     submitBtn.textContent = isEdit ? 'Salvando...' : 'Criando...';
 
     try {
       const url = isEdit ? `/api/admin/categorias/${categoryId}` : '/api/admin/categorias';
       const method = isEdit ? 'PUT' : 'POST';
+
+      console.log(`📤 ${method} ${url}`);
 
       const response = await fetch(url, {
         method,
@@ -126,16 +130,22 @@ const isEdit = !!categoria;
         cache: 'no-store',
       });
 
+      console.log('📥 Response status:', response.status, response.statusText);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+
       let data;
       try {
         const text = await response.text();
+        console.log('📥 Response text:', text);
         if (text) {
           data = JSON.parse(text);
+          console.log('📥 Parsed data:', data);
         } else {
+          console.error('❌ Resposta vazia!');
           data = { error: 'Resposta vazia do servidor' };
         }
       } catch (parseError) {
-        console.error('Erro ao fazer parse do JSON:', parseError);
+        console.error('❌ Erro ao fazer parse do JSON:', parseError);
         data = { error: 'Resposta inválida do servidor' };
       }
 
@@ -143,6 +153,7 @@ const isEdit = !!categoria;
         throw new Error(data.error || `Erro ${response.status}: ${response.statusText}`);
       }
 
+      console.log('✅ Sucesso!', data);
       window.showToast(
         isEdit ? 'Categoria atualizada!' : 'Categoria criada!',
         'success'
@@ -154,7 +165,7 @@ const isEdit = !!categoria;
         window.location.reload();
       }, 1000);
     } catch (error: any) {
-      console.error('Erro ao salvar categoria:', error);
+      console.error('❌ Erro ao salvar categoria:', error);
       window.showToast(error.message || 'Erro ao salvar categoria', 'error');
     } finally {
       submitBtn.disabled = false;
