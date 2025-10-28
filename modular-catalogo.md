@@ -70,8 +70,8 @@ src/
 ## ✅ Checklist de Implementação
 
 ### 1️⃣ **Separar o Estado e Configuração**
-- [ ] Criar `lib/catalog/core/state.ts` e `lib/catalog/core/config.ts`.
-- [ ] Definir `CatalogState` com produtos, categorias e filtros.
+- [x] Criar `lib/catalog/core/state.ts` e `lib/catalog/core/config.ts`.
+- [x] Definir `CatalogState` com produtos, categorias e filtros.
 - [ ] Implementar funções `getState()` e `updateState()`.
 
 ### 2️⃣ **Isolar a Lógica de Negócio**
@@ -79,19 +79,19 @@ src/
 - [ ] Garantir que todas retornem dados puros, sem manipular DOM.
 
 ### 3️⃣ **Organizar as Requisições e Cache**
-- [ ] Criar `lib/catalog/services/api.ts` e `cache.ts`.
-- [ ] Implementar pré-carregamento de produtos e cache local (sessionStorage).
-- [ ] Adicionar controle de erros e fallback.
+- [x] Criar `lib/catalog/services/api.ts` e `cache.ts`.
+- [x] Implementar pré-carregamento de produtos e cache local (sessionStorage).
+- [x] Adicionar controle de erros e fallback.
 
 ### 4️⃣ **Dividir Renderização e Templates**
-- [ ] Mover `produtoCard` e `categoriaSecao` para `lib/catalog/render/templates.ts`.
+- [x] Mover `produtoCard` e `categoriaSecao` para `lib/catalog/render/templates.ts`.
 - [ ] Criar `renderer.ts` com funções `renderProdutos()` e `renderCategorias()`.
 - [ ] Adicionar suporte a *lazy-loading* e placeholders (ProductCardSkeleton).
 
 ### 5️⃣ **Gerenciar UI e Eventos**
 - [ ] Criar `lib/catalog/ui/handlers.ts` e `lib/catalog/ui/events.ts`.
 - [ ] Centralizar listeners de filtros, busca, visualização e login.
-- [ ] Aplicar debounce de 300 ms no input de busca.
+- [x] Aplicar debounce de 300 ms no input de busca.
 
 ### 6️⃣ **Camada de Performance**
 - [ ] Criar `lib/catalog/performance/imageLoader.ts` e `metrics.ts`.
