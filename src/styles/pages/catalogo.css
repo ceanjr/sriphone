@@ -492,6 +492,7 @@
   justify-content: center;
   border-bottom: 1px solid #1a1a1a;
   overflow: hidden;
+  pointer-events: none; /* Permitir que o click passe para o link pai */
 }
 
 /* Container para lazy loading */
@@ -735,7 +736,8 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  position: relative; /* Adiciona position relative para controle fino */
+  position: relative;
+  pointer-events: none; /* Permitir que o click passe para o link pai */
 }
 
 /* Ajustar o h3 para alinhar com o topo do line-height */
@@ -1434,6 +1436,7 @@
   transition: all 0.2s ease;
   -webkit-tap-highlight-color: transparent;
   box-sizing: border-box;
+  pointer-events: auto !important; /* Botão de editar precisa capturar clicks */
 }
 
 /* Sempre visível quando autenticado */
