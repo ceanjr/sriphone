@@ -56,9 +56,9 @@ const isEdit = !!categoria;
         <button
           type="submit"
           id="submit-category-btn"
-          class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0] disabled:opacity-50 disabled:cursor-not-allowed"
+          class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0] disabled:opacity-50"
         >
-          {isEdit ? 'Salvar' : 'Criar Categoria'}
+          {isEdit ? 'Salvar' : 'Criar'}
         </button>
       </div>
     </form>
@@ -66,7 +66,7 @@ const isEdit = !!categoria;
 </div>
 
 <script>
-  import { criarCategoria, editarCategoria } from '../../lib/api';
+  import { criarCategoria, editarCategoria } from '../../lib/crud';
 
   const dialog = document.getElementById('category-dialog');
   const form = document.getElementById('category-form') as HTMLFormElement;
@@ -110,7 +110,7 @@ const isEdit = !!categoria;
         : await criarCategoria(nome);
 
       if (!result.success) {
-        throw new Error(result.error || 'Erro ao salvar categoria');
+        throw new Error(result.error);
       }
 
       window.showToast(
@@ -119,13 +119,12 @@ const isEdit = !!categoria;
       );
 
       closeDialog();
-      setTimeout(() => window.location.reload(), 500);
+      setTimeout(() => window.location.reload(), 300);
     } catch (error: any) {
-      console.error('Erro:', error);
-      window.showToast(error.message || 'Erro ao salvar categoria', 'error');
+      window.showToast(error.message || 'Erro ao salvar', 'error');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = isEdit ? 'Salvar' : 'Criar Categoria';
+      submitBtn.textContent = isEdit ? 'Salvar' : 'Criar';
     }
   });
 
