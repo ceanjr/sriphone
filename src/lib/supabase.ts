@@ -90,11 +90,9 @@ export const productService = {
     return data as (Product & { categoria: Category })[];
   },
 
-  async getPaginated(page: number = 0, limit: number = 30) {
-    const from = page * limit;
-    const to = from + limit - 1;
-
-    const { data, error, count } = await supabase
+  // Paginação cursor-based (mais eficiente)
+  async getPaginated(cursor?: string | null, limit: number = 30) {
+    let query = supabase
       .from('produtos')
       .select(
         `
@@ -109,21 +107,63 @@ export const productService = {
         imagens,
         created_at,
         categoria:categorias(id, nome)
-      `,
-        { count: 'exact' }
+      `
       )
       .order('created_at', { ascending: false })
-      .range(from, to);
-
+      .limit(limit);
+    
+    // Cursor-based pagination (mais eficiente que offset)
+    if (cursor) {
+      query = query.lt('created_at', cursor);
+    }
+    
+    const { data, error } = await query;
     if (error) throw error;
-    return { 
-      data: data as (Product & { categoria: Category })[], 
-      count: count || 0,
-      hasMore: count ? (to < count - 1) : false
+    
+    return {
+      produtos: data as (Product & { categoria: Category })[],
+      nextCursor: data.length === limit ? data[data.length - 1].created_at : null
     };
   },
 
-  async getByCategory(categoryId: string, page: number = 0, limit: number = 30) {
+  // Paginação por categoria
+  async getByCategory(categoriaId: string, cursor?: string | null, limit: number = 30) {
+    let query = supabase
+      .from('produtos')
+      .select(
+        `
+        id,
+        codigo,
+        nome,
+        descricao,
+        preco,
+        condicao,
+        bateria,
+        categoria_id,
+        imagens,
+        created_at,
+        categoria:categorias(id, nome)
+      `
+      )
+      .eq('categoria_id', categoriaId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (cursor) {
+      query = query.lt('created_at', cursor);
+    }
+    
+    const { data, error } = await query;
+    if (error) throw error;
+    
+    return {
+      produtos: data as (Product & { categoria: Category })[],
+      nextCursor: data.length === limit ? data[data.length - 1].created_at : null
+    };
+  },
+
+  // Manter offset-based para compatibilidade (deprecated)
+  async getPaginatedOffset(page: number = 0, limit: number = 30) {
     const from = page * limit;
     const to = from + limit - 1;
 
@@ -145,7 +185,6 @@ export const productService = {
       `,
         { count: 'exact' }
       )
-      .eq('categoria_id', categoryId)
       .order('created_at', { ascending: false })
       .range(from, to);
 

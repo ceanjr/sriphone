@@ -1,4 +1,7 @@
 ---
+// ✅ OTIMIZAÇÃO: SSG com ISR para melhor performance
+export const prerender = true;
+
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -9,6 +12,11 @@ import '../styles/pages/catalogo.css';
 
 import { initCatalogo } from '../scripts/catalogo.js';
 import { optimizeSupabaseImage, getThumbnailUrl } from '../lib/imageOptimizer';
+
+// Buscar dados no servidor para SSG
+import { productService, categoryService } from '../lib/supabase';
+const produtosIniciais = await productService.getPaginated(undefined, 30);
+const categorias = await categoryService.getAll();
 
 const metaDescription =
   'Explore nossa coleção exclusiva de iPhones novos e seminovos com garantia. Preços competitivos e qualidade certificada.';
@@ -295,6 +303,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       </section>
     </section>
 
+    <!-- ✅ OTIMIZAÇÃO: Dados iniciais inline para SSG -->
+    <script type="application/json" id="initial-data">
+      {JSON.stringify({
+        produtos: produtosIniciais.produtos,
+        nextCursor: produtosIniciais.nextCursor,
+        categorias: categorias
+      })}
+    </script>
+
     <!-- Modal de Login -->
     <div id="modal-login" class="modal-login">
       <div class="modal-overlay"></div>
@@ -323,16 +340,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   </main>
 
   <script>
-    import {
-      productService,
-      categoryService,
-      authService,
-    } from '../lib/supabase';
+    // ✅ OTIMIZAÇÃO: Remover import do Supabase do cliente
+    import { authService } from '../lib/supabase';
+
+    // ==================== Carregar Dados Iniciais ====================
+    const initialDataEl = document.getElementById('initial-data');
+    const initialData = initialDataEl ? JSON.parse(initialDataEl.textContent || '{}') : {};
 
     // ==================== Estado ====================
     const state = {
-      produtos: [],
-      categorias: [],
+      produtos: initialData.produtos || [],
+      categorias: initialData.categorias || [],
+      nextCursor: initialData.nextCursor || null,
       categoriaAtiva: 'todos',
       modoVisualizacao: window.innerWidth < 768 ? 'coluna' : 'grade',
       filtros: {
@@ -1013,74 +1032,31 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     // ==================== API ====================
     const api = {
       async carregarDados() {
-        
         try {
           render.loading(true);
-          if (elementos.emptyState) elementos.emptyState.style.display = 'none';
-          if (elementos.produtosContainer)
-            elementos.produtosContainer.innerHTML = '';
-
-          // Verificar cache
-          const cacheKey = 'sriphone-produtos-cache';
-          const cacheTimeKey = 'sriphone-produtos-cache-time';
-          const imagesCacheKey = 'sriphone-images-cache';
-          const cacheMaxAge = 10 * 60 * 1000; // 10 minutos
-
-          const cachedData = sessionStorage.getItem(cacheKey);
-          const cacheTime = sessionStorage.getItem(cacheTimeKey);
-
-          if (cachedData && cacheTime) {
-            const age = Date.now() - parseInt(cacheTime);
-            if (age < cacheMaxAge) {
-              const { produtos, categorias } = JSON.parse(cachedData);
-              state.produtos = produtos;
-              state.categorias = categorias;
-
-              // Precarregar imagens principais em background
-              setTimeout(() => {
-                const imagesToPreload = produtos
-                  .slice(0, 6) // Primeiras 6 imagens
-                  .map((p: { imagens: any[] }) => p.imagens?.[0])
-                  .filter(Boolean);
-
-                imagesToPreload.forEach((src: string, index: number) => {
-                  setTimeout(() => {
-                    const img = new Image();
-                    img.src = src;
-                  }, index * 100);
-                });
-              }, 500);
-
-              render.categorias();
-              render.produtos();
-              render.loading(false);
-              return;
-            }
+          
+          // ✅ OTIMIZAÇÃO: Usar dados iniciais (já carregados no SSG)
+          if (state.produtos.length > 0) {
+            render.categorias();
+            render.produtos();
+            render.loading(false);
+            return;
           }
-
-          const [produtosData, categoriasData] = await Promise.all([
-            productService.getAll(),
-            categoryService.getAll(),
-          ]);
-
-          state.produtos = produtosData;
-          state.categorias = categoriasData;
-
-          // Salvar no cache
-          sessionStorage.setItem(
-            cacheKey,
-            JSON.stringify({
-              produtos: produtosData,
-              categorias: categoriasData,
-            }),
-          );
-          sessionStorage.setItem(cacheTimeKey, Date.now().toString());
-
+          
+          // Se não houver dados iniciais, buscar da API
+          const response = await fetch('/api/produtos?limit=30');
+          const data = await response.json();
+          
+          if (data.error) throw new Error(data.error);
+          
+          state.produtos = data.produtos || [];
+          state.nextCursor = data.nextCursor || null;
+          
           render.categorias();
           render.produtos();
         } catch (error) {
           console.error('Erro ao carregar dados:', error);
-          alert('Erro ao carregar produtos. Tente novamente.');
+          if (elementos.emptyState) elementos.emptyState.style.display = 'block';
         } finally {
           render.loading(false);
           state.paginacao.carregando = false;
@@ -1088,24 +1064,33 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       },
 
       async carregarMaisProdutos() {
-        if (state.paginacao.carregando || !state.paginacao.hasMore) return;
+        if (state.paginacao.carregando || !state.nextCursor) return;
 
         try {
           state.paginacao.carregando = true;
           if (elementos.loadingMore)
             elementos.loadingMore.style.display = 'flex';
 
-          // Aqui você pode implementar a lógica de carregar mais
-          // Por enquanto, vamos usar abordagem client-side (filtrar do state.produtos)
-          // Em produção, seria melhor usar productService.getPaginated()
-
-          // Simular delay de rede
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          // Por enquanto, marcar como não há mais (já carregamos tudo)
-          // Quando implementar paginação no backend, atualizar aqui
-          state.paginacao.hasMore = false;
-          state.paginacao.paginaAtual++;
+          // ✅ OTIMIZAÇÃO: Usar API com cursor-based pagination
+          const params = new URLSearchParams({
+            cursor: state.nextCursor,
+            limit: '30'
+          });
+          
+          if (state.categoriaAtiva !== 'todos') {
+            params.set('categoria', state.categoriaAtiva);
+          }
+          
+          const response = await fetch(`/api/produtos?${params}`);
+          const data = await response.json();
+          
+          if (data.error) throw new Error(data.error);
+          
+          // Adicionar novos produtos
+          state.produtos.push(...(data.produtos || []));
+          state.nextCursor = data.nextCursor;
+          
+          render.produtos();
         } catch (error) {
           console.error('Erro ao carregar mais produtos:', error);
         } finally {
@@ -1116,11 +1101,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       },
 
       invalidarCache() {
-        sessionStorage.removeItem('sriphone-produtos-cache');
-        sessionStorage.removeItem('sriphone-produtos-cache-time');
-        // Resetar paginação
-        state.paginacao.paginaAtual = 1;
-        state.paginacao.hasMore = true;
+        // Não precisa mais de cache sessionStorage complexo
+        // Os dados vêm do SSG
       },
     };
 

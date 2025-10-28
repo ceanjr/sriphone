@@ -3,12 +3,15 @@
 ---
 
 <section class="hero">
+  <!-- ✅ OTIMIZAÇÃO: Dimensões explícitas para prevenir CLS -->
   <img
     src="/images/Barbudo.webp"
+    width="50"
+    height="50"
     class="hero-img"
-    alt="Banner catálogo"
+    alt="Sr. IPHONE Logo"
     fetchpriority="high"
-    decoding="async"
+    decoding="sync"
     loading="eager"
   />
   <h1>Seu iPhone, com <strong>Classe e Confiança</strong></h1>

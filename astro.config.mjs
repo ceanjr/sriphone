@@ -4,8 +4,11 @@ import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: 'https://sriphonevca.com.br',
-  output: 'server',
-  adapter: vercel(),
+  output: 'server', // Astro 5.x: usar 'server' com prerender seletivo
+  adapter: vercel({
+    // ISR no Vercel
+    isr: true,
+  }),
   
   // Otimização de imagens com Astro
   image: {

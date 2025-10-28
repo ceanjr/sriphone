@@ -1,31 +1,35 @@
 ---
+// ✅ OTIMIZAÇÃO: SSG - Gerar páginas de produto no build
+export const prerender = true;
+
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { productService } from '../../lib/supabase';
 import '../../styles/pages/produto.css';
 
-
-const { id } = Astro.params;
-
-
-if (!id) {
-  return Astro.redirect('/catalogo');
-}
-
-let produto;
-try {
-  produto = await productService.getById(id);
-  
-  
-  if (!produto) {
-    return Astro.redirect('/catalogo');
+// Gerar todas as páginas de produto no build
+export async function getStaticPaths() {
+  try {
+    const produtos = await productService.getAll();
+    
+    return produtos.map(produto => ({
+      params: { id: produto.id },
+      props: { produto }
+    }));
+  } catch (error) {
+    console.error('Erro ao gerar páginas de produto:', error);
+    return [];
   }
-} catch (error) {
-  console.error('  ❌ Erro ao carregar produto:', error);
-  return Astro.redirect('/catalogo');
 }
 
+// Receber produto via props (já buscado no build)
+const { produto } = Astro.props;
+
+// Se o produto não existir, redirecionar
+if (!produto) {
+  return Astro.redirect('/catalogo');
+}
 
 const precoFormatado = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -33,7 +37,7 @@ const precoFormatado = new Intl.NumberFormat('pt-BR', {
 }).format(produto.preco);
 
 const metaDescription = `${produto.nome} - ${produto.descricao}. ${precoFormatado}`;
-const canonicalURL = new URL(`/produto/${id}`, Astro.site);
+const canonicalURL = new URL(`/produto/${produto.id}`, Astro.site);
 
 function getBateriaColor(bateria: number): string {
   if (bateria >= 80) return 'bateria-verde';
