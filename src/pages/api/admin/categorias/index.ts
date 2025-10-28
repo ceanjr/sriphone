@@ -73,23 +73,33 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
-    // Handle specific DB errors
-    if (error.code === '23505') { // Unique violation
+    // 1. Log detalhado do erro no servidor para depuração
+    console.error('--- ERRO AO CRIAR CATEGORIA ---', error);
+
+    const headers = { 'Content-Type': 'application/json' };
+
+    // 2. Tratar erro de duplicação (categoria já existe)
+    if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
       return new Response(JSON.stringify({ error: 'Uma categoria com este nome já existe.' }), {
         status: 409, // Conflict
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
-    if (error.code === '23502') { // Not-null violation
-        return new Response(JSON.stringify({ error: 'O nome da categoria não pode ser nulo.' }), {
-            status: 400, // Bad request
-            headers: { 'Content-Type': 'application/json' },
-        });
+
+    // 3. Tratar erro de campo nulo (nome não enviado)
+    if (error.code === '23502') {
+      return new Response(JSON.stringify({ error: 'O nome da categoria não pode ser nulo.' }), {
+        status: 400, // Bad Request
+        headers,
+      });
     }
 
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+    // 4. Tratar outros erros genéricos
+    return new Response(JSON.stringify({ 
+      error: 'Ocorreu um erro inesperado no servidor.' 
+    }), {
+      status: 500, // Internal Server Error
+      headers,
     });
   }
 };
