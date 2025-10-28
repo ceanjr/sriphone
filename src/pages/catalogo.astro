@@ -330,11 +330,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   </main>
 
   <script>
+    console.log('🚀 SCRIPT CATALOGO INICIADO');
+    
     import {
       productService,
       categoryService,
       authService,
     } from '../lib/supabase';
+
+    console.log('📦 Serviços importados');
 
     // ==================== Estado ====================
     const state = {
@@ -1024,6 +1028,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     // ==================== API ====================
     const api = {
       async carregarDados() {
+        console.log('📥 CARREGANDO DADOS...');
+        
         try {
           render.loading(true);
           if (elementos.emptyState) elementos.emptyState.style.display = 'none';
@@ -1220,12 +1226,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Inicialização ====================
     function init(): void {
+      console.log('🎯 INIT CHAMADO');
+      
       const savedView = localStorage.getItem('modoVisualizacao') as
         | 'coluna'
         | 'grade'
         | 'lista';
       state.modoVisualizacao =
         savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
+      
+      console.log('  - Modo visualização:', state.modoVisualizacao);
+      
       setupEventListeners();
       api.carregarDados();
 
@@ -1236,7 +1247,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     }
 
     // Iniciar aplicação
+    console.log('📍 Chamando init()...');
     init();
+    console.log('✅ Init() executado');
 
     // ==================== Controle de Botões de Editar ====================
     async function setupEditButtons() {
