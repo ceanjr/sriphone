@@ -5,7 +5,7 @@
 
 <div class="view-mode-switcher" role="group" aria-label="Modo de visualização">
   <button
-    class="view-btn"
+    class="view-btn visualizacao-btn"
     data-view="grade"
     aria-label="Visualização em grade"
     title="Grade"
@@ -18,7 +18,7 @@
     </svg>
   </button>
   <button
-    class="view-btn"
+    class="view-btn visualizacao-btn"
     data-view="lista"
     aria-label="Visualização em lista"
     title="Lista"
@@ -33,7 +33,7 @@
     </svg>
   </button>
   <button
-    class="view-btn active"
+    class="view-btn visualizacao-btn"
     data-view="coluna"
     aria-label="Visualização em coluna"
     title="Coluna"
@@ -52,6 +52,7 @@
     background: rgba(255, 255, 255, 0.05);
     padding: 0.25rem;
     border-radius: 0.5rem;
+    width: fit-content;
   }
 
   .view-btn {
@@ -65,6 +66,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 2.5rem;
   }
 
   .view-btn svg {
@@ -78,12 +80,19 @@
   }
 
   .view-btn.active {
-    background: #3b82f6;
-    color: white;
+    background: #ffffff;
+    color: #000000;
   }
 
   .view-btn:focus-visible {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid #ffffff;
     outline-offset: 2px;
+  }
+
+  /* Esconder botão coluna no desktop */
+  @media (min-width: 768px) {
+    .view-btn[data-view="coluna"] {
+      display: none;
+    }
   }
 </style>

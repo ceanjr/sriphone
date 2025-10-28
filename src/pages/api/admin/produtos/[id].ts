@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../../lib/supabase';
-import { verifyAuth } from '../../../../lib/auth';
+import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../../lib/auth';
 
 export const prerender = false;
 
 // PUT - Atualizar produto
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
   try {
-    const isAuth = await verifyAuth(cookies);
+    const authHeader = request.headers.get('Authorization');
+    const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
@@ -18,6 +18,7 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     const { id } = params;
     const body = await request.json();
     
+    const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('produtos')
       .update(body)
@@ -40,9 +41,10 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
 };
 
 // DELETE - Deletar produto
-export const DELETE: APIRoute = async ({ params, cookies }) => {
+export const DELETE: APIRoute = async ({ params, request, cookies }) => {
   try {
-    const isAuth = await verifyAuth(cookies);
+    const authHeader = request.headers.get('Authorization');
+    const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
@@ -52,6 +54,7 @@ export const DELETE: APIRoute = async ({ params, cookies }) => {
 
     const { id } = params;
     
+    const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { error } = await supabase
       .from('produtos')
       .delete()

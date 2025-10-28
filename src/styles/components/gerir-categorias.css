@@ -344,8 +344,8 @@
 }
 
 .gc-btn-icon.edit:active {
-    border-color: #3b82f6;
-    color: #3b82f6;
+    border-color: #ffffff;
+    color: #ffffff;
     background: rgba(59, 130, 246, 0.1);
 }
 
@@ -578,8 +578,8 @@
     }
 
     .gc-btn-icon.edit:hover {
-        border-color: #3b82f6;
-        color: #3b82f6;
+        border-color: #ffffff;
+        color: #ffffff;
         background: rgba(59, 130, 246, 0.1);
     }
 

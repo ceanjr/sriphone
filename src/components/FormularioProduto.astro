@@ -183,7 +183,21 @@ import '../styles/components/formulario-produto.css';
 </div>
 
 <script>
+  import { authService } from '../lib/supabase';
+
   // ✅ OTIMIZAÇÃO: Removido imports do Supabase
+
+  // Initialize session token from Supabase on page load
+  async function initializeSession() {
+    try {
+      const session = await authService.getSession();
+      if (session?.access_token) {
+        localStorage.setItem('sb-access-token', session.access_token);
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar sessão:', error);
+    }
+  }
 
   const modalForm = document.getElementById('modal-form-produto');
   const form = document.getElementById('form-produto') as HTMLFormElement;
@@ -203,13 +217,39 @@ import '../styles/components/formulario-produto.css';
   const MAX_IMAGES = 5;
   let arquivosImagem: File[] = [];
 
+  // Initialize session on load
+  initializeSession();
+
+  // Helper para fazer requisições autenticadas
+  async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    // Buscar o token do Supabase do localStorage
+    const supabaseSession = localStorage.getItem('sb-access-token');
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+
+    // Se temos um token, adicionar ao header
+    if (supabaseSession) {
+      headers['Authorization'] = `Bearer ${supabaseSession}`;
+    }
+
+    return fetch(url, {
+      ...options,
+      credentials: 'include', // Incluir cookies
+      headers,
+    });
+  }
+
   // Carregar categorias via API
   async function carregarCategorias() {
     if (!selectCategoria) return;
     try {
-      const response = await fetch('/api/admin/categorias');
+      const response = await fetchWithAuth('/api/admin/categorias');
       if (!response.ok) throw new Error('Erro ao carregar categorias');
-      const categorias = await response.json();
+      const data = await response.json();
+      const categorias = data.categorias || [];
       selectCategoria.innerHTML =
         '<option value="">Selecione a categoria...</option>';
       categorias.forEach((cat) => {
@@ -419,9 +459,15 @@ import '../styles/components/formulario-produto.css';
         const formData = new FormData();
         formData.append('file', arquivosImagem[i]);
         
+        // Usar fetchWithAuth mas sem Content-Type (FormData define automaticamente)
+        const token = localStorage.getItem('sb-access-token');
         const uploadResponse = await fetch('/api/admin/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
+          credentials: 'include',
+          headers: token ? {
+            'Authorization': `Bearer ${token}`
+          } : {}
         });
         
         if (!uploadResponse.ok) throw new Error('Erro ao fazer upload');
@@ -449,7 +495,7 @@ import '../styles/components/formulario-produto.css';
         imagens: urlsImagens,
       };
 
-      const createResponse = await fetch('/api/admin/produtos', {
+      const createResponse = await fetchWithAuth('/api/admin/produtos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(produto)
@@ -457,10 +503,13 @@ import '../styles/components/formulario-produto.css';
       
       if (!createResponse.ok) throw new Error('Erro ao criar produto');
 
-      window.dispatchEvent(new Event('produtos-updated'));
-
       fecharModal();
       mostrarToast('Produto criado com sucesso!', 'success');
+      
+      // Aguardar um pouco antes de recarregar
+      setTimeout(() => {
+        window.dispatchEvent(new Event('produtos-updated'));
+      }, 300);
     } catch (error: any) {
       const mensagemErro =
         error?.message || JSON.stringify(error) || 'Erro desconhecido';
@@ -480,9 +529,12 @@ import '../styles/components/formulario-produto.css';
   });
 
   // Funções de controle do modal
-  function abrirModal() {
+  async function abrirModal() {
     modalForm?.classList.add('active');
     document.body.style.overflow = 'hidden';
+    
+    // Garantir que a sessão está inicializada antes de carregar
+    await initializeSession();
     carregarCategorias();
 
     // Focus no primeiro campo em desktop

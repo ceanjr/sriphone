@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../../lib/supabase';
-import { verifyAuth } from '../../../../lib/auth';
+import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../../lib/auth';
 
 export const prerender = false;
 
 // GET - Listar todas as categorias
 export const GET: APIRoute = async ({ request, cookies }) => {
   try {
-    const isAuth = await verifyAuth(cookies);
+    const authHeader = request.headers.get('Authorization');
+    const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
@@ -15,6 +15,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       });
     }
 
+    const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('categorias')
       .select('*')
@@ -37,7 +38,8 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 // POST - Criar nova categoria
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const isAuth = await verifyAuth(cookies);
+    const authHeader = request.headers.get('Authorization');
+    const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
@@ -47,13 +49,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const body = await request.json();
     
+    const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('categorias')
       .insert([body])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     return new Response(JSON.stringify({ categoria: data }), {
       status: 201,

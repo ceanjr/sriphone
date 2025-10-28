@@ -199,7 +199,44 @@ import '../styles/components/editar-produto.css';
 </div>
 
 <script>
+  import { authService } from '../lib/supabase';
+
   // ✅ OTIMIZAÇÃO: Removido imports do Supabase
+
+  // Initialize session token from Supabase on page load
+  async function initializeSession() {
+    try {
+      const session = await authService.getSession();
+      if (session?.access_token) {
+        localStorage.setItem('sb-access-token', session.access_token);
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar sessão:', error);
+    }
+  }
+
+  // Helper para fazer requisições autenticadas
+  async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    const supabaseSession = localStorage.getItem('sb-access-token');
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+
+    if (supabaseSession) {
+      headers['Authorization'] = `Bearer ${supabaseSession}`;
+    }
+
+    return fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers,
+    });
+  }
+
+  // Initialize session on load
+  initializeSession();
 
   const modalEditar = document.getElementById('modal-editar-produto');
   const formEditar = document.getElementById(
@@ -246,7 +283,10 @@ import '../styles/components/editar-produto.css';
   async function carregarCategorias() {
     if (!selectCategoria) return;
     try {
-      const categorias = await categoryService.getAll();
+      const response = await fetchWithAuth('/api/admin/categorias');
+      if (!response.ok) throw new Error('Erro ao carregar categorias');
+      const data = await response.json();
+      const categorias = data.categorias || [];
       selectCategoria.innerHTML =
         '<option value="">Selecione a categoria...</option>';
       categorias.forEach((cat) => {
@@ -518,9 +558,15 @@ import '../styles/components/editar-produto.css';
         const formData = new FormData();
         formData.append('file', arquivosImagem[i]);
         
+        // Usar token de autenticação
+        const token = localStorage.getItem('sb-access-token');
         const uploadResponse = await fetch('/api/admin/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
+          credentials: 'include',
+          headers: token ? {
+            'Authorization': `Bearer ${token}`
+          } : {}
         });
         
         if (!uploadResponse.ok) throw new Error('Erro ao fazer upload');
@@ -553,7 +599,7 @@ import '../styles/components/editar-produto.css';
         imagens: todasImagens,
       };
 
-      const updateResponse = await fetch(`/api/admin/produtos/${produtoAtualId}`, {
+      const updateResponse = await fetchWithAuth(`/api/admin/produtos/${produtoAtualId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(produto)
@@ -561,10 +607,13 @@ import '../styles/components/editar-produto.css';
       
       if (!updateResponse.ok) throw new Error('Erro ao atualizar produto');
 
-      window.dispatchEvent(new Event('produtos-updated'));
-
       fecharModal();
       mostrarToast('Produto atualizado com sucesso!', 'success');
+      
+      // Aguardar um pouco antes de recarregar
+      setTimeout(() => {
+        window.dispatchEvent(new Event('produtos-updated'));
+      }, 300);
     } catch (error: any) {
       const mensagemErro =
         error?.message || JSON.stringify(error) || 'Erro desconhecido';
@@ -584,7 +633,7 @@ import '../styles/components/editar-produto.css';
   });
 
   // Abrir modal
-  function abrirModal(produto: any) {
+  async function abrirModal(produto: any) {
     produtoAtualId = produto.id;
     imagensExistentes = [...(produto.imagens || [])];
     arquivosImagem = [];
@@ -610,6 +659,9 @@ import '../styles/components/editar-produto.css';
       document.getElementById('editar-produto-descricao') as HTMLTextAreaElement
     ).value = produto.descricao || '';
 
+    // Garantir que a sessão está inicializada antes de carregar
+    await initializeSession();
+    
     // Carregar categorias e selecionar a atual
     carregarCategorias().then(() => {
       (
@@ -678,15 +730,19 @@ import '../styles/components/editar-produto.css';
     }
 
     try {
-      const deleteResponse = await fetch(`/api/admin/produtos/${produtoAtualId}`, {
+      const deleteResponse = await fetchWithAuth(`/api/admin/produtos/${produtoAtualId}`, {
         method: 'DELETE'
       });
       
       if (!deleteResponse.ok) throw new Error('Erro ao excluir produto');
       
-      window.dispatchEvent(new Event('produtos-updated'));
       fecharModal();
       mostrarToast('Produto excluído com sucesso!', 'success');
+      
+      // Aguardar um pouco antes de recarregar para garantir que o backend processou
+      setTimeout(() => {
+        window.dispatchEvent(new Event('produtos-updated'));
+      }, 300);
     } catch (error) {
       console.error('Erro ao excluir produto:', error);
       mostrarToast('Erro ao excluir produto', 'error');

@@ -70,8 +70,47 @@ import '../styles/components/gerir-categorias.css';
 </div>
 
 <script>
+  import { authService } from '../lib/supabase';
+
   // ✅ OTIMIZAÇÃO: Removido import do categoryService
   // Usando API routes ao invés de Supabase direto no cliente
+
+  // Initialize session token from Supabase on page load
+  async function initializeSession() {
+    try {
+      const session = await authService.getSession();
+      if (session?.access_token) {
+        localStorage.setItem('sb-access-token', session.access_token);
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar sessão:', error);
+    }
+  }
+
+  // Helper para fazer requisições autenticadas
+  async function fetchWithAuth(url: string, options: RequestInit = {}) {
+    // Buscar o token do Supabase do localStorage
+    const supabaseSession = localStorage.getItem('sb-access-token');
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+
+    // Se temos um token, adicionar ao header
+    if (supabaseSession) {
+      headers['Authorization'] = `Bearer ${supabaseSession}`;
+    }
+
+    return fetch(url, {
+      ...options,
+      credentials: 'include', // Incluir cookies
+      headers,
+    });
+  }
+
+  // Initialize session on load
+  initializeSession();
 
   // Ordenação de Categorias
   function ordenarCategorias(categorias: Category[]): Category[] {
@@ -244,12 +283,12 @@ import '../styles/components/gerir-categorias.css';
       list.innerHTML = '';
 
       // ✅ OTIMIZAÇÃO: Usar API ao invés de Supabase direto
-      const response = await fetch('/api/admin/categorias');
+      const response = await fetchWithAuth('/api/admin/categorias');
       if (!response.ok) throw new Error('Erro ao carregar categorias');
-      const categoriasData = await response.json();
+      const data = await response.json();
 
-      // ORDENAR CATEGORIAS
-      categories = ordenarCategorias(categoriasData || []);
+      // ORDENAR CATEGORIAS - a API retorna { categorias: [...] }
+      categories = ordenarCategorias(data.categorias || []);
 
       if (categories.length === 0) {
         list.innerHTML = `
@@ -340,7 +379,7 @@ import '../styles/components/gerir-categorias.css';
       item.classList.add('gc-deleting');
       
       // ✅ OTIMIZAÇÃO: Usar API
-      const response = await fetch(`/api/admin/categorias?id=${id}`, {
+      const response = await fetchWithAuth(`/api/admin/categorias/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Erro ao deletar categoria');
@@ -421,10 +460,10 @@ import '../styles/components/gerir-categorias.css';
         item.classList.add('gc-saving');
         
         // ✅ OTIMIZAÇÃO: Usar API
-        const response = await fetch('/api/admin/categorias', {
+        const response = await fetchWithAuth(`/api/admin/categorias/${cat.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: cat.id, nome: newName })
+          body: JSON.stringify({ nome: newName })
         });
         if (!response.ok) throw new Error('Erro ao atualizar categoria');
 
@@ -478,12 +517,17 @@ import '../styles/components/gerir-categorias.css';
       form.classList.add('gc-submitting');
 
       // ✅ OTIMIZAÇÃO: Usar API
-      const response = await fetch('/api/admin/categorias', {
+      const response = await fetchWithAuth('/api/admin/categorias', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome })
       });
-      if (!response.ok) throw new Error('Erro ao criar categoria');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar categoria');
+      }
+      
       const newCategory = await response.json();
 
       input.value = '';
@@ -499,12 +543,12 @@ import '../styles/components/gerir-categorias.css';
       input.disabled = false;
       addButton.disabled = false;
       form.classList.remove('gc-submitting');
-      mostrarToast('Erro ao criar categoria. Tente novamente.', 'error');
+      mostrarToast(error.message || 'Erro ao criar categoria. Tente novamente.', 'error');
     }
   });
 
   // Modal Controls
-  function abrirModal() {
+  async function abrirModal() {
     if (!modal) return;
     modal.classList.add('active');
 
@@ -519,6 +563,8 @@ import '../styles/components/gerir-categorias.css';
       setTimeout(() => input?.focus(), 300);
     }
 
+    // Garantir que a sessão está inicializada antes de carregar
+    await initializeSession();
     renderCategories();
   }
 

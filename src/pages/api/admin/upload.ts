@@ -1,12 +1,12 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../lib/supabase';
-import { verifyAuth } from '../../../lib/auth';
+import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../lib/auth';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
-    const isAuth = await verifyAuth(cookies);
+    const authHeader = request.headers.get('Authorization');
+    const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
@@ -53,7 +53,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const fileName = `${timestamp}-${randomString}.${fileExt}`;
     const filePath = `produtos/${fileName}`;
 
-    // Upload para Supabase Storage
+    // Upload para Supabase Storage com token autenticado
+    const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { error: uploadError } = await supabase.storage
       .from('imagens')
       .upload(filePath, file, {
@@ -97,7 +98,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 // DELETE - Deletar imagem
 export const DELETE: APIRoute = async ({ request, cookies }) => {
   try {
-    const isAuth = await verifyAuth(cookies);
+    const authHeader = request.headers.get('Authorization');
+    const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
@@ -114,6 +116,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       });
     }
 
+    const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { error } = await supabase.storage
       .from('imagens')
       .remove([path]);

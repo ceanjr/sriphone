@@ -38,9 +38,9 @@ export function createHandlers(elementos: any) {
 
     viewModeChange: (e: Event) => {
       const btn = e.currentTarget as HTMLElement;
-      const mode = btn.dataset.view || 'grade';
+      const mode = btn.dataset.view as 'grade' | 'lista' | 'coluna' || 'grade';
       
-      updateState({ modoVisualizacao: mode });
+      updateState({ modoVisualizacao: mode as string });
       emitEvent(catalogEvents.VIEW_MODE_CHANGED, { mode });
       
       document.querySelectorAll('[data-view]').forEach(b => {

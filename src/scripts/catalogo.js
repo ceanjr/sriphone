@@ -619,7 +619,8 @@ export function initCatalogo() {
         grid.classList.add(view);
       });
 
-      renderProdutosComDelay();
+      // Não precisa re-render, apenas trocar as classes CSS
+      // renderProdutosComDelay();
     },
 
     async loginSubmit(e) {

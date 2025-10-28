@@ -334,7 +334,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Templates para Produtos ====================
     const templatesLocal = {
-      produtoCard(produto: any) {
+      produtoCard(produto: any, modoVisualizacao?: string) {
+        const modo = modoVisualizacao || getState().modoVisualizacao;
         const precoFormatado = utils.formatarPreco(produto.preco);
         const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
         const bateriaColorClass = getBateriaColor(produto.bateria);
@@ -366,7 +367,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             </div>` : ''}
         `;
 
-        if (state.modoVisualizacao === 'lista') {
+        if (modo === 'lista') {
           return `
             <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
               <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
@@ -379,13 +380,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
                 <div class="lista-left">
                   <h3>${utils.escapeHtml(produto.nome)}</h3>
                   <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
-                  <span class="modal-codigo">${produto.codigo ? `Cod.: ${utils.escapeHtml(produto.codigo)}` : ''}</span>
+                  <div class="lista-codigo-badges">
+                    ${produto.codigo ? `<span class="modal-codigo">Cod.: ${utils.escapeHtml(produto.codigo)}</span>` : ''}
+                    ${badges}
+                  </div>
                 </div>
                 <div class="lista-right">
-                  <div class="lista-badges">${badges}</div>
-                  <div class="produto-footer">
-                    <span class="preco">${precoFormatado}</span>
-                  </div>
+                  <span class="preco">${precoFormatado}</span>
                 </div>
               </div>
             </a>`;
@@ -429,12 +430,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           </a>`;
       },
 
-      categoriaSecao(nomeCategoria: string, produtos: any[]) {
+      categoriaSecao(nomeCategoria: string, produtos: any[], modoVisualizacao?: string) {
+        const modo = modoVisualizacao || getState().modoVisualizacao;
         return `
           <div class="categoria-section">
             <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
-            <div class="categoria-grid ${state.modoVisualizacao}">
-              ${produtos.map((p: any) => templatesLocal.produtoCard(p)).join('')}
+            <div class="categoria-grid ${modo}">
+              ${produtos.map((p: any) => templatesLocal.produtoCard(p, modo)).join('')}
             </div>
           </div>`;
       },
@@ -445,15 +447,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       produtos() {
         if (!elementos.produtosContainer || !elementos.emptyState) return;
 
+        // ✅ Obter estado atualizado
+        const currentState = getState();
+        
         elementos.produtosContainer.classList.remove('coluna', 'grade', 'lista');
-        elementos.produtosContainer.classList.add(state.modoVisualizacao);
+        elementos.produtosContainer.classList.add(currentState.modoVisualizacao);
         document.querySelectorAll('.categoria-grid').forEach((grid) => {
           grid.classList.remove('coluna', 'grade', 'lista');
-          grid.classList.add(state.modoVisualizacao);
+          grid.classList.add(currentState.modoVisualizacao);
         });
 
-        let produtosFiltrados = filtrarProdutos(state);
-        produtosFiltrados = ordenarProdutos(produtosFiltrados, state.filtros.ordenacao);
+        let produtosFiltrados = filtrarProdutos(currentState);
+        produtosFiltrados = ordenarProdutos(produtosFiltrados, currentState.filtros.ordenacao);
 
         if (produtosFiltrados.length === 0) {
           elementos.produtosContainer.innerHTML = '';
@@ -463,10 +468,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         elementos.emptyState.style.display = 'none';
 
-        if (state.categoriaAtiva === 'todos') {
+        if (currentState.categoriaAtiva === 'todos') {
           const grupos = agruparPorCategoria(produtosFiltrados);
           const categoriasComProdutos = Array.from(grupos.keys()).map((nomeCategoria) => {
-            const categoria = state.categorias.find((c) => c.nome === nomeCategoria);
+            const categoria = currentState.categorias.find((c) => c.nome === nomeCategoria);
             return { nome: nomeCategoria, categoria: categoria || { id: '', nome: nomeCategoria, created_at: '' } };
           });
 
@@ -475,13 +480,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           elementos.produtosContainer.innerHTML = categoriasOrdenadas
             .map((cat) => {
               const prods = grupos.get(cat.nome);
-              return prods ? templatesLocal.categoriaSecao(cat.nome, prods) : '';
+              return prods ? templatesLocal.categoriaSecao(cat.nome, prods, currentState.modoVisualizacao) : '';
             })
             .filter((html) => html !== '')
             .join('');
         } else {
           elementos.produtosContainer.innerHTML = produtosFiltrados
-            .map((p) => templatesLocal.produtoCard(p))
+            .map((p) => templatesLocal.produtoCard(p, currentState.modoVisualizacao))
             .join('');
         }
 
@@ -503,11 +508,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== API ====================
     const api = {
-      async carregarDados() {
+      async carregarDados(forceReload = false) {
         try {
           render.loading(true);
           
-          if (state.produtos.length > 0) {
+          const currentState = getState();
+          if (currentState.produtos.length > 0 && !forceReload) {
             render.produtos();
             render.loading(false);
             return;
@@ -589,7 +595,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       // View mode
       elementos.viewModeBtns.forEach((btn) => {
-        btn.addEventListener('click', handlers.viewModeChange);
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handlers.viewModeChange(e);
+        });
       });
 
       // Login
@@ -599,7 +609,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         const passwordInput = document.getElementById('login-password') as HTMLInputElement;
 
         try {
-          await authService.signIn(emailInput.value, passwordInput.value);
+          const data = await authService.signIn(emailInput.value, passwordInput.value);
           elementos.modalLogin?.classList.remove('active');
           elementos.formLogin?.reset();
           if (elementos.loginError) {
@@ -631,11 +641,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       });
 
       onEvent(catalogEvents.VIEW_MODE_CHANGED, () => {
+        const currentState = getState();
+        localStorage.setItem('modoVisualizacao', currentState.modoVisualizacao);
         render.produtos();
       });
 
       window.addEventListener('produtos-updated', () => {
-        api.carregarDados();
+        api.carregarDados(true); // Force reload
       });
 
       // ✅ Intersection Observer para scroll infinito
@@ -724,8 +736,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     // ==================== Inicialização ====================
     function init() {
       const savedView = localStorage.getItem('modoVisualizacao') as 'coluna' | 'grade' | 'lista';
+      const initialMode = savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
+      
       updateState({ 
-        modoVisualizacao: savedView || (window.innerWidth < 768 ? 'coluna' : 'grade') 
+        modoVisualizacao: initialMode
+      });
+      
+      // Set active button based on initial mode
+      document.querySelectorAll('[data-view]').forEach(btn => {
+        const btnElement = btn as HTMLElement;
+        btnElement.classList.toggle('active', btnElement.dataset.view === initialMode);
       });
       
       setupEventListeners();

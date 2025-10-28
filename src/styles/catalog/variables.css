@@ -14,9 +14,9 @@
   --catalog-border: rgba(255, 255, 255, 0.1);
   --catalog-border-hover: rgba(255, 255, 255, 0.2);
   
-  --catalog-accent: #3b82f6;
-  --catalog-accent-hover: #2563eb;
-  --catalog-accent-light: rgba(59, 130, 246, 0.1);
+  --catalog-accent: #ffffff;
+  --catalog-accent-hover: #f0f0f0;
+  --catalog-accent-light: rgba(255, 255, 255, 0.1);
   
   /* Espaçamento */
   --catalog-spacing-xs: 0.25rem;

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test View Modes</title>
+  <style>
+    body { padding: 20px; background: #0f0f0f; color: white; }
+    
+    .test-grid {
+      display: grid;
+      gap: 1rem;
+      margin: 20px 0;
+      padding: 20px;
+      background: #1a1a1a;
+      border: 2px solid #333;
+    }
+    
+    .test-card {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .test-image {
+      width: 100%;
+      height: 100px;
+      background: #444;
+      margin-bottom: 0.5rem;
+    }
+    
+    /* Modo Grade */
+    .test-grid.grade {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    }
+    
+    .test-grid.grade .test-card {
+      flex-direction: column !important;
+    }
+    
+    .test-grid.grade .test-image {
+      display: block !important;
+    }
+    
+    /* Modo Lista */
+    .test-grid.lista {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .test-grid.lista .test-card {
+      flex-direction: row !important;
+    }
+    
+    .test-grid.lista .test-image {
+      display: none !important;
+    }
+    
+    /* Modo Coluna */
+    .test-grid.coluna {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .test-grid.coluna .test-card {
+      flex-direction: row !important;
+    }
+    
+    .test-grid.coluna .test-image {
+      width: 150px !important;
+      display: block !important;
+    }
+    
+    button { padding: 10px 20px; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Test View Modes</h1>
+  
+  <div>
+    <button onclick="setMode('grade')">Grade</button>
+    <button onclick="setMode('lista')">Lista</button>
+    <button onclick="setMode('coluna')">Coluna</button>
+  </div>
+  
+  <div id="grid" class="test-grid grade">
+    <div class="test-card">
+      <div class="test-image"></div>
+      <div>Card 1</div>
+    </div>
+    <div class="test-card">
+      <div class="test-image"></div>
+      <div>Card 2</div>
+    </div>
+    <div class="test-card">
+      <div class="test-image"></div>
+      <div>Card 3</div>
+    </div>
+  </div>
+  
+  <script>
+    function setMode(mode) {
+      const grid = document.getElementById('grid');
+      grid.classList.remove('grade', 'lista', 'coluna');
+      grid.classList.add(mode);
+      console.log('Modo alterado para:', mode);
+      console.log('Classes:', grid.className);
+    }
+  </script>
+</body>
+</html>

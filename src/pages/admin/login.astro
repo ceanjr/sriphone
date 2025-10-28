@@ -114,6 +114,11 @@ import '../../styles/admin.css';
             throw new Error(data.error || 'Erro ao fazer login');
           }
 
+          // Store access token in localStorage for client-side requests
+          if (data.session?.access_token) {
+            localStorage.setItem('sb-access-token', data.session.access_token);
+          }
+
           // Redirect to dashboard
           window.location.href = '/admin/dashboard';
         } catch (error: any) {

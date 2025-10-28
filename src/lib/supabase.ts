@@ -308,11 +308,18 @@ export const authService = {
     });
 
     if (error) throw error;
+    
+    // Store access token in localStorage for client-side requests
+    if (data.session?.access_token) {
+      localStorage.setItem('sb-access-token', data.session.access_token);
+    }
+    
     return data;
   },
 
   async signOut() {
     const { error } = await supabase.auth.signOut();
+    localStorage.removeItem('sb-access-token');
     if (error) throw error;
   },
 
