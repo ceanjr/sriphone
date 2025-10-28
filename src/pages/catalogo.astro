@@ -830,6 +830,25 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             .join('');
         }
 
+        // DEBUG: Verificar se os links foram criados
+        const productLinks = elementos.produtosContainer?.querySelectorAll('.produto-card');
+        console.log('🔍 DEBUG: Produtos renderizados:', productLinks?.length);
+        productLinks?.forEach((link, index) => {
+          const href = (link as HTMLAnchorElement).href;
+          const id = (link as HTMLElement).dataset.produtoId;
+          console.log(`  - Produto ${index + 1}: ID=${id}, href=${href}`);
+          
+          // Adicionar listener de debug
+          link.addEventListener('click', (e) => {
+            console.log('🖱️ CLICK no produto:', {
+              id: (link as HTMLElement).dataset.produtoId,
+              href: (link as HTMLAnchorElement).href,
+              tagName: (e.target as HTMLElement).tagName,
+              currentTarget: e.currentTarget
+            });
+          });
+        });
+
         // Event listeners para editar produto
         setupEditButtons();
       },
@@ -1224,6 +1243,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       const session = await authService.getSession();
       const allEditButtons = document.querySelectorAll('.btn-editar-produto');
 
+      console.log('🔧 DEBUG: Setup dos botões editar');
+      console.log('  - Total de botões:', allEditButtons.length);
+      console.log('  - Usuário autenticado:', !!session);
+
       allEditButtons.forEach((btn, index) => {
         const card = btn.closest('.produto-card');
         const produtoInfo = card?.querySelector('.produto-info');
@@ -1254,11 +1277,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // Handler separado para o clique do botão editar
     function handleEditClick(e: Event) {
+      console.log('🔧 BOTÃO EDITAR CLICADO');
       e.stopPropagation(); // Impede que abra o modal do produto
       e.preventDefault();
 
       const btn = e.currentTarget as HTMLElement;
       const produtoDataStr = btn.dataset.produtoEdit;
+
+      console.log('  - Dados:', produtoDataStr ? 'Encontrados' : 'NÃO ENCONTRADOS');
 
       if (!produtoDataStr) {
         console.error('Dados do produto não encontrados no botão');
@@ -1268,6 +1294,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       try {
         const produtoData = JSON.parse(produtoDataStr);
+        console.log('  - Produto:', produtoData.nome);
         (window as any).abrirModalEditarProduto(produtoData);
       } catch (error) {
         console.error('Erro ao parsear dados do produto:', error);

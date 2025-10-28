@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Link</title>
+    <style>
+        body {
+            padding: 40px;
+            background: #0a0a0a;
+            color: white;
+            font-family: system-ui;
+        }
+        
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            width: 300px;
+            margin: 20px;
+        }
+        
+        .card:hover {
+            border-color: #3a3a3a;
+        }
+        
+        .image {
+            aspect-ratio: 1;
+            background: #0f0f0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        
+        .info {
+            padding: 20px;
+            pointer-events: none;
+        }
+        
+        .edit-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            z-index: 50;
+            pointer-events: auto !important;
+        }
+        
+        h3 {
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Links</h1>
+    
+    <h2>Card 1: Link simples (deve funcionar)</h2>
+    <a href="https://google.com" class="card" id="card1">
+        <div class="image">Imagem</div>
+        <div class="info">
+            <h3>Produto Teste 1</h3>
+            <p>Clique em qualquer lugar</p>
+        </div>
+    </a>
+    
+    <h2>Card 2: Com botão editar (link deve funcionar, botão também)</h2>
+    <a href="https://google.com" class="card" id="card2">
+        <button class="edit-btn" onclick="event.preventDefault(); event.stopPropagation(); alert('Editar clicado!'); console.log('Botão editar clicado');">✏️</button>
+        <div class="image">Imagem</div>
+        <div class="info">
+            <h3>Produto Teste 2</h3>
+            <p>Clique no card OU no botão editar</p>
+        </div>
+    </a>
+    
+    <div style="margin-top: 40px; padding: 20px; background: #1a1a1a; border-radius: 8px;">
+        <h3>Log de eventos:</h3>
+        <div id="log" style="font-family: monospace; font-size: 12px;"></div>
+    </div>
+    
+    <script>
+        const log = document.getElementById('log');
+        
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `[${time}] ${msg}<br>`;
+            console.log(msg);
+        }
+        
+        document.getElementById('card1').addEventListener('click', (e) => {
+            addLog('Card 1 clicado!');
+        });
+        
+        document.getElementById('card2').addEventListener('click', (e) => {
+            addLog('Card 2 clicado!');
+        });
+        
+        document.querySelectorAll('.card').forEach((card, index) => {
+            card.addEventListener('mouseenter', () => {
+                addLog(`Mouse entrou no card ${index + 1}`);
+            });
+        });
+        
+        addLog('Página carregada. Tente clicar nos cards.');
+    </script>
+</body>
+</html>
