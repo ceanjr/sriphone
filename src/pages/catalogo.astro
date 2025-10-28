@@ -544,7 +544,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         if (state.modoVisualizacao === 'lista') {
           return `
-<article class="produto-card" data-produto-id="${produto.id}">
+<a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
     <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -566,12 +566,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             </div>
         </div>
     </div>
-</article>
+</a>
 `;
         }
 
         return `
-<article class="produto-card" data-produto-id="${produto.id}">
+<a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
     <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -607,10 +607,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
         <div class="produto-footer">
             <span class="preco">${precoFormatado}</span>
-            <button class="btn-detalhes">Ver detalhes</button>
         </div>
     </div>
-</article>
+</a>
 `;
       },
 
@@ -831,13 +830,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             .join('');
         }
 
-        // Adicionar event listeners aos cards
-        elementos.produtosContainer
-          .querySelectorAll('.produto-card')
-          .forEach((card) => {
-            card.addEventListener('click', handlers.produtoClick);
-          });
-
+        // Event listeners para editar produto
         setupEditButtons();
       },
 
@@ -881,15 +874,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         });
 
         render.produtos();
-      },
-
-      produtoClick(e: { currentTarget: any }) {
-        const card = e.currentTarget;
-        const produtoId = card.dataset.produtoId;
-
-        if (produtoId) {
-          window.location.href = `/produto/${produtoId}`;
-        }
       },
 
       searchInput(e: { target: any }) {
