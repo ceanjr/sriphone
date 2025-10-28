@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v5-pwa';
+const CACHE_VERSION = 'v6-pwa';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -67,7 +67,17 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignorar requisições não-GET e requisições externas (exceto Supabase)
+  // NUNCA cachear rotas de API do admin (POST, PUT, DELETE, GET)
+  if (url.pathname.startsWith('/api/admin/')) {
+    return; // Deixa passar direto, sem cache
+  }
+
+  // NUNCA cachear outras APIs internas
+  if (url.pathname.startsWith('/api/')) {
+    return; // Deixa passar direto, sem cache
+  }
+
+  // Ignorar requisições não-GET
   if (request.method !== 'GET') return;
   
   // Estratégia para imagens: Cache-First

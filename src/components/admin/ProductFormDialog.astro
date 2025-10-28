@@ -365,6 +365,7 @@ const isEdit = !!produto;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(produto),
+        cache: 'no-store',
       });
 
       let data;

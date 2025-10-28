@@ -123,6 +123,7 @@ const isEdit = !!categoria;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(categoria),
+        cache: 'no-store',
       });
 
       let data;

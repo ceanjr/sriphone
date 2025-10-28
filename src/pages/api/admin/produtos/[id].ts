@@ -5,7 +5,10 @@ export const prerender = false;
 
 // PUT - Atualizar produto
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+  };
   
   try {
     const authHeader = request.headers.get('Authorization');
@@ -89,7 +92,10 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
 
 // DELETE - Deletar produto
 export const DELETE: APIRoute = async ({ params, request, cookies }) => {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+  };
   
   try {
     const authHeader = request.headers.get('Authorization');

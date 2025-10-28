@@ -5,7 +5,10 @@ export const prerender = false;
 
 // GET - Listar todos os produtos
 export const GET: APIRoute = async ({ request, cookies }) => {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+  };
   
   try {
     const authHeader = request.headers.get('Authorization');
@@ -46,7 +49,10 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
 // POST - Criar novo produto
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+  };
   
   try {
     const authHeader = request.headers.get('Authorization');

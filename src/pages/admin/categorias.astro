@@ -137,6 +137,7 @@ const categoriasComContagem = await Promise.all(
         try {
           const response = await fetch(`/api/admin/categorias/${id}`, {
             method: 'DELETE',
+            cache: 'no-store',
           });
           
           let data;

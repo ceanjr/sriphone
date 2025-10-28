@@ -175,6 +175,7 @@ const { data: categorias } = await supabase
         try {
           const response = await fetch(`/api/admin/produtos/${id}`, {
             method: 'DELETE',
+            cache: 'no-store',
           });
           
           let data;
