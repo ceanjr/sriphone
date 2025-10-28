@@ -84,6 +84,12 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <!-- Critical CSS Inline para eliminar render-blocking -->
     {criticalCSS && <style is:inline set:html={criticalCSS} />}
 
+    <!-- Additional SEO -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="bingbot" content="index, follow" />
+    <link rel="alternate" hreflang="pt-br" href={Astro.url.href} />
+
     <slot name="head" />
   </head>
 

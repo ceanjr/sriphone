@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4-pwa';
+const CACHE_VERSION = 'v5-pwa';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -13,6 +13,7 @@ const STATIC_ASSETS = [
   '/icons/icon-512x512.png',
   '/fonts/Halenoir-Bold.otf',
   '/images/Barbudo.webp',
+  '/favicon.webp',
   '/favicon.svg'
 ];
 

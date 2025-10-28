@@ -1,0 +1,27 @@
+# robots.txt - Sr. IPHONE
+User-agent: *
+Allow: /
+Allow: /catalogo
+Allow: /produto/
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://sriphonevca.com.br/sitemap.xml
+
+# Google specific
+User-agent: Googlebot
+Allow: /
+Allow: /catalogo
+Allow: /produto/
+Disallow: /admin/
+
+# Bing specific
+User-agent: Bingbot
+Allow: /
+Allow: /catalogo
+Allow: /produto/
+Disallow: /admin/
+
+# Crawl rate
+Crawl-delay: 1
