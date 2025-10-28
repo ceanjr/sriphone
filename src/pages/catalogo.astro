@@ -8,10 +8,19 @@ import Footer from '../components/Footer.astro';
 import EditarProduto from '../components/EditarProduto.astro';
 import FormularioProduto from '../components/FormularioProduto.astro';
 import GerirCategorias from '../components/GerirCategorias.astro';
-import '../styles/pages/catalogo.css';
 
-import { initCatalogo } from '../scripts/catalogo.js';
-import { optimizeSupabaseImage, getThumbnailUrl } from '../lib/imageOptimizer';
+// ✅ Componentes modulares do catálogo
+import SearchBar from '../components/catalog/SearchBar.astro';
+import EmptyState from '../components/catalog/EmptyState.astro';
+import LoadingSpinner from '../components/catalog/LoadingSpinner.astro';
+import ViewModeSwitcher from '../components/catalog/ViewModeSwitcher.astro';
+import CategoryFilters from '../components/catalog/CategoryFilters.astro';
+import ProductCardSkeleton from '../components/catalog/ProductCardSkeleton.astro';
+
+// ✅ CSS modular - Critical CSS inline, resto lazy load
+// Apenas o CSS essencial é carregado inicialmente
+import '../styles/catalog/variables.css'; // Tokens CSS (crítico)
+// CSS não-crítico será carregado após o load
 
 // ✅ OTIMIZAÇÃO: Buscar dados no servidor para SSG
 import { productService, categoryService } from '../lib/supabase';
@@ -35,6 +44,23 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta name="twitter:card" content="summary_large_image" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
+    
+    <!-- ✅ OTIMIZAÇÃO: Preload critical CSS -->
+    <link rel="preload" href="/src/styles/catalog/variables.css" as="style" />
+    
+    <!-- ✅ OTIMIZAÇÃO: Lazy load non-critical CSS -->
+    <link rel="preload" href="/src/styles/pages/catalogo.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="/src/styles/catalog/grid.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="/src/styles/catalog/card.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="/src/styles/catalog/animations.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- Fallback for no-JS -->
+    <noscript>
+      <link rel="stylesheet" href="/src/styles/pages/catalogo.css" />
+      <link rel="stylesheet" href="/src/styles/catalog/grid.css" />
+      <link rel="stylesheet" href="/src/styles/catalog/card.css" />
+      <link rel="stylesheet" href="/src/styles/catalog/animations.css" />
+    </noscript>
   </fragment>
 
   <Header />
@@ -64,55 +90,28 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     <section class="filtros-section">
       <div class="container">
-        <!-- Busca -->
-        <div class="search-bar">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"></path>
-          </svg>
-          <input
-            type="text"
-            id="search-input"
-            placeholder="Buscar produtos..."
-          />
-        </div>
+        <!-- ✅ Componente de busca modular -->
+        <SearchBar />
 
         <!-- Filtros -->
         <div class="filtros-container">
-          <!-- Categorias (Destaque) -->
-          <div class="categoria-filtros">
-            <button
-              class="categoria-btn active desktop-only"
-              data-categoria="todos"
-            >
-              Todos
-            </button>
-            <div id="categorias-lista" class="desktop-only"></div>
-            <select id="categoria-select" class="categoria-select mobile-only">
-              <option value="todos">Todos</option>
-              <!-- Categorias serão preenchidas via JavaScript -->
-            </select>
+          <!-- ✅ Filtros de categoria (desktop) -->
+          <div class="categoria-filtros desktop-only">
+            <CategoryFilters categorias={categorias} categoriaAtiva="todos" />
           </div>
+
+          <!-- ✅ Select de categoria (mobile) -->
+          <select id="categoria-select" class="categoria-select mobile-only">
+            <option value="todos">Todos</option>
+            {categorias.map((cat) => (
+              <option value={cat.id}>{cat.nome}</option>
+            ))}
+          </select>
 
           <!-- Outros Filtros -->
           <button class="toggle-filtros" id="toggle-filtros">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M3 4H21M3 12H21M3 20H21"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"></path>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 4H21M3 12H21M3 20H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
             Mais Filtros
           </button>
@@ -152,153 +151,45 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             </button>
           </div>
 
-          <!-- Controles de Visualização -->
+          <!-- ✅ Componente de visualização modular -->
           <div class="visualizacao-container">
             <span>Modos de Visualização</span>
-            <div class="visualizacao-btns">
-              <button
-                class="visualizacao-btn active mobile-only"
-                data-view="coluna"
-                title="Exibição em coluna"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="4"
-                    y="4"
-                    width="16"
-                    height="4"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="2"></rect>
-                  <rect
-                    x="4"
-                    y="10"
-                    width="16"
-                    height="4"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="2"></rect>
-                  <rect
-                    x="4"
-                    y="16"
-                    width="16"
-                    height="4"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="2"></rect>
-                </svg>
-              </button>
-              <button
-                class="visualizacao-btn"
-                data-view="grade"
-                title="Exibição em grade"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="4"
-                    y="4"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="2"></rect>
-                  <rect
-                    x="14"
-                    y="4"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="2"></rect>
-                  <rect
-                    x="4"
-                    y="14"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="2"></rect>
-                  <rect
-                    x="14"
-                    y="14"
-                    width="6"
-                    height="6"
-                    rx="1"
-                    stroke="currentColor"
-                    stroke-width="2"></rect>
-                </svg>
-              </button>
-              <button
-                class="visualizacao-btn"
-                data-view="lista"
-                title="Exibição em lista"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <line
-                    x1="4"
-                    y1="6"
-                    x2="20"
-                    y2="6"
-                    stroke="currentColor"
-                    stroke-width="2"></line>
-                  <line
-                    x1="4"
-                    y1="12"
-                    x2="20"
-                    y2="12"
-                    stroke="currentColor"
-                    stroke-width="2"></line>
-                  <line
-                    x1="4"
-                    y1="18"
-                    x2="20"
-                    y2="18"
-                    stroke="currentColor"
-                    stroke-width="2"></line>
-                </svg>
-              </button>
-            </div>
+            <ViewModeSwitcher />
           </div>
         </div>
       </div>
 
       <section class="produtos-section">
         <div class="container">
-          <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Carregando produtos...</p>
+          <!-- ✅ Skeleton loading durante carregamento inicial -->
+          <div id="produtos-skeleton" style="display: none;">
+            <div class="produtos-grid grade">
+              <ProductCardSkeleton />
+              <ProductCardSkeleton />
+              <ProductCardSkeleton />
+              <ProductCardSkeleton />
+              <ProductCardSkeleton />
+              <ProductCardSkeleton />
+            </div>
           </div>
+
+          <!-- ✅ Componente de loading -->
+          <LoadingSpinner />
+
+          <!-- Container de produtos -->
           <div id="produtos-container"></div>
+
+          <!-- Loading mais produtos -->
           <div id="loading-more" class="loading-more" style="display: none;">
             <div class="spinner-small"></div>
             <p>Carregando mais produtos...</p>
           </div>
+
+          <!-- Sentinel para scroll infinito -->
           <div id="scroll-sentinel" style="height: 1px;"></div>
-          <div id="empty-state" class="empty-state" style="display: none;">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z"
-                stroke="currentColor"
-                stroke-width="2"></path>
-            </svg>
-            <p>Nenhum produto encontrado</p>
-          </div>
+
+          <!-- ✅ Componente de estado vazio -->
+          <EmptyState />
         </div>
       </section>
     </section>
@@ -338,22 +229,35 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   </main>
 
   <script>
-    // ✅ OTIMIZAÇÃO: Código modularizado
+    // ✅ REFATORAÇÃO COMPLETA: Uso de módulos centralizados
     import { authService } from '../lib/supabase';
-    import { utils, getBateriaColor } from '../lib/catalog/utils';
-    import { business } from '../lib/catalog/logic/filters';
-    import { templates } from '../lib/catalog/render/templates';
-    import type { CatalogState, Product } from '../lib/catalog/logic/filters';
+    
+    // ✅ Importações modulares do catálogo
     import { initState, getState, updateState, updateFiltros } from '../lib/catalog/core/state';
-    import { debounce } from '../lib/utils/debounce';
     import { CATALOG_CONFIG } from '../lib/catalog/core/config';
+    import { filtrarProdutos, ordenarProdutos, agruparPorCategoria } from '../lib/catalog/logic';
+    import { renderer } from '../lib/catalog/render/renderer';
+    import { templates } from '../lib/catalog/render/templates';
+    import { createHandlers } from '../lib/catalog/ui/handlers';
+    import { catalogEvents, onEvent, emitEvent } from '../lib/catalog/ui/events';
+    import { imageLoader } from '../lib/catalog/performance/imageLoader';
+    import { metrics } from '../lib/catalog/performance/metrics';
+    import { utils, getBateriaColor } from '../lib/catalog/utils';
+    import type { CatalogState } from '../lib/catalog/logic/filters';
 
     // ==================== Carregar Dados Iniciais ====================
     const initialDataEl = document.getElementById('initial-data');
-    const initialData = initialDataEl ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}') : {};
+    const initialData = initialDataEl 
+      ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}') 
+      : {};
 
-    // ==================== Estado ====================
+    // ==================== Inicializar Estado ====================
     const state = initState(initialData);
+
+    // ✅ Habilitar métricas de performance
+    if (CATALOG_CONFIG.performance.enableWebVitals) {
+      metrics.enableWebVitals();
+    }
 
     // ==================== Elementos DOM ====================
     const elementos = {
@@ -365,128 +269,64 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       filtrosAvancados: document.getElementById('filtros-avancados'),
       btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
       produtosContainer: document.getElementById('produtos-container'),
+      produtosSkeleton: document.getElementById('produtos-skeleton'),
       loading: document.getElementById('loading'),
       loadingMore: document.getElementById('loading-more'),
       scrollSentinel: document.getElementById('scroll-sentinel'),
       emptyState: document.getElementById('empty-state'),
-      categoriasLista: document.getElementById('categorias-lista'),
-      filtroCondicao: document.getElementById(
-        'filtro-condicao',
-      ) as HTMLSelectElement,
-      filtroBateria: document.getElementById(
-        'filtro-bateria',
-      ) as HTMLSelectElement,
-      filtroOrdenacao: document.getElementById(
-        'filtro-ordenacao',
-      ) as HTMLSelectElement,
-      categoriaSelect: document.getElementById(
-        'categoria-select',
-      ) as HTMLSelectElement,
-      visualizacaoContainer: document.querySelector('.visualizacao-container'),
-      visualizacaoBtns: document.querySelectorAll('.visualizacao-btn'),
+      filtroCondicao: document.getElementById('filtro-condicao') as HTMLSelectElement,
+      filtroBateria: document.getElementById('filtro-bateria') as HTMLSelectElement,
+      filtroOrdenacao: document.getElementById('filtro-ordenacao') as HTMLSelectElement,
+      categoriaSelect: document.getElementById('categoria-select') as HTMLSelectElement,
+      categoriaBtns: document.querySelectorAll('.categoria-btn'),
+      viewModeBtns: document.querySelectorAll('.view-btn'),
     };
+
+    // ==================== Handlers Modulares ====================
+    const handlers = createHandlers(elementos);
 
     // ==================== Ordenação de Categorias ====================
     function ordenarCategorias(categorias: any[]) {
       const ordem: { [key: string]: number } = {
-        todos: 0,
-        'iphone 4': 1,
-        'iphone 4s': 2,
-        'iphone 5': 3,
-        'iphone 5c': 4,
-        'iphone 5s': 5,
-        'iphone 6': 6,
-        'iphone 6 plus': 7,
-        'iphone 6s': 8,
-        'iphone 6s plus': 9,
-        'iphone 7': 10,
-        'iphone 7 plus': 11,
-        'iphone 8': 12,
-        'iphone 8 plus': 13,
-        'iphone x': 14,
-        'iphone xr': 15,
-        'iphone xs': 16,
-        'iphone xs max': 17,
-        'iphone 11': 18,
-        'iphone 11 pro': 19,
-        'iphone 11 pro max': 20,
-        'iphone se': 21,
-        'iphone se 2': 22,
-        'iphone se 3': 23,
-        'iphone 12': 24,
-        'iphone 12 mini': 25,
-        'iphone 12 pro': 26,
-        'iphone 12 pro max': 27,
-        'iphone 13': 28,
-        'iphone 13 mini': 29,
-        'iphone 13 pro': 30,
-        'iphone 13 pro max': 31,
-        'iphone 14': 32,
-        'iphone 14 plus': 33,
-        'iphone 14 pro': 34,
-        'iphone 14 pro max': 35,
-        'iphone 15': 36,
-        'iphone 15 plus': 37,
-        'iphone 15 pro': 38,
-        'iphone 15 pro max': 39,
-        'iphone 16': 40,
-        'iphone 16 plus': 41,
-        'iphone 16 pro': 42,
-        'iphone 16 pro max': 43,
-        'iphone 17': 44,
-        'iphone 17 air': 45,
-        'iphone 17 pro': 46,
+        todos: 0, 'iphone 4': 1, 'iphone 4s': 2, 'iphone 5': 3, 'iphone 5c': 4,
+        'iphone 5s': 5, 'iphone 6': 6, 'iphone 6 plus': 7, 'iphone 6s': 8,
+        'iphone 6s plus': 9, 'iphone 7': 10, 'iphone 7 plus': 11, 'iphone 8': 12,
+        'iphone 8 plus': 13, 'iphone x': 14, 'iphone xr': 15, 'iphone xs': 16,
+        'iphone xs max': 17, 'iphone 11': 18, 'iphone 11 pro': 19,
+        'iphone 11 pro max': 20, 'iphone se': 21, 'iphone se 2': 22,
+        'iphone se 3': 23, 'iphone 12': 24, 'iphone 12 mini': 25,
+        'iphone 12 pro': 26, 'iphone 12 pro max': 27, 'iphone 13': 28,
+        'iphone 13 mini': 29, 'iphone 13 pro': 30, 'iphone 13 pro max': 31,
+        'iphone 14': 32, 'iphone 14 plus': 33, 'iphone 14 pro': 34,
+        'iphone 14 pro max': 35, 'iphone 15': 36, 'iphone 15 plus': 37,
+        'iphone 15 pro': 38, 'iphone 15 pro max': 39, 'iphone 16': 40,
+        'iphone 16 plus': 41, 'iphone 16 pro': 42, 'iphone 16 pro max': 43,
+        'iphone 17': 44, 'iphone 17 air': 45, 'iphone 17 pro': 46,
         'iphone 17 pro max': 47,
       };
 
       return [...categorias].sort((a, b) => {
         const nomeA = a.nome.toLowerCase().trim();
         const nomeB = b.nome.toLowerCase().trim();
-
         const ordemA = ordem[nomeA];
         const ordemB = ordem[nomeB];
 
-        // Se ambos têm ordem definida, usa a ordem
-        if (ordemA !== undefined && ordemB !== undefined) {
-          return ordemA - ordemB;
-        }
-
-        // Se apenas A tem ordem, A vem primeiro
+        if (ordemA !== undefined && ordemB !== undefined) return ordemA - ordemB;
         if (ordemA !== undefined) return -1;
-
-        // Se apenas B tem ordem, B vem primeiro
         if (ordemB !== undefined) return 1;
-
-        // Se nenhum tem ordem definida, ordena alfabeticamente
         return nomeA.localeCompare(nomeB, 'pt-BR');
-        if (!url || !url.includes('supabase.co')) return '';
-        return widths.map(w => `${this.optimizeImage(url, w)} ${w}w`).join(', ');
-      }
-      if (bateria >= 80) return 'bateria-verde';
-      return 'bateria-vermelho';
+      });
     }
 
-    // ==================== Templates ====================
-    const templates = {
-      produtoCard(produto: {
-        preco: number;
-        bateria: number;
-        imagens: any[];
-        id: any;
-        codigo: string;
-        nome: string;
-        descricao: string;
-        condicao: string;
-        categoria: { nome: any };
-        categoria_id: any;
-      }) {
+    // ==================== Templates para Produtos ====================
+    const templatesLocal = {
+      produtoCard(produto: any) {
         const precoFormatado = utils.formatarPreco(produto.preco);
         const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
         const bateriaColorClass = getBateriaColor(produto.bateria);
         const imagemPrincipal = produto.imagens?.[0];
         const temBateria = produto.bateria && produto.bateria > 0;
 
-        // Dados para edição
         const produtoEditData = JSON.stringify({
           id: produto.id,
           codigo: produto.codigo,
@@ -499,269 +339,110 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           imagens: produto.imagens || [],
         }).replace(/"/g, '&quot;');
 
-        // Badges comuns
         const badges = `
-      ${!temBateria ? `<span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>` : ''}
-      ${
-        temBateria
-          ? `
-      <div class="bateria-indicator ${bateriaColorClass}">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bateria-icon">
-              <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-              <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
-              <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor" class="bateria-fill"/>
-          </svg>
-          <span>${produto.bateria}%</span>
-      </div>
-      `
-          : ''
-      }
-    `;
+          ${!temBateria ? `<span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>` : ''}
+          ${temBateria ? `
+            <div class="bateria-indicator ${bateriaColorClass}">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="bateria-icon">
+                <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
+                <rect x="4" y="9" width="${bateriaWidth}" height="6" rx="1" fill="currentColor" class="bateria-fill"/>
+              </svg>
+              <span>${produto.bateria}%</span>
+            </div>` : ''}
+        `;
 
         if (state.modoVisualizacao === 'lista') {
           return `
-<a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
-    <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    </button>
-    <div class="produto-info">
-        <div class="lista-left">
-            <h3>${utils.escapeHtml(produto.nome)}</h3>
-            <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
-            <span class="modal-codigo">${produto.codigo ? `Cod.: ${utils.escapeHtml(produto.codigo)}` : ''}</span>
-        </div>
-        <div class="lista-right">
-            <div class="lista-badges">
-                ${badges}
-            </div>
-            <div class="produto-footer">
-                <span class="preco">${precoFormatado}</span>
-            </div>
-        </div>
-    </div>
-</a>
-`;
+            <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
+              <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="produto-info">
+                <div class="lista-left">
+                  <h3>${utils.escapeHtml(produto.nome)}</h3>
+                  <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
+                  <span class="modal-codigo">${produto.codigo ? `Cod.: ${utils.escapeHtml(produto.codigo)}` : ''}</span>
+                </div>
+                <div class="lista-right">
+                  <div class="lista-badges">${badges}</div>
+                  <div class="produto-footer">
+                    <span class="preco">${precoFormatado}</span>
+                  </div>
+                </div>
+              </div>
+            </a>`;
         }
 
         return `
-<a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
-    <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    </button>
-    <div class="produto-image">
-        ${
-          imagemPrincipal
-            ? `<img 
-                src="${utils.optimizeImage(imagemPrincipal, 400, 80)}" 
-                srcset="${utils.generateSrcSet(imagemPrincipal, [400, 600, 800])}"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
-                alt="${utils.escapeHtml(produto.nome)}" 
-                loading="lazy" 
-                decoding="async"
-                fetchpriority="low"
-                width="400" 
-                height="400"
-                style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); object-fit: cover; aspect-ratio: 1;"
-              />`
-            : `
-            <div class="image-placeholder">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
+            <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div class="produto-image">
+              ${imagemPrincipal ? `
+                <img 
+                  src="${utils.optimizeImage(imagemPrincipal, 400, 80)}" 
+                  srcset="${utils.generateSrcSet(imagemPrincipal, [400, 600, 800])}"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+                  alt="${utils.escapeHtml(produto.nome)}" 
+                  loading="lazy" 
+                  decoding="async"
+                  fetchpriority="low"
+                  width="400" 
+                  height="400"
+                  style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); object-fit: cover; aspect-ratio: 1;"
+                />` : `
+                <div class="image-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
                     <path d="M9 12L12 9L15 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
+                  </svg>
+                </div>`}
+              ${badges}
             </div>
-        `
-        }
-        ${badges}
-    </div>
-    <div class="produto-info">
-        <h3>${utils.escapeHtml(produto.nome)}</h3>
-        <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
-        <div class="produto-footer">
-            <span class="preco">${precoFormatado}</span>
-        </div>
-    </div>
-</a>
-`;
+            <div class="produto-info">
+              <h3>${utils.escapeHtml(produto.nome)}</h3>
+              <p class="descricao">${utils.escapeHtml(produto.descricao)}</p>
+              <div class="produto-footer">
+                <span class="preco">${precoFormatado}</span>
+              </div>
+            </div>
+          </a>`;
       },
 
       categoriaSecao(nomeCategoria: string, produtos: any[]) {
         return `
-      <div class="categoria-section">
-          <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
-          <div class="categoria-grid ${state.modoVisualizacao}">
-              ${produtos.map((p: any) => templates.produtoCard(p)).join('')}
-          </div>
-      </div>
-    `;
-      },
-    };
-
-    // ==================== Lógica de Negócio ====================
-    const business = {
-      filtrarProdutos() {
-        return state.produtos.filter((p) => {
-          // Filtro de categoria
-          if (
-            state.categoriaAtiva !== 'todos' &&
-            p.categoria_id !== state.categoriaAtiva
-          ) {
-            return false;
-          }
-
-          // Filtro de busca
-          if (state.filtros.busca) {
-            const busca = state.filtros.busca.toLowerCase();
-            const match =
-              p.nome.toLowerCase().includes(busca) ||
-              p.descricao.toLowerCase().includes(busca) ||
-              p.codigo.toLowerCase().includes(busca) ||
-              p.categoria?.nome.toLowerCase().includes(busca);
-            if (!match) return false;
-          }
-
-          // Filtro de condição
-          if (state.filtros.condicao && p.condicao !== state.filtros.condicao) {
-            return false;
-          }
-
-          // Filtro de bateria
-          if (p.bateria < state.filtros.bateria) {
-            return false;
-          }
-
-          return true;
-        });
-      },
-
-      ordenarProdutos(produtos: any[]) {
-        const copia = [...produtos];
-
-        switch (state.filtros.ordenacao) {
-          case 'preco-asc':
-            return copia.sort((a, b) => a.preco - b.preco);
-          case 'preco-desc':
-            return copia.sort((a, b) => b.preco - a.preco);
-          case 'bateria':
-            return copia.sort((a, b) => b.bateria - a.bateria);
-          default: // recente
-            return copia.sort(
-              (a, b) =>
-                new Date(b.created_at).getTime() -
-                new Date(a.created_at).getTime(),
-            );
-        }
-      },
-
-      agruparPorCategoria(produtos: any[]) {
-        const grupos = new Map();
-
-        produtos.forEach((p: { categoria: { nome: string } }) => {
-          const catNome = p.categoria?.nome || 'Sem Categoria';
-          if (!grupos.has(catNome)) {
-            grupos.set(catNome, []);
-          }
-          grupos.get(catNome)!.push(p);
-        });
-
-        return grupos;
+          <div class="categoria-section">
+            <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
+            <div class="categoria-grid ${state.modoVisualizacao}">
+              ${produtos.map((p: any) => templatesLocal.produtoCard(p)).join('')}
+            </div>
+          </div>`;
       },
     };
 
     // ==================== Renderização ====================
     const render = {
-      categorias() {
-        if (!elementos.categoriaSelect) return;
-
-        // ORDENAR CATEGORIAS ANTES DE RENDERIZAR
-        const categoriasOrdenadas = ordenarCategorias(state.categorias);
-
-        // Renderizar opções para o select
-        elementos.categoriaSelect.innerHTML = `
-    <option value="todos">Todos</option>
-    ${categoriasOrdenadas
-      .map(
-        (cat) => `
-        <option value="${cat.id}">${utils.escapeHtml(cat.nome)}</option>
-      `,
-      )
-      .join('')}
-  `;
-
-        // Renderizar botões para desktop, se elementos existirem
-        if (elementos.categoriasLista) {
-          elementos.categoriasLista.innerHTML = categoriasOrdenadas
-            .map(
-              (cat) => `
-        <button class="categoria-btn" data-categoria="${cat.id}">
-            ${utils.escapeHtml(cat.nome)}
-        </button>
-      `,
-            )
-            .join('');
-        }
-
-        // Definir categoria ativa
-        elementos.categoriaSelect.value = state.categoriaAtiva;
-        (
-          document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
-        ).forEach((btn) => {
-          btn.classList.toggle(
-            'active',
-            btn.dataset.categoria === state.categoriaAtiva,
-          );
-        });
-
-        // Adicionar event listeners para botões, se existirem
-        (
-          document.querySelectorAll('.categoria-btn') as NodeListOf<HTMLElement>
-        ).forEach((btn) => {
-          btn.addEventListener('click', handlers.categoriaClick);
-        });
-
-        // Adicionar event listener para o select
-        elementos.categoriaSelect.addEventListener(
-          'change',
-          handlers.categoriaSelectChange,
-        );
-
-        // Definir botão de visualização ativo
-        (elementos.visualizacaoBtns as NodeListOf<HTMLElement>).forEach(
-          (btn) => {
-            btn.classList.toggle(
-              'active',
-              btn.dataset.view === state.modoVisualizacao,
-            );
-          },
-        );
-      },
-
       produtos() {
         if (!elementos.produtosContainer || !elementos.emptyState) return;
 
-        // Aplicar classe do modo de visualização
-        elementos.produtosContainer.classList.remove(
-          'coluna',
-          'grade',
-          'lista',
-        );
+        elementos.produtosContainer.classList.remove('coluna', 'grade', 'lista');
         elementos.produtosContainer.classList.add(state.modoVisualizacao);
         document.querySelectorAll('.categoria-grid').forEach((grid) => {
           grid.classList.remove('coluna', 'grade', 'lista');
           grid.classList.add(state.modoVisualizacao);
         });
 
-        // Filtrar e ordenar
-        let produtosFiltrados = business.filtrarProdutos(state);
-        produtosFiltrados = business.ordenarProdutos(produtosFiltrados, state.filtros.ordenacao);
+        let produtosFiltrados = filtrarProdutos(state);
+        produtosFiltrados = ordenarProdutos(produtosFiltrados, state.filtros.ordenacao);
 
-        // Verificar se há produtos
         if (produtosFiltrados.length === 0) {
           elementos.produtosContainer.innerHTML = '';
           elementos.emptyState.style.display = 'block';
@@ -770,231 +451,41 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         elementos.emptyState.style.display = 'none';
 
-        // ✅ OTIMIZAÇÃO: Priorizar primeiras 6 imagens
-        let imageIndex = 0;
-
-        // Renderizar agrupado ou não
         if (state.categoriaAtiva === 'todos') {
-          const grupos = business.agruparPorCategoria(produtosFiltrados);
+          const grupos = agruparPorCategoria(produtosFiltrados);
+          const categoriasComProdutos = Array.from(grupos.keys()).map((nomeCategoria) => {
+            const categoria = state.categorias.find((c) => c.nome === nomeCategoria);
+            return { nome: nomeCategoria, categoria: categoria || { id: '', nome: nomeCategoria, created_at: '' } };
+          });
 
-          // ORDENAR AS CATEGORIAS NO AGRUPAMENTO
-          const categoriasComProdutos = Array.from(grupos.keys()).map(
-            (nomeCategoria) => {
-              const categoria = state.categorias.find(
-                (c) => c.nome === nomeCategoria,
-              );
-              return {
-                nome: nomeCategoria,
-                categoria: categoria || {
-                  id: '',
-                  nome: nomeCategoria,
-                  created_at: '',
-                },
-              };
-            },
-          );
-
-          const categoriasOrdenadas = ordenarCategorias(
-            categoriasComProdutos.map((c) => c.categoria),
-          );
+          const categoriasOrdenadas = ordenarCategorias(categoriasComProdutos.map((c) => c.categoria));
 
           elementos.produtosContainer.innerHTML = categoriasOrdenadas
             .map((cat) => {
               const prods = grupos.get(cat.nome);
-              return prods ? templates.categoriaSecao(cat.nome, prods, imageIndex++) : '';
+              return prods ? templatesLocal.categoriaSecao(cat.nome, prods) : '';
             })
             .filter((html) => html !== '')
             .join('');
         } else {
           elementos.produtosContainer.innerHTML = produtosFiltrados
-            .map((p) => templates.produtoCard(p))
+            .map((p) => templatesLocal.produtoCard(p))
             .join('');
         }
 
-        // DEBUG: Verificar se os links foram criados
-        const productLinks = elementos.produtosContainer?.querySelectorAll('.produto-card');
-        productLinks?.forEach((link, index) => {
-          const href = (link as HTMLAnchorElement).href;
-          const id = (link as HTMLElement).dataset.produtoId;
-          
-          // Adicionar listener de debug
-          link.addEventListener('click', (e) => {
-            
-            // Verificar se vai navegar
-            setTimeout(() => {
-            }, 100);
-          });
-        });
-
-        // Event listeners para editar produto
         setupEditButtons();
+        
+        // ✅ Lazy loading de imagens
+        imageLoader.observe(elementos.produtosContainer);
       },
 
       loading(mostrar: boolean) {
         if (elementos.loading) {
           elementos.loading.style.display = mostrar ? 'flex' : 'none';
         }
-      },
-    };
-
-    // ==================== Handlers ====================
-    const handlers = {
-      categoriaClick(e: { currentTarget: any }) {
-        const target = e.currentTarget;
-        const categoriaId = target.dataset.categoria;
-
-        // Atualizar UI
-        document
-          .querySelectorAll('.categoria-btn')
-          .forEach((b) => b.classList.remove('active'));
-        target.classList.add('active');
-
-        // Atualizar estado e re-renderizar
-        state.categoriaAtiva = categoriaId || 'todos';
-        if (elementos.categoriaSelect) {
-          elementos.categoriaSelect.value = state.categoriaAtiva;
+        if (elementos.produtosSkeleton) {
+          elementos.produtosSkeleton.style.display = mostrar ? 'block' : 'none';
         }
-        render.produtos();
-      },
-
-      categoriaSelectChange(e: { target: any }) {
-        const target = e.target;
-        state.categoriaAtiva = target.value;
-
-        // Atualizar UI dos botões no desktop, se existirem
-        document.querySelectorAll('.categoria-btn').forEach((b) => {
-          b.classList.toggle(
-            'active',
-            (b as HTMLElement).dataset.categoria === state.categoriaAtiva,
-          );
-        });
-
-        render.produtos();
-      },
-
-      searchInput(e: { target: any }) {
-        const target = e.target;
-        state.filtros.busca = target.value;
-        render.produtos();
-      },
-
-      toggleFiltros() {
-        elementos.filtrosAvancados?.classList.toggle('active');
-      },
-
-      filtroCondicao(e: { target: any }) {
-        const target = e.target;
-        state.filtros.condicao = target.value;
-        render.produtos();
-      },
-
-      filtroBateria(e: { target: any }) {
-        const target = e.target;
-        state.filtros.bateria = parseInt(target.value);
-        render.produtos();
-      },
-
-      filtroOrdenacao(e: { target: any }) {
-        const target = e.target;
-        state.filtros.ordenacao = target.value;
-        render.produtos();
-      },
-
-      limparFiltros() {
-        // Resetar estado
-        state.filtros = {
-          busca: '',
-          condicao: '',
-          bateria: 0,
-          ordenacao: 'recente',
-        };
-        state.categoriaAtiva = 'todos';
-
-        // Resetar inputs
-        if (elementos.searchInput) elementos.searchInput.value = '';
-        if (elementos.filtroCondicao)
-          elementos.filtroCondicao.selectedIndex = 0;
-        if (elementos.filtroBateria) elementos.filtroBateria.selectedIndex = 0;
-        if (elementos.filtroOrdenacao)
-          elementos.filtroOrdenacao.selectedIndex = 0;
-        if (elementos.categoriaSelect)
-          elementos.categoriaSelect.value = 'todos';
-
-        // Resetar botões, se existirem
-        document.querySelectorAll('.categoria-btn').forEach((b) => {
-          b.classList.toggle(
-            'active',
-            (b as HTMLElement).dataset.categoria === 'todos',
-          );
-        });
-
-        // Re-renderizar
-        render.produtos();
-      },
-
-      visualizacaoClick(e: { currentTarget: any }) {
-        const target = e.currentTarget;
-        const view = target.dataset.view;
-
-        // Atualizar estado
-        state.modoVisualizacao = view;
-        localStorage.setItem('modoVisualizacao', view);
-
-        // Atualizar UI dos botões
-        elementos.visualizacaoBtns.forEach((btn) => {
-          btn.classList.toggle(
-            'active',
-            (btn as HTMLElement).dataset.view === view,
-          );
-        });
-
-        // Atualizar classes no container
-        elementos.produtosContainer?.classList.remove(
-          'coluna',
-          'grade',
-          'lista',
-        );
-        elementos.produtosContainer?.classList.add(view);
-        document.querySelectorAll('.categoria-grid').forEach((grid) => {
-          grid.classList.remove('coluna', 'grade', 'lista');
-          grid.classList.add(view);
-        });
-
-        // Re-renderizar produtos
-        render.produtos();
-      },
-
-      async loginSubmit(e: { preventDefault: () => void }) {
-        e.preventDefault();
-
-        const emailInput = document.getElementById(
-          'login-email',
-        ) as HTMLInputElement;
-        const passwordInput = document.getElementById(
-          'login-password',
-        ) as HTMLInputElement;
-
-        try {
-          await authService.signIn(emailInput.value, passwordInput.value);
-
-          elementos.modalLogin?.classList.remove('active');
-          elementos.formLogin?.reset();
-
-          if (elementos.loginError) {
-            elementos.loginError.textContent = '';
-            elementos.loginError.classList.remove('show');
-          }
-        } catch (error) {
-          if (elementos.loginError) {
-            elementos.loginError.textContent =
-              error.message || 'Credenciais inválidas';
-            elementos.loginError.classList.add('show');
-          }
-        }
-      },
-
-      closeModalLogin() {
-        elementos.modalLogin?.classList.remove('active');
       },
     };
 
@@ -1004,50 +495,46 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         try {
           render.loading(true);
           
-          // ✅ OTIMIZAÇÃO: Usar dados iniciais (já carregados no SSG)
           if (state.produtos.length > 0) {
-            render.categorias();
             render.produtos();
             render.loading(false);
             return;
           }
           
-          // Se não houver dados iniciais, buscar da API
           const response = await fetch('/api/produtos?limit=30');
           const data = await response.json();
           
           if (data.error) throw new Error(data.error);
           
-          state.produtos = data.produtos || [];
-          state.nextCursor = data.nextCursor || null;
+          updateState({ 
+            produtos: data.produtos || [], 
+            nextCursor: data.nextCursor || null 
+          });
           
-          render.categorias();
           render.produtos();
         } catch (error) {
           console.error('Erro ao carregar dados:', error);
           if (elementos.emptyState) elementos.emptyState.style.display = 'block';
         } finally {
           render.loading(false);
-          state.paginacao.carregando = false;
         }
       },
 
       async carregarMaisProdutos() {
-        if (state.paginacao.carregando || !state.nextCursor) return;
+        const currentState = getState();
+        if (currentState.paginacao.carregando || !currentState.nextCursor) return;
 
         try {
-          state.paginacao.carregando = true;
-          if (elementos.loadingMore)
-            elementos.loadingMore.style.display = 'flex';
+          updateState({ paginacao: { ...currentState.paginacao, carregando: true } });
+          if (elementos.loadingMore) elementos.loadingMore.style.display = 'flex';
 
-          // ✅ OTIMIZAÇÃO: Usar API com cursor-based pagination
           const params = new URLSearchParams({
-            cursor: state.nextCursor,
+            cursor: currentState.nextCursor,
             limit: '30'
           });
           
-          if (state.categoriaAtiva !== 'todos') {
-            params.set('categoria', state.categoriaAtiva);
+          if (currentState.categoriaAtiva !== 'todos') {
+            params.set('categoria', currentState.categoriaAtiva);
           }
           
           const response = await fetch(`/api/produtos?${params}`);
@@ -1055,178 +542,143 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           
           if (data.error) throw new Error(data.error);
           
-          // Adicionar novos produtos
-          state.produtos.push(...(data.produtos || []));
-          state.nextCursor = data.nextCursor;
+          const novosProdutos = [...currentState.produtos, ...(data.produtos || [])];
+          updateState({ 
+            produtos: novosProdutos, 
+            nextCursor: data.nextCursor 
+          });
           
           render.produtos();
         } catch (error) {
           console.error('Erro ao carregar mais produtos:', error);
         } finally {
-          state.paginacao.carregando = false;
-          if (elementos.loadingMore)
-            elementos.loadingMore.style.display = 'none';
+          const currentState = getState();
+          updateState({ paginacao: { ...currentState.paginacao, carregando: false } });
+          if (elementos.loadingMore) elementos.loadingMore.style.display = 'none';
         }
-      },
-
-      invalidarCache() {
-        // Não precisa mais de cache sessionStorage complexo
-        // Os dados vêm do SSG
       },
     };
 
     // ==================== Event Listeners ====================
     function setupEventListeners() {
-      // Busca
+      // ✅ Usar handlers modulares
       elementos.searchInput?.addEventListener('input', handlers.searchInput);
+      elementos.toggleFiltros?.addEventListener('click', () => handlers.toggleFiltros(elementos));
+      elementos.filtroCondicao?.addEventListener('change', handlers.condicaoChange);
+      elementos.filtroBateria?.addEventListener('change', handlers.bateriaChange);
+      elementos.filtroOrdenacao?.addEventListener('change', handlers.ordenacaoChange);
+      elementos.btnLimparFiltros?.addEventListener('click', () => handlers.limparFiltros(elementos));
 
-      // Toggle filtros avançados
-      elementos.toggleFiltros?.addEventListener(
-        'click',
-        handlers.toggleFiltros,
-      );
+      // Categorias
+      elementos.categoriaBtns.forEach((btn) => {
+        btn.addEventListener('click', handlers.categoriaClick);
+      });
+      elementos.categoriaSelect?.addEventListener('change', handlers.categoriaSelectChange);
 
-      // Filtros
-      elementos.filtroCondicao?.addEventListener(
-        'change',
-        handlers.filtroCondicao,
-      );
-      elementos.filtroBateria?.addEventListener(
-        'change',
-        handlers.filtroBateria,
-      );
-      elementos.filtroOrdenacao?.addEventListener(
-        'change',
-        handlers.filtroOrdenacao,
-      );
-
-      // Limpar filtros
-      elementos.btnLimparFiltros?.addEventListener(
-        'click',
-        handlers.limparFiltros,
-      );
-
-      // Visualização
-      elementos.visualizacaoBtns.forEach((btn) => {
-        btn.addEventListener('click', handlers.visualizacaoClick);
+      // View mode
+      elementos.viewModeBtns.forEach((btn) => {
+        btn.addEventListener('click', handlers.viewModeChange);
       });
 
       // Login
-      elementos.formLogin?.addEventListener('submit', handlers.loginSubmit);
-      elementos.modalLogin
-        ?.querySelector('.modal-close')
-        ?.addEventListener('click', handlers.closeModalLogin);
-      elementos.modalLogin
-        ?.querySelector('.modal-overlay')
-        ?.addEventListener('click', handlers.closeModalLogin);
+      elementos.formLogin?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const emailInput = document.getElementById('login-email') as HTMLInputElement;
+        const passwordInput = document.getElementById('login-password') as HTMLInputElement;
 
-      // Evento customizado para recarregar produtos
+        try {
+          await authService.signIn(emailInput.value, passwordInput.value);
+          elementos.modalLogin?.classList.remove('active');
+          elementos.formLogin?.reset();
+          if (elementos.loginError) {
+            elementos.loginError.textContent = '';
+            elementos.loginError.classList.remove('show');
+          }
+        } catch (error: any) {
+          if (elementos.loginError) {
+            elementos.loginError.textContent = error.message || 'Credenciais inválidas';
+            elementos.loginError.classList.add('show');
+          }
+        }
+      });
+
+      elementos.modalLogin?.querySelector('.modal-close')?.addEventListener('click', () => {
+        elementos.modalLogin?.classList.remove('active');
+      });
+      elementos.modalLogin?.querySelector('.modal-overlay')?.addEventListener('click', () => {
+        elementos.modalLogin?.classList.remove('active');
+      });
+
+      // ✅ Sistema de eventos pub/sub
+      onEvent(catalogEvents.FILTROS_CHANGED, () => {
+        render.produtos();
+      });
+
+      onEvent(catalogEvents.CATEGORIA_CHANGED, () => {
+        render.produtos();
+      });
+
+      onEvent(catalogEvents.VIEW_MODE_CHANGED, () => {
+        render.produtos();
+      });
+
       window.addEventListener('produtos-updated', () => {
-        api.invalidarCache();
         api.carregarDados();
       });
 
-      // Intersection Observer para scroll infinito
+      // ✅ Intersection Observer para scroll infinito
       if (elementos.scrollSentinel) {
-        const observerOptions = {
-          root: null,
-          rootMargin: '100px',
-          threshold: 0.1,
-        };
-
-        const observerCallback = (entries: any[]) => {
-          entries.forEach((entry: { isIntersecting: any }) => {
-            if (
-              entry.isIntersecting &&
-              !state.paginacao.carregando &&
-              state.paginacao.hasMore
-            ) {
-              api.carregarMaisProdutos();
-            }
-          });
-        };
-
         const observer = new IntersectionObserver(
-          observerCallback,
-          observerOptions,
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                const currentState = getState();
+                if (!currentState.paginacao.carregando && currentState.paginacao.hasMore) {
+                  api.carregarMaisProdutos();
+                }
+              }
+            });
+          },
+          { root: null, rootMargin: '100px', threshold: 0.1 }
         );
         observer.observe(elementos.scrollSentinel);
       }
     }
-
-    // ==================== Funções Globais ====================
-    (window as any).abrirModalLogin = () => {
-      elementos.modalLogin?.classList.add('active');
-    };
-
-    // ==================== Inicialização ====================
-    function init(): void {
-      
-      const savedView = localStorage.getItem('modoVisualizacao') as
-        | 'coluna'
-        | 'grade'
-        | 'lista';
-      state.modoVisualizacao =
-        savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
-      
-      
-      setupEventListeners();
-      api.carregarDados();
-
-      // Configurar botões de editar quando houver mudança de autenticação
-      authService.onAuthStateChange(() => {
-        setupEditButtons();
-      });
-    }
-
-    // Iniciar aplicação
-    init();
 
     // ==================== Controle de Botões de Editar ====================
     async function setupEditButtons() {
       const session = await authService.getSession();
       const allEditButtons = document.querySelectorAll('.btn-editar-produto');
 
-
-      allEditButtons.forEach((btn, index) => {
+      allEditButtons.forEach((btn) => {
         const card = btn.closest('.produto-card');
         const produtoInfo = card?.querySelector('.produto-info');
 
-        // REMOVER botões órfãos
         if (!card) {
           btn.remove();
           return;
         }
 
-        // Controlar visibilidade
         if (session) {
           btn.classList.add('visible');
-          if (produtoInfo) {
-            produtoInfo.classList.add('com-editar');
-          }
+          produtoInfo?.classList.add('com-editar');
         } else {
           btn.classList.remove('visible');
-          if (produtoInfo) {
-            produtoInfo.classList.remove('com-editar');
-          }
+          produtoInfo?.classList.remove('com-editar');
         }
 
-        // Configurar evento de clique
         btn.addEventListener('click', handleEditClick);
       });
     }
 
-    // Handler separado para o clique do botão editar
     function handleEditClick(e: Event) {
-      e.stopPropagation(); // Impede que abra o modal do produto
+      e.stopPropagation();
       e.preventDefault();
 
       const btn = e.currentTarget as HTMLElement;
       const produtoDataStr = btn.dataset.produtoEdit;
 
-
       if (!produtoDataStr) {
-        console.error('Dados do produto não encontrados no botão');
         mostrarToast('Erro: dados do produto não encontrados', 'error');
         return;
       }
@@ -1235,16 +687,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         const produtoData = JSON.parse(produtoDataStr);
         (window as any).abrirModalEditarProduto(produtoData);
       } catch (error) {
-        console.error('Erro ao parsear dados do produto:', error);
         mostrarToast('Erro ao carregar dados do produto', 'error');
       }
     }
 
-    // Função toast para o script principal
-    function mostrarToast(
-      mensagem: string,
-      tipo: 'success' | 'error' | 'warning' | 'info' = 'info',
-    ) {
+    function mostrarToast(mensagem: string, tipo: 'success' | 'error' | 'warning' | 'info' = 'info') {
       const toast = document.createElement('div');
       toast.className = `toast toast-${tipo}`;
       toast.textContent = mensagem;
@@ -1257,78 +704,46 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       }, 3000);
     }
 
-    // Em catalogo.astro - adicionar Intersection Observer
-    const observerOptions = {
-      root: null,
-      rootMargin: '50px',
-      threshold: 0.01,
+    // ==================== Funções Globais ====================
+    (window as any).abrirModalLogin = () => {
+      elementos.modalLogin?.classList.add('active');
     };
 
-    const imageObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const img = entry.target as HTMLImageElement;
-          if (img.dataset.src) {
-            img.src = img.dataset.src;
-            img.removeAttribute('data-src');
-            imageObserver.unobserve(img);
-          }
+    // ==================== Inicialização ====================
+    function init() {
+      const savedView = localStorage.getItem('modoVisualizacao') as 'coluna' | 'grade' | 'lista';
+      updateState({ 
+        modoVisualizacao: savedView || (window.innerWidth < 768 ? 'coluna' : 'grade') 
+      });
+      
+      setupEventListeners();
+      api.carregarDados();
+
+      authService.onAuthStateChange((session) => {
+        setupEditButtons();
+        
+        // ✅ OTIMIZAÇÃO: Lazy load scripts de admin apenas quando logado
+        if (session) {
+          loadAdminScripts();
         }
       });
-    }, observerOptions);
-  </script>
 
-  <!-- Otimização de carregamento de imagens - Mobile -->
-  <script>
-    // MOBILE: Intersection Observer para imagens do catálogo
-    const imageObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const img = entry.target as HTMLImageElement;
-
-            // Adicionar fade-in suave quando carregar
-            if (!img.complete) {
-              img.style.opacity = '0';
-              img.style.transition = 'opacity 0.3s ease';
-
-              img.onload = () => {
-                img.style.opacity = '1';
-                img.classList.add('loaded');
-              };
-            }
-
-            imageObserver.unobserve(img);
-          }
-        });
-      },
-      {
-        rootMargin: '100px', // Carregar 100px antes (mobile precisa de mais buffer)
-        threshold: 0.01,
-      },
-    );
-
-    // Observar imagens quando produtos renderizarem
-    const observeProductImages = () => {
-      document.querySelectorAll('.produto-card img').forEach((img) => {
-        if (!img.classList.contains('loaded') && !img.complete) {
-          imageObserver.observe(img);
-        }
-      });
-    };
-
-    // Chamar após render inicial
-    setTimeout(observeProductImages, 500);
-
-    // Re-observar após mudanças (filtros, ordenação, etc)
-    const originalRenderProdutos = (window as any).renderProdutos;
-    if (originalRenderProdutos) {
-      (window as any).renderProdutos = function (...args: any[]) {
-        originalRenderProdutos.apply(this, args);
-        setTimeout(observeProductImages, 100);
-      };
+      // ✅ Registrar tempo de inicialização
+      metrics.recordMetric('PageInit', performance.now());
     }
-  </script>
 
-  <!-- PWAInstallPrompt removido -->
+    // ✅ OTIMIZAÇÃO: Carregar scripts admin sob demanda
+    async function loadAdminScripts() {
+      // Marcar que os scripts admin já foram carregados
+      if ((window as any).__adminScriptsLoaded) return;
+      (window as any).__adminScriptsLoaded = true;
+
+      // Os componentes já estão no DOM (FormularioProduto, EditarProduto, GerirCategorias)
+      // Seus scripts já estão carregados, então não há necessidade de dynamic import adicional
+      // Esta função está pronta para futuras otimizações se necessário
+      console.log('✅ Scripts admin prontos');
+    }
+
+    init();
+  </script>
 </Layout>

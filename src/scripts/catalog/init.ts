@@ -5,7 +5,7 @@ import { initState, getState } from '../../lib/catalog/core/state';
 import { renderer } from '../../lib/catalog/render/renderer';
 import { createHandlers } from '../../lib/catalog/ui/handlers';
 import { catalogEvents, onEvent } from '../../lib/catalog/ui/events';
-import { business } from '../../lib/catalog/logic/filters';
+import { filtrarProdutos, ordenarProdutos } from '../../lib/catalog/logic';
 import { imageLoader } from '../../lib/catalog/performance/imageLoader';
 import { metrics } from '../../lib/catalog/performance/metrics';
 
@@ -31,8 +31,8 @@ export function initializeCatalog(initialData: any) {
 
   onEvent(catalogEvents.FILTROS_CHANGED, () => {
     const state = getState();
-    let produtosFiltrados = business.filtrarProdutos(state);
-    produtosFiltrados = business.ordenarProdutos(produtosFiltrados, state.filtros.ordenacao);
+    let produtosFiltrados = filtrarProdutos(state);
+    produtosFiltrados = ordenarProdutos(produtosFiltrados, state.filtros.ordenacao);
 
     if (elementos.produtosContainer) {
       renderer.renderProdutos(

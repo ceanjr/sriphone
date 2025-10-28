@@ -1,0 +1,198 @@
+/* src/styles/catalog/card.css */
+/* Estilos do card de produto */
+
+.produto-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--catalog-bg-secondary);
+  border: 1px solid var(--catalog-border);
+  border-radius: var(--catalog-radius-lg);
+  overflow: hidden;
+  transition: all var(--catalog-transition-base);
+  text-decoration: none;
+  color: inherit;
+}
+
+.produto-card:hover {
+  border-color: var(--catalog-border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--catalog-shadow-lg);
+}
+
+.produto-card:focus-visible {
+  outline: 2px solid var(--catalog-accent);
+  outline-offset: 2px;
+}
+
+/* Imagem do Produto */
+.produto-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--catalog-card-aspect, 1);
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--catalog-bg-secondary) 0%, var(--catalog-bg-tertiary) 100%);
+}
+
+.produto-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--catalog-transition-slow);
+}
+
+.produto-card:hover .produto-image img {
+  transform: scale(1.05);
+}
+
+/* Placeholder para imagem */
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--catalog-text-muted);
+}
+
+.image-placeholder svg {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Badges */
+.produto-badges {
+  position: absolute;
+  top: var(--catalog-spacing-sm);
+  left: var(--catalog-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--catalog-spacing-xs);
+  z-index: var(--catalog-z-base);
+}
+
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--catalog-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+
+.badge.novo {
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+}
+
+.badge.promocao {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+}
+
+/* Botão de Editar */
+.btn-editar-produto {
+  position: absolute;
+  top: var(--catalog-spacing-sm);
+  right: var(--catalog-spacing-sm);
+  padding: var(--catalog-spacing-sm);
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: var(--catalog-radius-sm);
+  color: white;
+  cursor: pointer;
+  opacity: 0;
+  transition: all var(--catalog-transition-base);
+  z-index: var(--catalog-z-base);
+}
+
+.btn-editar-produto svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.produto-card:hover .btn-editar-produto {
+  opacity: 1;
+}
+
+.btn-editar-produto:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+/* Info do Produto */
+.produto-info {
+  padding: var(--catalog-spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--catalog-spacing-sm);
+  flex: 1;
+}
+
+.produto-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--catalog-text-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.produto-info .descricao {
+  font-size: 0.875rem;
+  color: var(--catalog-text-muted);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* Footer do Card */
+.produto-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.produto-footer .preco {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--catalog-accent);
+}
+
+/* Responsividade */
+@media (max-width: 640px) {
+  .produto-info {
+    padding: var(--catalog-spacing-md);
+  }
+
+  .produto-info h3 {
+    font-size: 0.875rem;
+  }
+
+  .produto-info .descricao {
+    font-size: 0.8125rem;
+  }
+
+  .produto-footer .preco {
+    font-size: 1.125rem;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .produto-card,
+  .produto-image img,
+  .btn-editar-produto {
+    transition: none;
+  }
+
+  .produto-card:hover {
+    transform: none;
+  }
+
+  .produto-card:hover .produto-image img {
+    transform: none;
+  }
+}

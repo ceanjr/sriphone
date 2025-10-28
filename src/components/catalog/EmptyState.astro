@@ -1,0 +1,64 @@
+---
+// src/components/catalog/EmptyState.astro
+// Estado vazio quando não há produtos
+---
+
+<div class="empty-state" id="empty-state">
+  <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" 
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="7" y1="10" x2="13" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <h3>Nenhum produto encontrado</h3>
+  <p>Tente ajustar os filtros ou fazer uma nova busca</p>
+</div>
+
+<style>
+  .empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #9ca3af;
+  }
+
+  .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1.5rem;
+    color: #6b7280;
+  }
+
+  .empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    font-size: 1rem;
+    max-width: 400px;
+  }
+
+  @media (max-width: 768px) {
+    .empty-state {
+      padding: 3rem 1.5rem;
+    }
+
+    .empty-icon {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+    }
+
+    .empty-state p {
+      font-size: 0.875rem;
+    }
+  }
+</style>

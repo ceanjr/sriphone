@@ -1,8 +1,8 @@
 // src/lib/catalog/templates.ts
 // Templates HTML para renderização do catálogo
 
-import { utils, getBateriaColor } from './utils';
-import type { Product } from './business';
+import { utils, getBateriaColor } from '../utils';
+import type { Product } from '../logic/filters';
 
 export const templates = {
   produtoCard(produto: Product): string {

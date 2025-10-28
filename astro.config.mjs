@@ -37,14 +37,32 @@ export default defineConfig({
       },
       rollupOptions: {
         output: {
-          manualChunks: {
-            'supabase': ['@supabase/supabase-js'],
-            'analytics': ['@vercel/analytics'],
+          manualChunks: (id) => {
+            // Separar dependências grandes em chunks
+            if (id.includes('@supabase/supabase-js')) {
+              return 'supabase';
+            }
+            if (id.includes('@vercel/analytics')) {
+              return 'analytics';
+            }
+            // Separar módulos do catálogo
+            if (id.includes('src/lib/catalog')) {
+              if (id.includes('services')) return 'catalog-services';
+              if (id.includes('render')) return 'catalog-render';
+              if (id.includes('logic')) return 'catalog-logic';
+              return 'catalog-core';
+            }
+            // Vendors comuns
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
           },
         },
       },
       cssCodeSplit: true,
       assetsInlineLimit: 4096,
+      // Chunk size warnings
+      chunkSizeWarningLimit: 500,
     },
     // PWA optimizations
     server: {

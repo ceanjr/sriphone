@@ -1,0 +1,107 @@
+/* src/styles/catalog/grid.css */
+/* Estilos de grid para produtos */
+
+.categoria-grid {
+  display: grid;
+  gap: var(--catalog-grid-gap, 1.5rem);
+  grid-template-columns: repeat(var(--catalog-grid-cols, 3), 1fr);
+  width: 100%;
+}
+
+/* Modo Grade (padrão) */
+.categoria-grid.grade {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+/* Modo Coluna */
+.categoria-grid.coluna {
+  grid-template-columns: 1fr;
+}
+
+.categoria-grid.coluna .produto-card {
+  display: flex;
+  flex-direction: row;
+  max-width: 100%;
+}
+
+.categoria-grid.coluna .produto-image {
+  width: 200px;
+  min-width: 200px;
+  aspect-ratio: 1;
+}
+
+.categoria-grid.coluna .produto-info {
+  flex: 1;
+  padding: var(--catalog-spacing-lg);
+}
+
+/* Modo Lista */
+.categoria-grid.lista {
+  grid-template-columns: 1fr;
+  gap: var(--catalog-spacing-md);
+}
+
+.categoria-grid.lista .produto-card {
+  display: flex;
+  flex-direction: row;
+  padding: var(--catalog-spacing-md);
+}
+
+.categoria-grid.lista .produto-image {
+  width: 120px;
+  min-width: 120px;
+  aspect-ratio: 1;
+  border-radius: var(--catalog-radius-sm);
+}
+
+.categoria-grid.lista .produto-info {
+  flex: 1;
+  padding-left: var(--catalog-spacing-lg);
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+  .categoria-grid.grade {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .categoria-grid.coluna .produto-image {
+    width: 150px;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 640px) {
+  .categoria-grid.grade {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .categoria-grid.coluna {
+    grid-template-columns: 1fr;
+  }
+
+  .categoria-grid.coluna .produto-card {
+    flex-direction: column;
+  }
+
+  .categoria-grid.coluna .produto-image {
+    width: 100%;
+    aspect-ratio: 1;
+  }
+
+  .categoria-grid.coluna .produto-info {
+    padding: var(--catalog-spacing-md);
+  }
+
+  .categoria-grid.lista .produto-card {
+    flex-direction: column;
+  }
+
+  .categoria-grid.lista .produto-image {
+    width: 100%;
+  }
+
+  .categoria-grid.lista .produto-info {
+    padding: var(--catalog-spacing-md) 0 0;
+  }
+}

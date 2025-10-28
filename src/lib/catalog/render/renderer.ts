@@ -3,7 +3,7 @@
 
 import { templates } from './templates';
 import type { Product } from '../logic/filters';
-import { business } from '../logic/filters';
+import { agruparPorCategoria } from '../logic/grouping';
 import type { CatalogState } from '../logic/filters';
 
 export const renderer = {
@@ -22,7 +22,7 @@ export const renderer = {
 
     if (categoriaAtiva === 'todos') {
       // Agrupar por categoria
-      const grupos = business.agruparPorCategoria(produtos);
+      const grupos = agruparPorCategoria(produtos);
       
       // Ordenar categorias
       const categoriasOrdenadas = Array.from(grupos.keys())
@@ -44,6 +44,31 @@ export const renderer = {
         </div>
       `;
     }
+  },
+
+  renderSkeletons(container: HTMLElement, count: number = 6): void {
+    if (!container) return;
+    
+    const skeletonHTML = `
+      <div class="produto-card skeleton" aria-busy="true">
+        <div class="produto-image skeleton-image">
+          <div class="skeleton-shimmer"></div>
+        </div>
+        <div class="produto-info">
+          <div class="skeleton-title skeleton-shimmer"></div>
+          <div class="skeleton-desc skeleton-shimmer"></div>
+          <div class="produto-footer">
+            <div class="skeleton-price skeleton-shimmer"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    container.innerHTML = `
+      <div class="categoria-grid">
+        ${Array(count).fill(skeletonHTML).join('')}
+      </div>
+    `;
   },
 
   renderCategorias(
