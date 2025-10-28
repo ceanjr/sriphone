@@ -338,38 +338,22 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   </main>
 
   <script>
-    // ✅ OTIMIZAÇÃO: Código modularizado + auth
+    // ✅ OTIMIZAÇÃO: Código modularizado
     import { authService } from '../lib/supabase';
     import { utils, getBateriaColor } from '../lib/catalog/utils';
-    import { business } from '../lib/catalog/business';
-    import { templates } from '../lib/catalog/templates';
-    import type { CatalogState, Product } from '../lib/catalog/business';
+    import { business } from '../lib/catalog/logic/filters';
+    import { templates } from '../lib/catalog/render/templates';
+    import type { CatalogState, Product } from '../lib/catalog/logic/filters';
+    import { initState, getState, updateState, updateFiltros } from '../lib/catalog/core/state';
+    import { debounce } from '../lib/utils/debounce';
+    import { CATALOG_CONFIG } from '../lib/catalog/core/config';
 
     // ==================== Carregar Dados Iniciais ====================
     const initialDataEl = document.getElementById('initial-data');
     const initialData = initialDataEl ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}') : {};
 
     // ==================== Estado ====================
-    const state: CatalogState = {
-      produtos: initialData.produtos || [],
-      categorias: initialData.categorias || [],
-      nextCursor: initialData.nextCursor || null,
-      categoriaAtiva: 'todos',
-      modoVisualizacao: window.innerWidth < 768 ? 'coluna' : 'grade',
-      filtros: {
-        busca: '',
-        condicao: '',
-        bateria: 0,
-        ordenacao: 'recente',
-      },
-      paginacao: {
-        itensPorPagina: 30,
-        paginaAtual: 1,
-        totalPaginas: 1,
-        carregando: false,
-        hasMore: true,
-      },
-    };
+    const state = initState(initialData);
 
     // ==================== Elementos DOM ====================
     const elementos = {
@@ -774,8 +758,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         });
 
         // Filtrar e ordenar
-        let produtosFiltrados = business.filtrarProdutos();
-        produtosFiltrados = business.ordenarProdutos(produtosFiltrados);
+        let produtosFiltrados = business.filtrarProdutos(state);
+        produtosFiltrados = business.ordenarProdutos(produtosFiltrados, state.filtros.ordenacao);
 
         // Verificar se há produtos
         if (produtosFiltrados.length === 0) {
