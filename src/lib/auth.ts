@@ -23,6 +23,13 @@ export async function verifyAuth(cookies: AstroCookies, authHeader?: string | nu
 }
 
 export function getAuthenticatedSupabaseClient(cookies: AstroCookies, authHeader?: string | null) {
+  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+  const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase URL or Anon Key is not set in environment variables.');
+  }
+
   let token = authHeader?.replace('Bearer ', '');
   
   if (!token) {
@@ -32,9 +39,6 @@ export function getAuthenticatedSupabaseClient(cookies: AstroCookies, authHeader
   if (!token) {
     throw new Error('No authentication token found');
   }
-  
-  const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-  const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
   
   return createClient(supabaseUrl, supabaseKey, {
     global: {
