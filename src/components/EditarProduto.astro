@@ -199,7 +199,7 @@ import '../styles/components/editar-produto.css';
 </div>
 
 <script>
-  import { productService, categoryService } from '../lib/supabase';
+  // ✅ OTIMIZAÇÃO: Removido imports do Supabase
 
   const modalEditar = document.getElementById('modal-editar-produto');
   const formEditar = document.getElementById(
@@ -512,10 +512,20 @@ import '../styles/components/editar-produto.css';
         uploadProgress?.classList.add('active');
       }
 
+      // Upload novas imagens via API
       const novasUrls: string[] = [];
       for (let i = 0; i < arquivosImagem.length; i++) {
-        const url = await productService.uploadImage(arquivosImagem[i]);
-        novasUrls.push(url);
+        const formData = new FormData();
+        formData.append('file', arquivosImagem[i]);
+        
+        const uploadResponse = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!uploadResponse.ok) throw new Error('Erro ao fazer upload');
+        const uploadData = await uploadResponse.json();
+        novasUrls.push(uploadData.url);
 
         if (progressBar && arquivosImagem.length > 0) {
           const progresso = ((i + 1) / arquivosImagem.length) * 100;
@@ -528,22 +538,28 @@ import '../styles/components/editar-produto.css';
       // Combinar imagens existentes com novas
       const todasImagens = [...imagensExistentes, ...novasUrls];
 
-      // Atualizar produto
-      const formData = new FormData(formEditar);
-      const bateriaValue = formData.get('bateria') as string;
+      // Atualizar produto via API
+      const formData2 = new FormData(formEditar);
+      const bateriaValue = formData2.get('bateria') as string;
 
       const produto = {
-        codigo: formData.get('codigo') as string,
-        nome: formData.get('nome') as string,
-        descricao: formData.get('descricao') as string,
-        preco: parseFloat(formData.get('preco') as string),
-        condicao: formData.get('condicao') as 'Novo' | 'Seminovo',
+        codigo: formData2.get('codigo') as string,
+        nome: formData2.get('nome') as string,
+        descricao: formData2.get('descricao') as string,
+        preco: parseFloat(formData2.get('preco') as string),
+        condicao: formData2.get('condicao') as 'Novo' | 'Seminovo',
         bateria: bateriaValue ? parseInt(bateriaValue) : 0,
-        categoria_id: formData.get('categoria') as string,
+        categoria_id: formData2.get('categoria') as string,
         imagens: todasImagens,
       };
 
-      await productService.update(produtoAtualId, produto);
+      const updateResponse = await fetch(`/api/admin/produtos/${produtoAtualId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(produto)
+      });
+      
+      if (!updateResponse.ok) throw new Error('Erro ao atualizar produto');
 
       window.dispatchEvent(new Event('produtos-updated'));
 
@@ -662,7 +678,12 @@ import '../styles/components/editar-produto.css';
     }
 
     try {
-      await productService.delete(produtoAtualId);
+      const deleteResponse = await fetch(`/api/admin/produtos/${produtoAtualId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!deleteResponse.ok) throw new Error('Erro ao excluir produto');
+      
       window.dispatchEvent(new Event('produtos-updated'));
       fecharModal();
       mostrarToast('Produto excluído com sucesso!', 'success');

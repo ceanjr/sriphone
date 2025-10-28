@@ -13,7 +13,7 @@ import '../styles/pages/catalogo.css';
 import { initCatalogo } from '../scripts/catalogo.js';
 import { optimizeSupabaseImage, getThumbnailUrl } from '../lib/imageOptimizer';
 
-// Buscar dados no servidor para SSG
+// ✅ OTIMIZAÇÃO: Buscar dados no servidor para SSG
 import { productService, categoryService } from '../lib/supabase';
 const produtosIniciais = await productService.getPaginated(undefined, 30);
 const categorias = await categoryService.getAll();

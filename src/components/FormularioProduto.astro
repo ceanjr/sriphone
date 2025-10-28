@@ -1,6 +1,6 @@
 ---
 import '../styles/components/formulario-produto.css';
-import { categoryService } from '../lib/supabase';
+// ✅ OTIMIZAÇÃO: Categorias carregadas via API
 ---
 
 <div id="modal-form-produto" class="modal-form">
@@ -183,7 +183,7 @@ import { categoryService } from '../lib/supabase';
 </div>
 
 <script>
-  import { productService, categoryService } from '../lib/supabase';
+  // ✅ OTIMIZAÇÃO: Removido imports do Supabase
 
   const modalForm = document.getElementById('modal-form-produto');
   const form = document.getElementById('form-produto') as HTMLFormElement;
@@ -203,11 +203,13 @@ import { categoryService } from '../lib/supabase';
   const MAX_IMAGES = 5;
   let arquivosImagem: File[] = [];
 
-  // Carregar categorias
+  // Carregar categorias via API
   async function carregarCategorias() {
     if (!selectCategoria) return;
     try {
-      const categorias = await categoryService.getAll();
+      const response = await fetch('/api/admin/categorias');
+      if (!response.ok) throw new Error('Erro ao carregar categorias');
+      const categorias = await response.json();
       selectCategoria.innerHTML =
         '<option value="">Selecione a categoria...</option>';
       categorias.forEach((cat) => {
@@ -411,10 +413,20 @@ import { categoryService } from '../lib/supabase';
       ) as HTMLElement;
       uploadProgress?.classList.add('active');
 
+      // Upload imagens via API
       const urlsImagens: string[] = [];
       for (let i = 0; i < arquivosImagem.length; i++) {
-        const url = await productService.uploadImage(arquivosImagem[i]);
-        urlsImagens.push(url);
+        const formData = new FormData();
+        formData.append('file', arquivosImagem[i]);
+        
+        const uploadResponse = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!uploadResponse.ok) throw new Error('Erro ao fazer upload');
+        const uploadData = await uploadResponse.json();
+        urlsImagens.push(uploadData.url);
 
         if (progressBar) {
           const progresso = ((i + 1) / arquivosImagem.length) * 100;
@@ -424,20 +436,26 @@ import { categoryService } from '../lib/supabase';
 
       uploadProgress?.classList.remove('active');
 
-      // Criar produto
-      const formData = new FormData(form);
+      // Criar produto via API
+      const formData2 = new FormData(form);
       const produto = {
-        codigo: formData.get('codigo') as string,
-        nome: formData.get('nome') as string,
-        descricao: formData.get('descricao') as string,
-        preco: parseFloat(formData.get('preco') as string),
-        condicao: formData.get('condicao') as 'Novo' | 'Seminovo',
-        bateria: parseInt(formData.get('bateria') as string),
-        categoria_id: formData.get('categoria') as string,
+        codigo: formData2.get('codigo') as string,
+        nome: formData2.get('nome') as string,
+        descricao: formData2.get('descricao') as string,
+        preco: parseFloat(formData2.get('preco') as string),
+        condicao: formData2.get('condicao') as 'Novo' | 'Seminovo',
+        bateria: parseInt(formData2.get('bateria') as string),
+        categoria_id: formData2.get('categoria') as string,
         imagens: urlsImagens,
       };
 
-      await productService.create(produto);
+      const createResponse = await fetch('/api/admin/produtos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(produto)
+      });
+      
+      if (!createResponse.ok) throw new Error('Erro ao criar produto');
 
       window.dispatchEvent(new Event('produtos-updated'));
 
