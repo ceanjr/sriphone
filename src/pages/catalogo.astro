@@ -298,6 +298,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             </svg>
             <p>Nenhum produto encontrado</p>
           </div>
+          
+          <!-- DEBUG -->
+          <div id="debug-info" style="position: fixed; bottom: 0; left: 0; background: rgba(0,0,0,0.9); color: lime; padding: 10px; font-family: monospace; font-size: 11px; max-width: 400px; z-index: 99999; display: none;">
+            <div id="debug-content"></div>
+          </div>
         </div>
       </section>
     </section>
@@ -330,7 +335,31 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   </main>
 
   <script>
-    console.log('🚀 SCRIPT CATALOGO INICIADO');
+    // Debug helper - visível em produção
+    const debugEl = (() => {
+      let el: HTMLElement | null = null;
+      let content: HTMLElement | null = null;
+      let logs: string[] = [];
+      
+      return {
+        init() {
+          el = document.getElementById('debug-info');
+          content = document.getElementById('debug-content');
+          if (el) el.style.display = 'block';
+        },
+        log(msg: string) {
+          logs.push(`[${new Date().toLocaleTimeString()}] ${msg}`);
+          if (logs.length > 10) logs.shift();
+          if (content) {
+            content.innerHTML = logs.join('<br>');
+          }
+          console.log(msg); // Também no console se disponível
+        }
+      };
+    })();
+    
+    debugEl.init();
+    debugEl.log('🚀 SCRIPT CATALOGO INICIADO');
     
     import {
       productService,
@@ -338,7 +367,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       authService,
     } from '../lib/supabase';
 
-    console.log('📦 Serviços importados');
+    debugEl.log('📦 Serviços importados');
 
     // ==================== Estado ====================
     const state = {
@@ -836,20 +865,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
         // DEBUG: Verificar se os links foram criados
         const productLinks = elementos.produtosContainer?.querySelectorAll('.produto-card');
-        console.log('🔍 DEBUG: Produtos renderizados:', productLinks?.length);
+        debugEl.log(`🔍 ${productLinks?.length} produtos renderizados`);
         productLinks?.forEach((link, index) => {
           const href = (link as HTMLAnchorElement).href;
           const id = (link as HTMLElement).dataset.produtoId;
-          console.log(`  - Produto ${index + 1}: ID=${id}, href=${href}`);
           
           // Adicionar listener de debug
           link.addEventListener('click', (e) => {
-            console.log('🖱️ CLICK no produto:', {
-              id: (link as HTMLElement).dataset.produtoId,
-              href: (link as HTMLAnchorElement).href,
-              tagName: (e.target as HTMLElement).tagName,
-              currentTarget: e.currentTarget
-            });
+            debugEl.log(`🖱️ CLICK: ${id}`);
+            debugEl.log(`  href: ${href}`);
+            debugEl.log(`  tag: ${(e.target as HTMLElement).tagName}`);
           });
         });
 
@@ -1226,7 +1251,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     // ==================== Inicialização ====================
     function init(): void {
-      console.log('🎯 INIT CHAMADO');
+      debugEl.log('🎯 INIT CHAMADO');
       
       const savedView = localStorage.getItem('modoVisualizacao') as
         | 'coluna'
@@ -1235,7 +1260,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       state.modoVisualizacao =
         savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
       
-      console.log('  - Modo visualização:', state.modoVisualizacao);
+      debugEl.log(`  - Modo: ${state.modoVisualizacao}`);
       
       setupEventListeners();
       api.carregarDados();
@@ -1247,9 +1272,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     }
 
     // Iniciar aplicação
-    console.log('📍 Chamando init()...');
+    debugEl.log('📍 Chamando init()...');
     init();
-    console.log('✅ Init() executado');
+    debugEl.log('✅ Init() executado');
 
     // ==================== Controle de Botões de Editar ====================
     async function setupEditButtons() {
