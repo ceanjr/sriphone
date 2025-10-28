@@ -8,7 +8,8 @@
     "build:analyze": "astro build && du -sh dist/* | sort -h",
     "preview": "astro preview",
     "astro": "astro",
-    "migrate:all": "tsx scripts/migrate-images.ts"
+    "migrate:all": "tsx scripts/migrate-images.ts",
+    "fix:images": "tsx scripts/fix-image-format.ts"
   },
   "dependencies": {
     "@astrojs/vercel": "^8.2.10",

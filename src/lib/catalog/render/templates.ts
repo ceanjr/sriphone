@@ -7,7 +7,7 @@ import type { Product } from '../logic/filters';
 export const templates = {
   produtoCard(produto: Product): string {
     const precoFormatado = utils.formatarPreco(produto.preco);
-    const imagemPrincipal = produto.imagens?.[0] || '';
+    const imagemPrincipal = utils.getImageUrl(produto.imagens, 'medium', 0);
     const larguraBateria = utils.calcularLarguraBateria(produto.bateria);
     const corBateria = getBateriaColor(produto.bateria);
     
@@ -44,17 +44,15 @@ export const templates = {
     </button>
     <div class="produto-image">
         ${
-          imagemPrincipal
+          imagemPrincipal && imagemPrincipal !== '/placeholder.jpg'
             ? `<img 
-                src="${utils.optimizeImage(imagemPrincipal, 400, 80)}" 
-                srcset="${utils.generateSrcSet(imagemPrincipal, [400, 600, 800])}"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+                src="${imagemPrincipal}" 
                 alt="${utils.escapeHtml(produto.nome)}" 
                 loading="lazy" 
                 decoding="async"
                 fetchpriority="low"
-                width="400" 
-                height="400"
+                width="600" 
+                height="600"
                 style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); object-fit: cover; aspect-ratio: 1;"
               />`
             : `

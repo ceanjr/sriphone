@@ -304,13 +304,41 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       });
     }
 
+    // ==================== Helper para extrair URL da imagem ====================
+    function getImageUrl(imagens: any, size = 'medium', index = 0) {
+      if (!imagens || imagens.length === 0) return '/placeholder.jpg';
+      
+      const image = imagens[index];
+      if (!image) return '/placeholder.jpg';
+      
+      // Se for string JSON, fazer parse
+      if (typeof image === 'string') {
+        if (image.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(image);
+            return parsed[size] || parsed.medium || parsed.thumbnail || '/placeholder.jpg';
+          } catch {
+            return image; // URL direta (formato antigo)
+          }
+        }
+        return image; // URL direta (formato antigo)
+      }
+      
+      // Formato objeto direto
+      if (typeof image === 'object' && image !== null && 'thumbnail' in image) {
+        return image[size] || image.medium || image.thumbnail || '/placeholder.jpg';
+      }
+      
+      return '/placeholder.jpg';
+    }
+
     // ==================== Templates para Produtos ====================
     const templatesLocal = {
       produtoCard(produto: any) {
         const precoFormatado = utils.formatarPreco(produto.preco);
         const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
         const bateriaColorClass = getBateriaColor(produto.bateria);
-        const imagemPrincipal = produto.imagens?.[0];
+        const imagemPrincipal = getImageUrl(produto.imagens, 'medium', 0);
         const temBateria = produto.bateria && produto.bateria > 0;
 
         const produtoEditData = JSON.stringify({
@@ -372,17 +400,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
               </svg>
             </button>
             <div class="produto-image">
-              ${imagemPrincipal ? `
+              ${imagemPrincipal && imagemPrincipal !== '/placeholder.jpg' ? `
                 <img 
-                  src="${utils.optimizeImage(imagemPrincipal, 400, 80)}" 
-                  srcset="${utils.generateSrcSet(imagemPrincipal, [400, 600, 800])}"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 300px"
+                  src="${imagemPrincipal}" 
                   alt="${utils.escapeHtml(produto.nome)}" 
                   loading="lazy" 
                   decoding="async"
                   fetchpriority="low"
-                  width="400" 
-                  height="400"
+                  width="600" 
+                  height="600"
                   style="background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); object-fit: cover; aspect-ratio: 1;"
                 />` : `
                 <div class="image-placeholder">

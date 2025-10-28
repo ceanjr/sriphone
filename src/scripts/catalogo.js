@@ -1,5 +1,34 @@
 // src/scripts/catalogo.js
 import { productService, categoryService, authService } from '../lib/supabase';
+
+// Função helper para extrair URL da imagem (compatível com formato antigo e novo)
+function getImageUrl(imagens, size = 'medium', index = 0) {
+  if (!imagens || imagens.length === 0) return '/placeholder.jpg';
+  
+  const image = imagens[index];
+  if (!image) return '/placeholder.jpg';
+  
+  // Se for string JSON, fazer parse
+  if (typeof image === 'string') {
+    if (image.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(image);
+        return parsed[size] || parsed.medium || parsed.thumbnail || '/placeholder.jpg';
+      } catch {
+        return image; // URL direta (formato antigo)
+      }
+    }
+    return image; // URL direta (formato antigo)
+  }
+  
+  // Formato objeto direto
+  if (typeof image === 'object' && image !== null && 'thumbnail' in image) {
+    return image[size] || image.medium || image.thumbnail || '/placeholder.jpg';
+  }
+  
+  return '/placeholder.jpg';
+}
+
 export function initCatalogo() {
   // ==================== Estado ====================
   const state = {
@@ -139,7 +168,7 @@ export function initCatalogo() {
       const precoFormatado = utils.formatarPreco(produto.preco);
       const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
       const bateriaColorClass = getBateriaColor(produto.bateria);
-      const imagemPrincipal = produto.imagens?.[0];
+      const imagemPrincipal = getImageUrl(produto.imagens, 'medium', 0);
       const temBateria = produto.bateria && produto.bateria > 0;
 
       const produtoModalData = JSON.stringify({
@@ -234,7 +263,7 @@ export function initCatalogo() {
     </button>
     <div class="produto-image">
         ${
-          imagemPrincipal
+          imagemPrincipal && imagemPrincipal !== '/placeholder.jpg'
             ? `<div class="image-container">
                 <div class="image-skeleton"></div>
                 <img data-src="${imagemPrincipal}" alt="${utils.escapeHtml(
@@ -820,30 +849,19 @@ export function initCatalogo() {
         if (produto.imagens && produto.imagens.length > 0) {
           // Precarregar primeira imagem imediatamente
           const firstImg = new Image();
+          const firstImgUrl = getImageUrl(produto.imagens, 'medium', 0);
           
-          // Otimizar para mobile
-          if (isMobile && produto.imagens[0].includes('supabase')) {
-            const url = new URL(produto.imagens[0]);
-            url.searchParams.set('width', '800');
-            url.searchParams.set('quality', '80');
-            url.searchParams.set('format', 'webp');
-            firstImg.src = url.toString();
-          } else {
-            firstImg.src = produto.imagens[0];
+          if (firstImgUrl && firstImgUrl !== '/placeholder.jpg') {
+            firstImg.src = firstImgUrl;
           }
 
           // Precarregar segunda imagem se disponível (mobile)
           if (isMobile && produto.imagens.length > 1) {
             setTimeout(() => {
               const secondImg = new Image();
-              if (produto.imagens[1].includes('supabase')) {
-                const url = new URL(produto.imagens[1]);
-                url.searchParams.set('width', '800');
-                url.searchParams.set('quality', '80');
-                url.searchParams.set('format', 'webp');
-                secondImg.src = url.toString();
-              } else {
-                secondImg.src = produto.imagens[1];
+              const secondImgUrl = getImageUrl(produto.imagens, 'medium', 1);
+              if (secondImgUrl && secondImgUrl !== '/placeholder.jpg') {
+                secondImg.src = secondImgUrl;
               }
             }, 100);
           }

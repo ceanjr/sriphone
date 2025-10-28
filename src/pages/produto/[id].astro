@@ -6,6 +6,7 @@ import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { productService } from '../../lib/supabase';
+import { utils } from '../../lib/catalog/utils';
 import '../../styles/pages/produto.css';
 
 // Gerar todas as páginas de produto no build
@@ -38,6 +39,10 @@ const precoFormatado = new Intl.NumberFormat('pt-BR', {
 
 const metaDescription = `${produto.nome} - ${produto.descricao}. ${precoFormatado}`;
 const canonicalURL = new URL(`/produto/${produto.id}`, Astro.site);
+
+// Obter URLs das imagens no formato correto
+const imagemPrincipal = utils.getImageUrl(produto.imagens, 'large', 0);
+const imagemOg = utils.getImageUrl(produto.imagens, 'medium', 0);
 
 function getBateriaColor(bateria: number): string {
   if (bateria >= 80) return 'bateria-verde';
@@ -78,7 +83,7 @@ const schemaData = {
     <link rel="canonical" href={canonicalURL} />
     <meta property="og:title" content={`${produto.nome} | Sr. IPHONE`} />
     <meta property="og:description" content={metaDescription} />
-    <meta property="og:image" content={produto.imagens?.[0] || '/og-image.jpg'} />
+    <meta property="og:image" content={imagemOg !== '/placeholder.jpg' ? imagemOg : '/og-image.jpg'} />
     <meta property="og:type" content="product" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:price:amount" content={produto.preco.toString()} />
@@ -88,7 +93,7 @@ const schemaData = {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={`${produto.nome} | Sr. IPHONE`} />
     <meta name="twitter:description" content={metaDescription} />
-    <meta name="twitter:image" content={produto.imagens?.[0] || '/og-image.jpg'} />
+    <meta name="twitter:image" content={imagemOg !== '/placeholder.jpg' ? imagemOg : '/og-image.jpg'} />
     
     <!-- Schema.org JSON-LD -->
     <script type="application/ld+json" set:html={JSON.stringify(schemaData)} />
@@ -104,7 +109,7 @@ const schemaData = {
           <div class="main-image-container">
             <img 
               id="main-image"
-              src={produto.imagens?.[0] || '/placeholder.jpg'} 
+              src={imagemPrincipal} 
               alt={produto.nome}
               class="main-image"
             />
@@ -113,15 +118,19 @@ const schemaData = {
           {produto.imagens && produto.imagens.length > 1 && (
             <div class="thumbnails-container">
               <div class="thumbnails-track">
-                {produto.imagens.map((img, index) => (
-                  <button 
-                    class={`thumbnail ${index === 0 ? 'active' : ''}`}
-                    data-image={img}
-                    aria-label={`Ver imagem ${index + 1}`}
-                  >
-                    <img src={img} alt={`${produto.nome} - Imagem ${index + 1}`} />
-                  </button>
-                ))}
+                {produto.imagens.map((img, index) => {
+                  const thumbUrl = utils.getImageUrl(produto.imagens, 'thumbnail', index);
+                  const largeUrl = utils.getImageUrl(produto.imagens, 'large', index);
+                  return (
+                    <button 
+                      class={`thumbnail ${index === 0 ? 'active' : ''}`}
+                      data-image={largeUrl}
+                      aria-label={`Ver imagem ${index + 1}`}
+                    >
+                      <img src={thumbUrl} alt={`${produto.nome} - Imagem ${index + 1}`} />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
