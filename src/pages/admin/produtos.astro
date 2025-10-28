@@ -177,16 +177,29 @@ const { data: categorias } = await supabase
             method: 'DELETE',
           });
           
+          let data;
+          try {
+            const text = await response.text();
+            if (text) {
+              data = JSON.parse(text);
+            } else {
+              data = { error: 'Resposta vazia do servidor' };
+            }
+          } catch (parseError) {
+            console.error('Erro ao fazer parse do JSON:', parseError);
+            data = { error: 'Resposta inválida do servidor' };
+          }
+
           if (response.ok) {
             window.showToast('Produto deletado com sucesso!', 'success');
             setTimeout(() => {
               window.location.reload();
             }, 1000);
           } else {
-            const data = await response.json();
-            throw new Error(data.error || 'Erro ao deletar produto');
+            throw new Error(data.error || `Erro ${response.status}: ${response.statusText}`);
           }
         } catch (error: any) {
+          console.error('Erro ao deletar produto:', error);
           window.showToast(error.message || 'Erro ao deletar produto', 'error');
         }
       }

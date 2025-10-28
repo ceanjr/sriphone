@@ -5,99 +5,147 @@ export const prerender = false;
 
 // PUT - Atualizar categoria
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
+  const headers = { 'Content-Type': 'application/json' };
+  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
     const { id } = params;
-    const body = await request.json();
+    
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'JSON inválido' }), {
+        status: 400,
+        headers,
+      });
+    }
+
+    if (!body || !body.nome || typeof body.nome !== 'string' || body.nome.trim() === '') {
+      return new Response(JSON.stringify({ error: 'O nome da categoria é obrigatório.' }), {
+        status: 400,
+        headers,
+      });
+    }
     
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('categorias')
-      .update(body)
+      .update({ nome: body.nome.trim() })
       .eq('id', id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro Supabase ao atualizar categoria:', error);
+      
+      if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
+        return new Response(JSON.stringify({ error: 'Uma categoria com este nome já existe.' }), {
+          status: 409,
+          headers,
+        });
+      }
+
+      return new Response(JSON.stringify({ error: error.message || 'Erro ao atualizar categoria' }), {
+        status: 500,
+        headers,
+      });
+    }
+
+    if (!data) {
+      return new Response(JSON.stringify({ error: 'Categoria não encontrada' }), {
+        status: 404,
+        headers,
+      });
+    }
 
     return new Response(JSON.stringify({ categoria: data }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Erro ao atualizar categoria:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Erro ao atualizar categoria' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 };
 
 // DELETE - Deletar categoria
 export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+  const headers = { 'Content-Type': 'application/json' };
+  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
     const { id } = params;
     
+    if (!id) {
+      return new Response(JSON.stringify({ error: 'ID da categoria não fornecido' }), {
+        status: 400,
+        headers,
+      });
+    }
+    
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
-    // Use .select() to confirm which row was deleted.
     const { data, error } = await supabase
       .from('categorias')
       .delete()
       .eq('id', id)
-      .select(); // Returns an array of deleted items
+      .select();
 
     if (error) {
-      // This will catch specific DB errors, like foreign key violations
-      throw error;
+      console.error('Erro Supabase ao deletar categoria:', error);
+      
+      if (error.code === '23503') {
+        return new Response(JSON.stringify({ 
+          error: 'Esta categoria não pode ser deletada pois está sendo usada por produtos.' 
+        }), {
+          status: 409,
+          headers,
+        });
+      }
+
+      return new Response(JSON.stringify({ error: error.message || 'Erro ao deletar categoria' }), {
+        status: 500,
+        headers,
+      });
     }
 
-    // If no error, but data is empty, it means nothing was deleted.
-    // This can happen if the ID doesn't exist or if RLS silently prevents it.
     if (!data || data.length === 0) {
       return new Response(JSON.stringify({ 
-        error: 'Falha ao deletar. A categoria pode não existir ou estar em uso.' 
+        error: 'Categoria não encontrada' 
       }), {
-        status: 409, // Conflict
-        headers: { 'Content-Type': 'application/json' },
+        status: 404,
+        headers,
       });
     }
 
-    // If we get here, it means data contains the deleted category.
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   } catch (error: any) {
-    // Add a specific check for the foreign key violation code for a clearer message
-    if (error.code === '23503') {
-      return new Response(JSON.stringify({ 
-        error: 'Esta categoria não pode ser deletada pois está sendo usada por produtos.' 
-      }), {
-        status: 409, // Conflict
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    
-    // Generic catch-all
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Erro ao deletar categoria:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Erro ao deletar categoria' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 };

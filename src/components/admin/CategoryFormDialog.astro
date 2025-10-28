@@ -125,10 +125,21 @@ const isEdit = !!categoria;
         body: JSON.stringify(categoria),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        } else {
+          data = { error: 'Resposta vazia do servidor' };
+        }
+      } catch (parseError) {
+        console.error('Erro ao fazer parse do JSON:', parseError);
+        data = { error: 'Resposta inválida do servidor' };
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar categoria');
+        throw new Error(data.error || `Erro ${response.status}: ${response.statusText}`);
       }
 
       window.showToast(
@@ -142,6 +153,7 @@ const isEdit = !!categoria;
         window.location.reload();
       }, 1000);
     } catch (error: any) {
+      console.error('Erro ao salvar categoria:', error);
       window.showToast(error.message || 'Erro ao salvar categoria', 'error');
     } finally {
       submitBtn.disabled = false;

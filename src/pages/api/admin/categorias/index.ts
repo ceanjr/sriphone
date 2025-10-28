@@ -5,13 +5,15 @@ export const prerender = false;
 
 // GET - Listar todas as categorias
 export const GET: APIRoute = async ({ request, cookies }) => {
+  const headers = { 'Content-Type': 'application/json' };
+  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
@@ -21,84 +23,98 @@ export const GET: APIRoute = async ({ request, cookies }) => {
       .select('*')
       .order('nome', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro Supabase ao listar categorias:', error);
+      return new Response(JSON.stringify({ error: error.message || 'Erro ao listar categorias' }), {
+        status: 500,
+        headers,
+      });
+    }
 
-    return new Response(JSON.stringify({ categorias: data }), {
+    return new Response(JSON.stringify({ categorias: data || [] }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Erro ao listar categorias:', error);
+    return new Response(JSON.stringify({ error: error.message || 'Erro ao listar categorias' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   }
 };
 
 // POST - Criar nova categoria
 export const POST: APIRoute = async ({ request, cookies }) => {
+  const headers = { 'Content-Type': 'application/json' };
+  
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
       return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
       });
     }
 
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(JSON.stringify({ error: 'JSON inválido' }), {
+        status: 400,
+        headers,
+      });
+    }
 
-    // Validate the request body
     if (!body || !body.nome || typeof body.nome !== 'string' || body.nome.trim() === '') {
       return new Response(JSON.stringify({ error: 'O nome da categoria é obrigatório.' }), {
-        status: 400, // Bad Request
-        headers: { 'Content-Type': 'application/json' },
+        status: 400,
+        headers,
       });
     }
     
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data, error } = await supabase
       .from('categorias')
-      .insert([{ nome: body.nome.trim() }]) // Use a cleaned-up body
+      .insert([{ nome: body.nome.trim() }])
       .select()
       .single();
 
     if (error) {
-      throw error;
+      console.error('Erro Supabase ao criar categoria:', error);
+      
+      if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
+        return new Response(JSON.stringify({ error: 'Uma categoria com este nome já existe.' }), {
+          status: 409,
+          headers,
+        });
+      }
+
+      if (error.code === '23502') {
+        return new Response(JSON.stringify({ error: 'O nome da categoria não pode ser nulo.' }), {
+          status: 400,
+          headers,
+        });
+      }
+
+      return new Response(JSON.stringify({ error: error.message || 'Erro ao criar categoria' }), {
+        status: 500,
+        headers,
+      });
     }
 
     return new Response(JSON.stringify({ categoria: data }), {
       status: 201,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     });
   } catch (error: any) {
-    // 1. Log detalhado do erro no servidor para depuração
-    console.error('--- ERRO AO CRIAR CATEGORIA ---', error);
-
-    const headers = { 'Content-Type': 'application/json' };
-
-    // 2. Tratar erro de duplicação (categoria já existe)
-    if (error.code === '23505' || (error.message && error.message.includes('duplicate key'))) {
-      return new Response(JSON.stringify({ error: 'Uma categoria com este nome já existe.' }), {
-        status: 409, // Conflict
-        headers,
-      });
-    }
-
-    // 3. Tratar erro de campo nulo (nome não enviado)
-    if (error.code === '23502') {
-      return new Response(JSON.stringify({ error: 'O nome da categoria não pode ser nulo.' }), {
-        status: 400, // Bad Request
-        headers,
-      });
-    }
-
-    // 4. Tratar outros erros genéricos
+    console.error('Erro ao criar categoria:', error);
     return new Response(JSON.stringify({ 
-      error: 'Ocorreu um erro inesperado no servidor.' 
+      error: error.message || 'Ocorreu um erro inesperado no servidor.' 
     }), {
-      status: 500, // Internal Server Error
+      status: 500,
       headers,
     });
   }
