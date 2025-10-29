@@ -1,17 +1,19 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin } from '../../lib/supabaseAdmin';
 import '../../styles/admin-list.css';
 import '../../styles/admin-form.css';
 
+export const prerender = false; // Força SSR sem cache para admin
+
 // Buscar todas as categorias para o filtro
-const { data: categorias } = await supabase
+const { data: categorias } = await supabaseAdmin
   .from('categorias')
   .select('*')
   .order('nome');
 
 // Buscar todos os produtos
-const { data: produtos, error } = await supabase
+const { data: produtos, error } = await supabaseAdmin
   .from('produtos')
   .select('*, categoria:categoria_id(id, nome)')
   .order('created_at', { ascending: false });

@@ -1,9 +1,11 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import '../../../styles/admin-form.css';
 
-const { data: categorias } = await supabase
+export const prerender = false; // Força SSR sem cache para admin
+
+const { data: categorias } = await supabaseAdmin
   .from('categorias')
   .select('*')
   .order('nome');

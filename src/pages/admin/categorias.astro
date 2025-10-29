@@ -1,18 +1,20 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import ConfirmModal from '../../components/admin/ConfirmModal.astro';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin } from '../../lib/supabaseAdmin';
 import '../../styles/admin-list.css';
 import '../../styles/admin-form.css';
 
-const { data: categorias } = await supabase
+export const prerender = false; // Força SSR sem cache para admin
+
+const { data: categorias } = await supabaseAdmin
   .from('categorias')
   .select('*')
   .order('nome');
 
 const categoriasComContagem = await Promise.all(
   (categorias || []).map(async (cat) => {
-    const { count } = await supabase
+    const { count } = await supabaseAdmin
       .from('produtos')
       .select('*', { count: 'exact', head: true })
       .eq('categoria_id', cat.id);

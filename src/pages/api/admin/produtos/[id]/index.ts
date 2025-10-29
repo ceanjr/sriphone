@@ -53,17 +53,22 @@ export const PUT: APIRoute = async ({ params, request }) => {
 
     console.log('✅ Produto atualizado:', data);
 
-    // Revalidar cache
-    try {
-      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/catalogo`);
-      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/produto/${id}`);
-    } catch (e) {
-      console.warn('⚠️ Erro ao revalidar cache:', e);
-    }
-
     return new Response(
-      JSON.stringify({ success: true, data }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        data,
+        message: 'Produto atualizado com sucesso!',
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        status: 200, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        } 
+      }
     );
   } catch (error: any) {
     console.error('❌ Erro crítico em PUT:', error);
