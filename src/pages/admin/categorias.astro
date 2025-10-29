@@ -7,13 +7,6 @@ declare global {
     getCategorias: typeof getCategorias;
   }
 }
-import {
-  criarCategoria,
-  editarCategoria,
-  deletarCategoria,
-  getCategorias,
-} from '../../lib/crud';
-
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import ConfirmModal from '../../components/admin/ConfirmModal.astro';
 import '../../styles/admin-list.css';
@@ -75,6 +68,12 @@ import '../../styles/admin-form.css';
 </AdminLayout>
 
 <script is:inline>
+  import {
+    criarCategoria,
+    editarCategoria,
+    deletarCategoria,
+    getCategorias,
+  } from '../../lib/crud';
   window.criarCategoria = criarCategoria;
   window.editarCategoria = editarCategoria;
   window.deletarCategoria = deletarCategoria;
