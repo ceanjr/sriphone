@@ -4,6 +4,50 @@ import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 
 export const prerender = false;
 
+export const GET: APIRoute = async () => {
+  try {
+    console.log('📋 GET /api/admin/produtos - Listando produtos...');
+
+    const { data, error } = await supabaseAdmin
+      .from('produtos')
+      .select(`
+        *,
+        categorias (
+          id,
+          nome
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Erro Supabase:', error);
+      throw error;
+    }
+
+    console.log('✅ Produtos encontrados:', data?.length || 0);
+
+    return new Response(
+      JSON.stringify({ success: true, data: data || [] }),
+      { 
+        status: 200, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
+    );
+  } catch (error: any) {
+    console.error('❌ Erro crítico em GET /api/admin/produtos:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Erro ao buscar produtos' 
+      }),
+      { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+};
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     console.log('📥 POST /api/admin/produtos - Iniciando...');
