@@ -1,7 +1,5 @@
-// CRUD COM API ROUTES - USA SUPABASE ADMIN (BYPASSA RLS)
-
 // ============================================
-// CATEGORIAS
+// CATEGORIAS - CORRIGIDO
 // ============================================
 
 export async function getCategorias() {
@@ -13,17 +11,18 @@ export async function getCategorias() {
       throw new Error(result.error || 'Erro ao buscar categorias');
     }
     
-    // ✅ CORRIGIDO: Garante que sempre retorna { success, data }
+    // ✅ CORRIGIDO: A API retorna { success, data }
+    // Então devemos retornar result direto, não result.data
     return {
       success: true,
-      data: result.data || result.categorias || [] // Aceita ambos os formatos
+      data: result.data || [] // result.data já é o array de categorias
     };
   } catch (error: any) {
     console.error('Erro ao buscar categorias:', error);
     return { 
       success: false, 
       error: error.message || 'Erro ao buscar categorias',
-      data: [] // Sempre retorna array vazio em caso de erro
+      data: []
     };
   }
 }
@@ -59,6 +58,7 @@ export async function criarCategoria(nome: string) {
       throw new Error((result && result.error) || 'Erro ao criar categoria');
     }
     
+    // ✅ Retornar result direto (já tem success e data)
     return result;
   } catch (error: any) {
     console.error('Erro ao criar categoria:', error);
@@ -91,6 +91,7 @@ export async function editarCategoria(id: string, nome: string) {
       throw new Error(result.error || 'Erro ao editar categoria');
     }
 
+    // ✅ Retornar result direto
     return result;
   } catch (error: any) {
     console.error('Erro ao editar categoria:', error);
@@ -117,6 +118,7 @@ export async function deletarCategoria(id: string) {
       throw new Error(result.error || 'Erro ao deletar categoria');
     }
 
+    // ✅ Retornar result direto
     return result;
   } catch (error: any) {
     console.error('Erro ao deletar categoria:', error);
