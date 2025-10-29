@@ -117,14 +117,17 @@ export interface Categoria {
 }
 
 export async function getCategorias(): Promise<ApiResponse<Categoria[]>> {
-  const result = await apiRequest<Categoria[]>(
+  const result = await apiRequest<any>(
     '/api/admin/categorias'
   );
 
   if (result.success && result.data) {
+    // API retorna { success, data }, então result.data = { success, data }
+    // Precisamos acessar result.data.data para pegar o array
+    const categorias = result.data.data || result.data || [];
     return {
       success: true,
-      data: result.data,
+      data: Array.isArray(categorias) ? categorias : [],
     };
   }
 
@@ -139,7 +142,7 @@ export async function criarCategoria(nome: string): Promise<ApiResponse<Categori
     };
   }
 
-  const result = await apiRequest<Categoria>(
+  const result = await apiRequest<any>(
     '/api/admin/categorias',
     {
       method: 'POST',
@@ -148,9 +151,11 @@ export async function criarCategoria(nome: string): Promise<ApiResponse<Categori
   );
 
   if (result.success && result.data) {
+    // API retorna { success, data }, então acessar result.data.data
+    const categoria = result.data.data || result.data;
     return {
       success: true,
-      data: result.data,
+      data: categoria,
     };
   }
 
@@ -175,7 +180,7 @@ export async function editarCategoria(
     };
   }
 
-  const result = await apiRequest<Categoria>(
+  const result = await apiRequest<any>(
     `/api/admin/categorias/${id}`,
     {
       method: 'PUT',
@@ -184,9 +189,10 @@ export async function editarCategoria(
   );
 
   if (result.success && result.data) {
+    const categoria = result.data.data || result.data;
     return {
       success: true,
-      data: result.data,
+      data: categoria,
     };
   }
 
@@ -225,14 +231,15 @@ export interface Produto {
 }
 
 export async function getProdutos(): Promise<ApiResponse<Produto[]>> {
-  const result = await apiRequest<Produto[]>(
+  const result = await apiRequest<any>(
     '/api/admin/produtos'
   );
 
   if (result.success && result.data) {
+    const produtos = result.data.data || result.data || [];
     return {
       success: true,
-      data: result.data,
+      data: Array.isArray(produtos) ? produtos : [],
     };
   }
 
@@ -262,7 +269,7 @@ export async function criarProduto(dados: Partial<Produto>): Promise<ApiResponse
     };
   }
 
-  const result = await apiRequest<Produto>(
+  const result = await apiRequest<any>(
     '/api/admin/produtos',
     {
       method: 'POST',
@@ -271,9 +278,10 @@ export async function criarProduto(dados: Partial<Produto>): Promise<ApiResponse
   );
 
   if (result.success && result.data) {
+    const produto = result.data.data || result.data;
     return {
       success: true,
-      data: result.data,
+      data: produto,
     };
   }
 
@@ -291,7 +299,7 @@ export async function editarProduto(
     };
   }
 
-  const result = await apiRequest<Produto>(
+  const result = await apiRequest<any>(
     `/api/admin/produtos/${id}`,
     {
       method: 'PUT',
@@ -300,9 +308,10 @@ export async function editarProduto(
   );
 
   if (result.success && result.data) {
+    const produto = result.data.data || result.data;
     return {
       success: true,
-      data: result.data,
+      data: produto,
     };
   }
 

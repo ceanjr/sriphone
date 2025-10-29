@@ -38,11 +38,12 @@ const { data: categorias } = await supabaseAdmin
 
           <!-- Image Upload -->
           <div class="form-group">
-            <label class="form-label">Imagem do Produto</label>
+            <label class="form-label">Imagens do Produto (até 5)</label>
             <input
               id="foto-upload"
               type="file"
               accept="image/*"
+              multiple
               style="display: none;"
             />
             <div class="form-image-upload" id="upload-area">
@@ -61,31 +62,12 @@ const { data: categorias } = await supabaseAdmin
                   ></path>
                 </svg>
                 <p class="form-image-upload-text">
-                  Clique para adicionar imagem
+                  Clique para adicionar imagens
                 </p>
-                <small class="form-image-upload-hint">JPG, PNG até 5MB</small>
+                <small class="form-image-upload-hint">JPG, PNG até 5MB cada (máximo 5 imagens)</small>
               </div>
-              <img
-                id="preview-image"
-                class="form-image-preview"
-                style="display: none;"
-                alt="Preview"
-              />
-              <button
-                type="button"
-                id="remove-image-btn"
-                class="form-image-remove"
-                style="display: none;"
-              >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
             </div>
+            <div id="images-preview-grid" style="display: none; margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;"></div>
           </div>
 
           <!-- Nome -->
@@ -212,23 +194,215 @@ const { data: categorias } = await supabaseAdmin
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
   const submitText = document.getElementById('submit-text') as HTMLSpanElement;
   const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
-  const fotoHidden = document.getElementById(
-    'foto_principal',
-  ) as HTMLInputElement;
-  const previewImg = document.getElementById(
-    'preview-image',
-  ) as HTMLImageElement;
   const uploadArea = document.getElementById('upload-area');
   const uploadPlaceholder = document.getElementById('upload-placeholder');
-  const removeImageBtn = document.getElementById('remove-image-btn');
+  const imagesPreviewGrid = document.getElementById('images-preview-grid');
 
-  // [Upload handlers permanecem iguais...]
+  // Estado de imagens carregadas
+  interface UploadedImage {
+    url: string;
+    path: string; // Caminho no storage para poder deletar
+  }
+  let uploadedImages: UploadedImage[] = [];
+  const MAX_IMAGES = 5;
+  let formSaved = false; // Flag para saber se salvou com sucesso
+
+  // Click na área de upload abre o file input
+  uploadArea?.addEventListener('click', () => {
+    if (uploadedImages.length < MAX_IMAGES) {
+      fileInput?.click();
+    } else {
+      window.showToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning');
+    }
+  });
+
+  // Função para fazer upload de uma imagem
+  async function uploadImage(file: File): Promise<UploadedImage | null> {
+    try {
+      // Validar tamanho (10MB - será otimizado no servidor)
+      if (file.size > 10 * 1024 * 1024) {
+        window.showToast('Imagem muito grande (máx 10MB)', 'error');
+        return null;
+      }
+
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        window.showToast('Arquivo deve ser uma imagem', 'error');
+        return null;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao fazer upload');
+      }
+
+      const result = await response.json();
+
+      // Mostrar economia de espaço
+      if (result.savings) {
+        console.log(`✅ Imagem otimizada: ${result.savings} de redução`);
+      }
+
+      return {
+        url: result.url,
+        path: result.path,
+      };
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      window.showToast(error.message || 'Erro ao fazer upload', 'error');
+      return null;
+    }
+  }
+
+  // Função para deletar imagem do storage
+  async function deleteImage(path: string): Promise<boolean> {
+    try {
+      const response = await fetch('/api/admin/upload', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar imagem');
+      }
+
+      return true;
+    } catch (error: any) {
+      console.error('Erro ao deletar imagem:', error);
+      return false;
+    }
+  }
+
+  // Limpar todas as imagens temporárias
+  async function cleanupTemporaryImages() {
+    if (formSaved || uploadedImages.length === 0) return;
+
+    console.log('🧹 Limpando imagens temporárias...');
+
+    const deletePromises = uploadedImages.map((img) => deleteImage(img.path));
+    await Promise.all(deletePromises);
+
+    console.log(`✅ ${uploadedImages.length} imagem(ns) removida(s) do storage`);
+  }
+
+  // Limpar imagens ao sair da página sem salvar
+  window.addEventListener('beforeunload', () => {
+    if (!formSaved && uploadedImages.length > 0) {
+      // Usar sendBeacon para garantir que a requisição seja enviada mesmo ao fechar
+      const paths = uploadedImages.map(img => img.path);
+      navigator.sendBeacon(
+        '/api/admin/upload',
+        new Blob([JSON.stringify({ paths })], { type: 'application/json' })
+      );
+    }
+  });
+
+  // Limpar ao clicar no botão Voltar
+  document.querySelector('.form-back-btn')?.addEventListener('click', async (e) => {
+    if (!formSaved && uploadedImages.length > 0) {
+      e.preventDefault();
+      await cleanupTemporaryImages();
+      window.location.href = '/admin/produtos';
+    }
+  });
+
+  // Renderizar preview das imagens
+  function renderImagesPreviews() {
+    if (!imagesPreviewGrid) return;
+
+    if (uploadedImages.length === 0) {
+      imagesPreviewGrid.style.display = 'none';
+      if (uploadPlaceholder) uploadPlaceholder.style.display = 'block';
+      return;
+    }
+
+    imagesPreviewGrid.style.display = 'grid';
+    if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
+
+    imagesPreviewGrid.innerHTML = uploadedImages
+      .map(
+        (img, index) => `
+        <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb;">
+          <img src="${img.url}" alt="Preview ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;" />
+          <button
+            type="button"
+            onclick="window.removeImage(${index})"
+            style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px;"
+            title="Remover imagem"
+          >
+            ×
+          </button>
+          ${index === 0 ? '<span style="position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.7); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px;">Principal</span>' : ''}
+        </div>
+      `,
+      )
+      .join('');
+  }
+
+  // Função global para remover imagem
+  (window as any).removeImage = async (index: number) => {
+    const imageToRemove = uploadedImages[index];
+
+    // Deletar do storage
+    await deleteImage(imageToRemove.path);
+
+    // Remover do array
+    uploadedImages.splice(index, 1);
+    renderImagesPreviews();
+    window.showToast('Imagem removida', 'success');
+  };
+
+  // Quando selecionar arquivos
+  fileInput?.addEventListener('change', async (e) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = MAX_IMAGES - uploadedImages.length;
+    if (files.length > remainingSlots) {
+      window.showToast(
+        `Você pode adicionar apenas ${remainingSlots} imagem${remainingSlots !== 1 ? 'ns' : ''} (máximo ${MAX_IMAGES})`,
+        'warning',
+      );
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+
+    // Mostrar loading
+    window.showToast('Fazendo upload das imagens...', 'info');
+
+    // Upload em paralelo
+    const uploadPromises = filesToUpload.map((file) => uploadImage(file));
+    const results = await Promise.all(uploadPromises);
+
+    // Adicionar imagens válidas
+    const validImages = results.filter((img): img is UploadedImage => img !== null);
+    uploadedImages.push(...validImages);
+
+    renderImagesPreviews();
+
+    if (validImages.length > 0) {
+      window.showToast(
+        `${validImages.length} imagem${validImages.length !== 1 ? 'ns' : ''} carregada${validImages.length !== 1 ? 's' : ''}!`,
+        'success',
+      );
+    }
+
+    // Limpar input para permitir re-upload do mesmo arquivo
+    fileInput.value = '';
+  });
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = new FormData(form);
-    const fotoPrincipal = formData.get('foto_principal') as string;
 
     const produto = {
       nome: formData.get('nome'),
@@ -240,7 +414,7 @@ const { data: categorias } = await supabaseAdmin
       condicao: formData.get('condicao'),
       categoria_id: formData.get('categoria_id'),
       descricao: formData.get('descricao') || null,
-      imagens: fotoPrincipal ? [fotoPrincipal] : [],
+      imagens: uploadedImages.map((img) => img.url), // Array de URLs das imagens
     };
 
     submitBtn.disabled = true;
@@ -262,7 +436,7 @@ const { data: categorias } = await supabaseAdmin
       const responseText = await response.text();
       console.log('📄 Response text:', responseText);
 
-      let data;
+      let data: any;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
@@ -279,6 +453,9 @@ const { data: categorias } = await supabaseAdmin
       }
 
       console.log('✅ Produto criado:', data);
+
+      // Marcar como salvo para não limpar as imagens
+      formSaved = true;
 
       // Mostrar sucesso
       window.showToast('Produto adicionado com sucesso!', 'success');
