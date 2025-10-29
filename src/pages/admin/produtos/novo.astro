@@ -121,8 +121,7 @@ const { data: categorias } = await supabaseAdmin
               <label class="form-label" for="condicao">Condição</label>
               <select id="condicao" name="condicao" class="form-select">
                 <option value="Novo">Novo</option>
-                <option value="Semi-novo">Semi-novo</option>
-                <option value="Usado">Usado</option>
+                <option value="Seminovo">Seminovo</option>
               </select>
             </div>
           </div>
@@ -272,29 +271,33 @@ const { data: categorias } = await supabaseAdmin
     const deletePromises = uploadedImages.map((img) => deleteImage(img.path));
     await Promise.all(deletePromises);
 
-    console.log(`✅ ${uploadedImages.length} imagem(ns) removida(s) do storage`);
+    console.log(
+      `✅ ${uploadedImages.length} imagem(ns) removida(s) do storage`,
+    );
   }
 
   // Limpar imagens ao sair da página sem salvar
   window.addEventListener('beforeunload', () => {
     if (!formSaved && uploadedImages.length > 0) {
       // Usar sendBeacon para garantir que a requisição seja enviada mesmo ao fechar
-      const paths = uploadedImages.map(img => img.path);
+      const paths = uploadedImages.map((img) => img.path);
       navigator.sendBeacon(
         '/api/admin/upload',
-        new Blob([JSON.stringify({ paths })], { type: 'application/json' })
+        new Blob([JSON.stringify({ paths })], { type: 'application/json' }),
       );
     }
   });
 
   // Limpar ao clicar no botão Voltar
-  document.querySelector('.form-back-btn')?.addEventListener('click', async (e) => {
-    if (!formSaved && uploadedImages.length > 0) {
-      e.preventDefault();
-      await cleanupTemporaryImages();
-      window.location.href = '/admin/produtos';
-    }
-  });
+  document
+    .querySelector('.form-back-btn')
+    ?.addEventListener('click', async (e) => {
+      if (!formSaved && uploadedImages.length > 0) {
+        e.preventDefault();
+        await cleanupTemporaryImages();
+        window.location.href = '/admin/produtos';
+      }
+    });
 
   // Renderizar preview das imagens
   function renderImagesPreviews() {
@@ -420,7 +423,9 @@ const { data: categorias } = await supabaseAdmin
     const results = await Promise.all(uploadPromises);
 
     // Adicionar imagens válidas
-    const validImages = results.filter((img): img is UploadedImage => img !== null);
+    const validImages = results.filter(
+      (img): img is UploadedImage => img !== null,
+    );
     uploadedImages.push(...validImages);
 
     renderImagesPreviews();
