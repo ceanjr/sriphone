@@ -119,6 +119,21 @@ iframe {
   }
 }
 
+/* Forçar modo escuro em todos os contextos, inclusive Safari/iOS */
+html, body, :root {
+  color-scheme: dark !important;
+  background: #030303 !important;
+  background-color: #030303 !important;
+  --cor-primaria: #ffffff !important;
+  --cor-secundaria: #000000 !important;
+  --cor-texto: #e0e0e0 !important;
+  --cor-fundo-claro: #eaeaea !important;
+  --cor-fundo-escuro: #030303 !important;
+  --cor-destaque: #e0e0e0 !important;
+  --cor-texto-claro-on-escuro: #ffffff !important;
+  --cor-texto-escuro-on-claro: #000000 !important;
+}
+
 /* Otimizar animações */
 @media (prefers-reduced-motion: reduce) {
   *,
