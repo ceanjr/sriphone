@@ -1,6 +1,5 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import ProductFormDialog from '../../components/admin/ProductFormDialog.astro';
 import { supabase } from '../../lib/supabase';
 
 // Buscar todos os produtos
@@ -8,11 +7,6 @@ const { data: produtos, error } = await supabase
   .from('produtos')
   .select('*, categoria:categoria_id(id, nome)')
   .order('created_at', { ascending: false });
-
-const { data: categorias } = await supabase
-  .from('categorias')
-  .select('*')
-  .order('nome');
 ---
 
 <AdminLayout title="Produtos" description="Gerenciar produtos do catálogo">
@@ -23,13 +17,13 @@ const { data: categorias } = await supabase
         <h1 class="truncate text-lg font-bold text-white md:text-xl">Produtos</h1>
         <p class="hidden text-sm text-[#a0a0a0] sm:block">Gerenciar produtos do catálogo</p>
       </div>
-      <button
-        id="add-product-btn"
+      <a
+        href="/admin/produtos/novo"
         class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
       >
         <span class="hidden sm:inline">Adicionar Produto</span>
         <span class="sm:hidden">Adicionar</span>
-      </button>
+      </a>
     </div>
 
     <!-- Content -->
@@ -43,12 +37,12 @@ const { data: categorias } = await supabase
           <p class="mt-2 text-sm text-[#a0a0a0]">
             Comece adicionando seu primeiro produto.
           </p>
-          <button
-            onclick="window.openProductDialog()"
-            class="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
+          <a
+            href="/admin/produtos/novo"
+            class="mt-4 inline-block rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
           >
             Adicionar Produto
-          </button>
+          </a>
         </div>
       ) : (
         <div class="overflow-x-auto rounded-lg border border-[#2a2a2a] bg-[#0a0a0a]">
@@ -142,24 +136,17 @@ const { data: categorias } = await supabase
       )}
     </div>
   </div>
-
-  <!-- Product Form Dialog -->
-  <ProductFormDialog categorias={categorias || []} />
 </AdminLayout>
 
 <script>
-  // Botão adicionar produto
-  document.getElementById('add-product-btn')?.addEventListener('click', () => {
-    window.openProductDialog();
-  });
-
-  // Botões de editar
+  // Botões de editar - redirect to edit page (criar depois)
   document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const produtoJson = (e.currentTarget as HTMLElement).dataset.produto;
       if (produtoJson) {
         const produto = JSON.parse(produtoJson);
-        window.openProductDialog(produto);
+        // TODO: Criar página de edição /admin/produtos/[id]/editar
+        window.location.href = `/admin/produtos/novo?edit=${produto.id}`;
       }
     });
   });

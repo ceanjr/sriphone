@@ -1,0 +1,402 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const { data: categorias } = await supabase
+  .from('categorias')
+  .select('*')
+  .order('nome');
+---
+
+<AdminLayout title="Novo Produto" description="Adicionar novo produto ao catálogo">
+  <div class="flex flex-col">
+    <!-- Header -->
+    <div class="flex min-h-[64px] items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 md:px-6">
+      <div class="min-w-0 flex-1">
+        <h1 class="truncate text-lg font-bold text-white md:text-xl">Adicionar Produto</h1>
+        <p class="hidden text-sm text-[#a0a0a0] sm:block">Preencha os dados do novo produto</p>
+      </div>
+      <a
+        href="/admin/produtos"
+        class="rounded-lg border border-[#2a2a2a] bg-transparent px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1a1a1a]"
+      >
+        Cancelar
+      </a>
+    </div>
+
+    <!-- Form -->
+    <div class="flex-1 p-4 md:p-6">
+      <div class="mx-auto max-w-2xl">
+        <form id="product-form" class="space-y-6">
+          <input type="hidden" id="foto_principal" name="foto_principal" />
+
+          <!-- Image Upload -->
+          <div>
+            <label class="block text-sm font-medium text-[#e0e0e0] mb-2">
+              Imagem do Produto
+            </label>
+            <div class="image-upload-area" id="upload-area">
+              <input id="foto-upload" type="file" accept="image/*" style="display: none;" />
+              <div class="upload-placeholder" id="upload-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 16L8.586 11.414C9.367 10.633 10.633 10.633 11.414 11.414L16 16M14 14L15.586 12.414C16.367 11.633 17.633 11.633 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="upload-title">Toque para adicionar foto</span>
+                <small>JPG, PNG até 5MB</small>
+              </div>
+              <div class="image-preview-grid" id="preview-container" style="display: none;">
+                <div class="image-preview-item">
+                  <img id="preview-image" alt="Preview" />
+                  <button type="button" class="remove-image" id="remove-image-btn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nome -->
+          <div>
+            <label for="nome" class="block text-sm font-medium text-[#e0e0e0]">
+              Nome do Produto <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="nome"
+              name="nome"
+              type="text"
+              placeholder="Ex: iPhone 13 Pro Max"
+              required
+              class="mt-1 block w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white placeholder-[#a0a0a0] focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+            />
+          </div>
+
+          <!-- Código e Preço -->
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="codigo" class="block text-sm font-medium text-[#e0e0e0]">
+                Código
+              </label>
+              <input
+                id="codigo"
+                name="codigo"
+                type="text"
+                placeholder="Ex: IP13PM"
+                class="mt-1 block w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white placeholder-[#a0a0a0] focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+              />
+            </div>
+            <div>
+              <label for="preco" class="block text-sm font-medium text-[#e0e0e0]">
+                Preço <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="preco"
+                name="preco"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+                class="mt-1 block w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white placeholder-[#a0a0a0] focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+              />
+            </div>
+          </div>
+
+          <!-- Categoria e Condição -->
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="categoria_id" class="block text-sm font-medium text-[#e0e0e0]">
+                Categoria <span class="text-red-500">*</span>
+              </label>
+              <select
+                id="categoria_id"
+                name="categoria_id"
+                required
+                class="mt-1 block w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+              >
+                <option value="">Selecione</option>
+                {categorias?.map((categoria) => (
+                  <option value={categoria.id}>{categoria.nome}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label for="condicao" class="block text-sm font-medium text-[#e0e0e0]">
+                Condição
+              </label>
+              <select
+                id="condicao"
+                name="condicao"
+                class="mt-1 block w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+              >
+                <option value="Novo">Novo</option>
+                <option value="Semi-novo">Semi-novo</option>
+                <option value="Usado">Usado</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Bateria -->
+          <div>
+            <label for="bateria" class="block text-sm font-medium text-[#e0e0e0]">
+              Bateria (mAh)
+            </label>
+            <input
+              id="bateria"
+              name="bateria"
+              type="number"
+              placeholder="Ex: 4352"
+              class="mt-1 block w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white placeholder-[#a0a0a0] focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+            />
+          </div>
+
+          <!-- Descrição -->
+          <div>
+            <label for="descricao" class="block text-sm font-medium text-[#e0e0e0]">
+              Descrição
+            </label>
+            <textarea
+              id="descricao"
+              name="descricao"
+              rows="4"
+              placeholder="Descreva o produto, suas características e estado..."
+              class="mt-1 block w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white placeholder-[#a0a0a0] focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+            ></textarea>
+          </div>
+
+          <!-- Ativo -->
+          <div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                id="ativo"
+                name="ativo"
+                type="checkbox"
+                checked
+                class="h-4 w-4 rounded border-[#2a2a2a] bg-[#1a1a1a] text-white focus:ring-white"
+              />
+              <span class="text-sm text-[#e0e0e0]">Produto ativo (visível no catálogo)</span>
+            </label>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-3">
+            <a
+              href="/admin/produtos"
+              class="flex-1 rounded-lg border border-[#2a2a2a] bg-transparent px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-[#1a1a1a]"
+            >
+              Cancelar
+            </a>
+            <button
+              id="submit-btn"
+              type="submit"
+              class="flex-1 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span id="submit-text">Adicionar</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .image-upload-area {
+    border: 2px dashed #2a2a2a;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #0a0a0a;
+  }
+
+  .image-upload-area:hover {
+    border-color: #fff;
+    background: #1a1a1a;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #a0a0a0;
+  }
+
+  .upload-placeholder.hidden {
+    display: none;
+  }
+
+  .upload-placeholder svg {
+    color: #a0a0a0;
+  }
+
+  .upload-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+  }
+
+  .image-preview-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .image-preview-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .image-preview-item img {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+    background: #1a1a1a;
+  }
+
+  .remove-image {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0, 0, 0, 0.8);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+  }
+
+  .remove-image:hover {
+    background: rgba(255, 0, 0, 0.8);
+  }
+</style>
+
+<script>
+  const form = document.getElementById('product-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
+  const fotoHidden = document.getElementById('foto_principal') as HTMLInputElement;
+  const previewImg = document.getElementById('preview-image') as HTMLImageElement;
+  const uploadArea = document.getElementById('upload-area');
+  const uploadPlaceholder = document.getElementById('upload-placeholder');
+  const previewContainer = document.getElementById('preview-container');
+  const removeImageBtn = document.getElementById('remove-image-btn');
+
+  uploadArea?.addEventListener('click', () => {
+    fileInput?.click();
+  });
+
+  removeImageBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (fotoHidden) fotoHidden.value = '';
+    if (previewImg) previewImg.src = '';
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (uploadPlaceholder) uploadPlaceholder.classList.remove('hidden');
+    if (fileInput) fileInput.value = '';
+  });
+
+  fileInput?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    if (uploadPlaceholder) {
+      uploadPlaceholder.innerHTML = '<div class="loading-spinner"></div><span>Enviando...</span>';
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao fazer upload');
+      }
+
+      fotoHidden.value = data.url;
+      if (previewImg) previewImg.src = data.url;
+      if (previewContainer) previewContainer.style.display = 'grid';
+      if (uploadPlaceholder) uploadPlaceholder.classList.add('hidden');
+
+      window.showToast('Imagem enviada com sucesso!', 'success');
+    } catch (error: any) {
+      console.error('Erro ao fazer upload:', error);
+      window.showToast(error.message || 'Erro ao fazer upload', 'error');
+      
+      if (uploadPlaceholder) {
+        uploadPlaceholder.innerHTML = `
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 16L8.586 11.414C9.367 10.633 10.633 10.633 11.414 11.414L16 16M14 14L15.586 12.414C16.367 11.633 17.633 11.633 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="upload-title">Toque para adicionar foto</span>
+          <small>JPG, PNG até 5MB</small>
+        `;
+      }
+    }
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const produto = {
+      nome: formData.get('nome'),
+      codigo: formData.get('codigo'),
+      preco: parseFloat(formData.get('preco') as string),
+      bateria: formData.get('bateria') ? parseInt(formData.get('bateria') as string) : null,
+      condicao: formData.get('condicao'),
+      categoria_id: formData.get('categoria_id'),
+      descricao: formData.get('descricao') || null,
+      foto_principal: formData.get('foto_principal') || null,
+      ativo: formData.get('ativo') === 'on',
+    };
+
+    submitBtn.disabled = true;
+    const submitText = document.getElementById('submit-text');
+    if (submitText) submitText.textContent = 'Adicionando...';
+
+    try {
+      const response = await fetch('/api/admin/produtos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(produto),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao adicionar produto');
+      }
+
+      window.showToast('Produto adicionado com sucesso!', 'success');
+      setTimeout(() => {
+        window.location.href = '/admin/produtos';
+      }, 1000);
+    } catch (error: any) {
+      console.error('Erro ao salvar produto:', error);
+      window.showToast(error.message || 'Erro ao salvar produto', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      if (submitText) submitText.textContent = 'Adicionar';
+    }
+  });
+
+  declare global {
+    interface Window {
+      showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+    }
+  }
+</script>

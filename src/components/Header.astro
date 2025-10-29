@@ -380,7 +380,7 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
                     btnMenuMobile.style.display = 'none'
                     
                     btnAuthDesktop.onclick = () => {
-                        (window as any).abrirModalLogin()
+                        window.location.href = '/admin/login';
                     }
                 }
             }
@@ -419,11 +419,11 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         const btnGerirCategoriasDesktop = document.getElementById('btn-gerir-categorias-desktop')
 
         btnCriarProdutoDesktop?.addEventListener('click', () => {
-            (window as any).abrirFormProduto()
+            window.location.href = '/admin/produtos/novo';
         })
 
         btnGerirCategoriasDesktop?.addEventListener('click', () => {
-            (window as any).abrirGerirCategorias()
+            window.location.href = '/admin/categorias';
         })
 
         // Botões Mobile
@@ -432,12 +432,12 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
 
         btnCriarProdutoMobile?.addEventListener('click', () => {
             dropdownMobile?.classList.remove('active')
-            ;(window as any).abrirFormProduto()
+            window.location.href = '/admin/produtos/novo';
         })
 
         btnGerirCategoriasMobile?.addEventListener('click', () => {
             dropdownMobile?.classList.remove('active')
-            ;(window as any).abrirGerirCategorias()
+            window.location.href = '/admin/categorias';
         })
 
         // Botão Sair Mobile

@@ -1,6 +1,5 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import CategoryFormDialog from '../../components/admin/CategoryFormDialog.astro';
 import { supabase } from '../../lib/supabase';
 
 const { data: categorias } = await supabase
@@ -25,24 +24,44 @@ const categoriasComContagem = await Promise.all(
       <div class="min-w-0 flex-1">
         <h1 class="truncate text-lg font-bold text-white md:text-xl">Categorias</h1>
       </div>
-      <button
-        id="add-category-btn"
-        class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
-      >
-        Nova
-      </button>
     </div>
 
     <div class="flex-1 p-4 md:p-6">
+      <!-- Add Category Form -->
+      <div class="mb-6 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-4">
+        <h2 class="mb-3 text-sm font-semibold text-white">Adicionar Nova Categoria</h2>
+        <form id="add-category-form" class="flex gap-2">
+          <input type="hidden" id="edit-category-id" />
+          <input
+            id="category-name"
+            type="text"
+            placeholder="Nome da categoria"
+            required
+            class="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white placeholder-[#a0a0a0] focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+          />
+          <button
+            type="submit"
+            id="submit-category-btn"
+            class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
+          >
+            <span id="submit-category-text">Adicionar</span>
+          </button>
+          <button
+            type="button"
+            id="cancel-edit-btn"
+            class="hidden rounded-lg border border-[#2a2a2a] bg-transparent px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1a1a1a]"
+          >
+            Cancelar
+          </button>
+        </form>
+      </div>
+
       {!categoriasComContagem || categoriasComContagem.length === 0 ? (
         <div class="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-12 text-center">
           <h3 class="text-lg font-medium text-white">Nenhuma categoria</h3>
-          <button
-            onclick="window.openCategoryDialog()"
-            class="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-black"
-          >
-            Nova Categoria
-          </button>
+          <p class="mt-2 text-sm text-[#a0a0a0]">
+            Use o formulário acima para adicionar sua primeira categoria.
+          </p>
         </div>
       ) : (
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -83,24 +102,80 @@ const categoriasComContagem = await Promise.all(
       )}
     </div>
   </div>
-
-  <CategoryFormDialog />
 </AdminLayout>
 
 <script>
-  import { deletarCategoria } from '../../lib/crud';
+  import { criarCategoria, editarCategoria, deletarCategoria } from '../../lib/crud';
 
-  document.getElementById('add-category-btn')?.addEventListener('click', () => {
-    window.openCategoryDialog();
+  const form = document.getElementById('add-category-form') as HTMLFormElement;
+  const nameInput = document.getElementById('category-name') as HTMLInputElement;
+  const editIdInput = document.getElementById('edit-category-id') as HTMLInputElement;
+  const submitBtn = document.getElementById('submit-category-btn') as HTMLButtonElement;
+  const submitText = document.getElementById('submit-category-text') as HTMLSpanElement;
+  const cancelBtn = document.getElementById('cancel-edit-btn') as HTMLButtonElement;
+
+  // Submit form
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const nome = nameInput.value.trim();
+    const editId = editIdInput.value;
+    const isEdit = !!editId;
+
+    if (!nome) return;
+
+    submitBtn.disabled = true;
+    submitText.textContent = isEdit ? 'Salvando...' : 'Adicionando...';
+
+    try {
+      const result = isEdit
+        ? await editarCategoria(editId, nome)
+        : await criarCategoria(nome);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      window.showToast(
+        isEdit ? 'Categoria atualizada!' : 'Categoria criada!',
+        'success'
+      );
+
+      form.reset();
+      editIdInput.value = '';
+      cancelBtn.classList.add('hidden');
+      submitText.textContent = 'Adicionar';
+
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error: any) {
+      window.showToast(error.message || 'Erro ao salvar', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitText.textContent = isEdit ? 'Salvar' : 'Adicionar';
+    }
   });
 
+  // Cancel edit
+  cancelBtn?.addEventListener('click', () => {
+    form.reset();
+    editIdInput.value = '';
+    cancelBtn.classList.add('hidden');
+    submitText.textContent = 'Adicionar';
+  });
+
+  // Edit buttons
   document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       const cat = JSON.parse((e.currentTarget as HTMLElement).dataset.cat || '{}');
-      window.openCategoryDialog(cat);
+      nameInput.value = cat.nome;
+      editIdInput.value = cat.id;
+      submitText.textContent = 'Salvar';
+      cancelBtn.classList.remove('hidden');
+      nameInput.focus();
     });
   });
 
+  // Delete buttons
   document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const el = e.currentTarget as HTMLElement;

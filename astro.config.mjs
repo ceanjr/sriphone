@@ -64,6 +64,7 @@ export default defineConfig({
       // Chunk size warnings
       chunkSizeWarningLimit: 500,
     },
+
     // PWA optimizations
     server: {
       headers: {

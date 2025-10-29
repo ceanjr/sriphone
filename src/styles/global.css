@@ -1,4 +1,7 @@
 /* src/styles/global.css (TEMA ESCURO) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @font-face {
   font-family: 'Halenoir';

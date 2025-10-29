@@ -917,7 +917,8 @@ export function initCatalogo() {
 
     try {
       const produtoData = JSON.parse(produtoDataStr);
-      window.abrirModalEditarProduto(produtoData);
+      // Redirect to edit page
+      window.location.href = `/admin/produtos/novo?edit=${produtoData.id}`;
     } catch (error) {
       console.error('Erro ao parsear dados do produto:', error);
       mostrarToast('Erro ao carregar dados do produto', 'error');
