@@ -21,58 +21,13 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
             )}
             {isCatalogPage && (
                 <>
-                    <!-- Botão Auth Desktop -->
-                    <button id="btn-auth-desktop" class="btn-auth btn-auth-desktop">
+                    <!-- Botão Auth -->
+                    <button id="btn-auth" class="btn-auth">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>Admin</span>
                     </button>
-                    
-                    <!-- Menu Desktop -->
-                    <div id="admin-actions-desktop" class="admin-actions-desktop" style="display: none;">
-                        <button id="btn-criar-produto-desktop" class="btn-admin-action">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            Novo Produto
-                        </button>
-                        <button id="btn-gerir-categorias-desktop" class="btn-admin-action">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            Categorias
-                        </button>
-                    </div>
-
-                    <!-- Menu Hamburguer Mobile -->
-                    <button id="btn-menu-mobile" class="btn-menu-mobile" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </button>
-
-                    <!-- Dropdown Mobile -->
-                    <div id="dropdown-mobile" class="dropdown-mobile">
-                        <button id="btn-criar-produto-mobile" class="dropdown-item">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            Novo Produto
-                        </button>
-                        <button id="btn-gerir-categorias-mobile" class="dropdown-item">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 7H21M3 12H21M3 17H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            Categorias
-                        </button>
-                        <button id="btn-sair-mobile" class="dropdown-item">
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            Sair
-                        </button>
-                    </div>
                 </>
             )}
         </nav>
@@ -155,136 +110,6 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         height: 18px;
     }
 
-    .btn-auth-desktop {
-        display: inline-flex;
-    }
-
-    @media (max-width: 767px) {
-        .btn-auth-desktop.hide-mobile {
-            display: none;
-        }
-    }
-
-    .admin-actions-desktop {
-        display: none;
-        gap: 0.5rem;
-    }
-
-    @media (min-width: 768px) {
-        .admin-actions-desktop {
-            display: flex;
-        }
-    }
-
-    .btn-admin-action {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #fff;
-        border: none;
-        color: #000;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-    }
-
-    .btn-admin-action:hover {
-        background: #e5e5e5;
-        transform: translateY(-1px);
-    }
-
-    .btn-admin-action svg {
-        width: 16px;
-        height: 16px;
-    }
-
-    @media (max-width: 767px) {
-        .btn-admin-action {
-            display: none;
-        }
-    }
-
-    .btn-menu-mobile {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        border: 1px solid #2a2a2a;
-        color: #fff;
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    @media (min-width: 768px) {
-        .btn-menu-mobile {
-            display: none !important;
-        }
-    }
-
-    .btn-menu-mobile:hover {
-        background: #1a1a1a;
-        border-color: #fff;
-    }
-
-    .btn-menu-mobile svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .dropdown-mobile {
-        position: absolute;
-        top: calc(100% + 0.5rem);
-        right: 0;
-        background: #0a0a0a;
-        border: 1px solid #2a2a2a;
-        border-radius: 12px;
-        min-width: 200px;
-        display: none;
-        flex-direction: column;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-    }
-
-    .dropdown-mobile.active {
-        display: flex;
-    }
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        background: transparent;
-        border: none;
-        color: #fff;
-        padding: 1rem 1.25rem;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: left;
-        border-bottom: 1px solid #1a1a1a;
-    }
-
-    .dropdown-item:last-child {
-        border-bottom: none;
-    }
-
-    .dropdown-item:hover {
-        background: #1a1a1a;
-    }
-
-    .dropdown-item svg {
-        width: 18px;
-        height: 18px;
-    }
-
     @media (min-width: 768px) {
         .logo {
             height: 50px;
@@ -304,16 +129,6 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
             width: 20px;
             height: 20px;
         }
-
-        .btn-admin-action {
-            font-size: 0.9rem;
-            padding: 0.625rem 1.25rem;
-        }
-
-        .btn-admin-action svg {
-            width: 18px;
-            height: 18px;
-        }
     }
 </style>
 
@@ -321,12 +136,7 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
     <script>
         import { authService } from '../lib/supabase'
 
-        const btnAuthDesktop = document.getElementById('btn-auth-desktop')
-        const adminActionsDesktop = document.getElementById('admin-actions-desktop')
-        const btnMenuMobile = document.getElementById('btn-menu-mobile')
-        const dropdownMobile = document.getElementById('dropdown-mobile')
-        const btnSairMobile = document.getElementById('btn-sair-mobile')
-
+        const btnAuth = document.getElementById('btn-auth')
         let isAuthenticated = false;
 
         async function checkAuth() {
@@ -341,116 +151,36 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         }
 
         function updateUI() {
-            if (!btnAuthDesktop || !adminActionsDesktop || !btnMenuMobile) return;
+            if (!btnAuth) return;
 
             if (isAuthenticated) {
-                // Usuário autenticado
-                btnAuthDesktop.innerHTML = `
+                // Usuário autenticado - mostrar botão Dashboard
+                btnAuth.innerHTML = `
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>Sair</span>
+                    <span>Dashboard</span>
                 `;
-                
-                // Desktop: Mostrar ações admin
-                adminActionsDesktop.style.display = 'flex';
-                
-                // Mobile: Esconder botão auth e mostrar hamburguer
-                btnAuthDesktop.classList.add('hide-mobile');
-                btnMenuMobile.style.display = 'inline-flex';
-                
-                // Atualizar handler do botão sair
-                btnAuthDesktop.onclick = handleLogout;
+                btnAuth.onclick = () => window.location.href = '/admin/dashboard';
             } else {
-                // Usuário não autenticado
-                btnAuthDesktop.innerHTML = `
+                // Usuário não autenticado - mostrar botão Admin
+                btnAuth.innerHTML = `
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span>Admin</span>
                 `;
-                
-                adminActionsDesktop.style.display = 'none';
-                btnAuthDesktop.classList.remove('hide-mobile');
-                btnMenuMobile.style.display = 'none';
-
-                // Atualizar handler do botão login
-                btnAuthDesktop.onclick = handleLogin;
+                btnAuth.onclick = () => window.location.href = '/admin/login';
             }
         }
-
-        function handleLogin() {
-            // Simples redirecionamento para login
-            // window.location.href = '/admin/login';
-            window.location.replace('/admin/login');
-        }
-
-        async function handleLogout() {
-            try {
-                await authService.signOut();
-                isAuthenticated = false;
-                updateUI();
-                // Opcional: recarregar página para limpar estado
-                setTimeout(() => window.location.reload(), 100);
-            } catch (error) {
-                console.error('Erro ao fazer logout:', error);
-                alert('Erro ao fazer logout. Tente novamente.');
-            }
-        }
-
-        // Toggle dropdown mobile
-        btnMenuMobile?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdownMobile?.classList.toggle('active');
-        });
-
-        // Fechar dropdown ao clicar fora
-        document.addEventListener('click', () => {
-            dropdownMobile?.classList.remove('active');
-        });
-
-        dropdownMobile?.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        // Botões Desktop
-        document.getElementById('btn-criar-produto-desktop')?.addEventListener('click', () => {
-            window.location.href = '/admin/produtos/novo';
-        });
-
-        document.getElementById('btn-gerir-categorias-desktop')?.addEventListener('click', () => {
-            window.location.href = '/admin/categorias';
-        });
-
-        // Botões Mobile
-        document.getElementById('btn-criar-produto-mobile')?.addEventListener('click', () => {
-            dropdownMobile?.classList.remove('active');
-            window.location.href = '/admin/produtos/novo';
-        });
-
-        document.getElementById('btn-gerir-categorias-mobile')?.addEventListener('click', () => {
-            dropdownMobile?.classList.remove('active');
-            window.location.href = '/admin/categorias';
-        });
-
-        // Botão Sair Mobile
-        btnSairMobile?.addEventListener('click', async () => {
-            dropdownMobile?.classList.remove('active');
-            await handleLogout();
-        });
 
         // Inicializar
         checkAuth();
 
         // Escutar mudanças de autenticação
-        const subscription = authService.onAuthStateChange((session) => {
+        authService.onAuthStateChange((session) => {
             isAuthenticated = session !== null;
             updateUI();
-        });
-
-        // Cleanup ao desmontar (para SPAs)
-        window.addEventListener('beforeunload', () => {
-            subscription?.unsubscribe();
         });
     </script>
 )}

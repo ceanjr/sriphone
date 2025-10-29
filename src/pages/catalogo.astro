@@ -415,12 +415,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       if (modo === 'lista') {
         return `
             <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
-              <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
               <div class="produto-info">
                 <div class="lista-left">
                   <h3>${utils.escapeHtml(produto.nome)}</h3>
@@ -439,12 +433,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       return `
           <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
-            <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
             <div class="produto-image">
               ${
                 imagemPrincipal && imagemPrincipal !== '/placeholder.jpg'
@@ -577,8 +565,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           )
           .join('');
       }
-
-      setupEditButtons();
 
       // ✅ Lazy loading de imagens
       imageLoader.observe(elementos.produtosContainer);
@@ -801,69 +787,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     }
   }
 
-  // ==================== Controle de Botões de Editar ====================
-  async function setupEditButtons() {
-    const session = await authService.getSession();
-    const allEditButtons = document.querySelectorAll('.btn-editar-produto');
-
-    allEditButtons.forEach((btn) => {
-      const card = btn.closest('.produto-card');
-      const produtoInfo = card?.querySelector('.produto-info');
-
-      if (!card) {
-        btn.remove();
-        return;
-      }
-
-      if (session) {
-        btn.classList.add('visible');
-        produtoInfo?.classList.add('com-editar');
-      } else {
-        btn.classList.remove('visible');
-        produtoInfo?.classList.remove('com-editar');
-      }
-
-      btn.addEventListener('click', handleEditClick);
-    });
-  }
-
-  function handleEditClick(e: Event) {
-    e.stopPropagation();
-    e.preventDefault();
-
-    const btn = e.currentTarget as HTMLElement;
-    const produtoDataStr = btn.dataset.produtoEdit;
-
-    if (!produtoDataStr) {
-      mostrarToast('Erro: dados do produto não encontrados', 'error');
-      return;
-    }
-
-    try {
-      const produtoData = JSON.parse(produtoDataStr);
-      // Redirect to edit page
-      window.location.href = `/admin/produtos/novo?edit=${produtoData.id}`;
-    } catch (error) {
-      mostrarToast('Erro ao carregar dados do produto', 'error');
-    }
-  }
-
-  function mostrarToast(
-    mensagem: string,
-    tipo: 'success' | 'error' | 'warning' | 'info' = 'info',
-  ) {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${tipo}`;
-    toast.textContent = mensagem;
-    document.body.appendChild(toast);
-
-    setTimeout(() => toast.classList.add('show'), 10);
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  }
-
   // ==================== Funções Globais ====================
   // Nota: abrirModalLogin é definido no LoginDialog.astro
 
@@ -901,29 +824,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     console.log('📡 Loading data...');
     api.carregarDados();
 
-    authService.onAuthStateChange((session) => {
-      setupEditButtons();
-
-      // ✅ OTIMIZAÇÃO: Lazy load scripts de admin apenas quando logado
-      if (session) {
-        loadAdminScripts();
-      }
-    });
-
     // ✅ Registrar tempo de inicialização
     metrics.recordMetric('PageInit', performance.now());
-  }
-
-  // ✅ OTIMIZAÇÃO: Carregar scripts admin sob demanda
-  async function loadAdminScripts() {
-    // Marcar que os scripts admin já foram carregados
-    if ((window as any).__adminScriptsLoaded) return;
-    (window as any).__adminScriptsLoaded = true;
-
-    // Os componentes de modal já estão no DOM (ProductFormDialog, CategoryFormDialog)
-    // Seus scripts já estão carregados, então não há necessidade de dynamic import adicional
-    // Esta função está pronta para futuras otimizações se necessário
-    console.log('✅ Scripts admin prontos');
   }
 
   init();

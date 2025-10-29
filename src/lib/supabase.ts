@@ -119,22 +119,22 @@ export const productService = {
         categoria_id,
         imagens,
         created_at,
-        categoria:categorias(id, nome, created_at)
+        categoria:categoria_id(id, nome, created_at)
       `
       )
       .order('created_at', { ascending: false })
       .limit(limit);
-    
+
     if (cursor) {
       query = query.lt('created_at', cursor);
     }
-    
+
     const { data, error } = await query;
     if (error) throw error;
-    
+
     const produtos = (data ?? []).map((item: any) => ({
       ...item,
-      categoria: Array.isArray(item.categoria) && item.categoria.length > 0 ? item.categoria[0] : undefined
+      categoria: item.categoria || undefined
     })) as (Product & { categoria: Category })[];
     return {
       produtos,
@@ -157,23 +157,23 @@ export const productService = {
         categoria_id,
         imagens,
         created_at,
-        categoria:categorias(id, nome, created_at)
+        categoria:categoria_id(id, nome, created_at)
       `
       )
       .eq('categoria_id', categoriaId)
       .order('created_at', { ascending: false })
       .limit(limit);
-    
+
     if (cursor) {
       query = query.lt('created_at', cursor);
     }
-    
+
     const { data, error } = await query;
     if (error) throw error;
-    
+
     const produtos = (data ?? []).map((item: any) => ({
       ...item,
-      categoria: Array.isArray(item.categoria) && item.categoria.length > 0 ? item.categoria[0] : undefined
+      categoria: item.categoria || undefined
     })) as (Product & { categoria: Category })[];
     return {
       produtos,
