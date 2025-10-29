@@ -67,18 +67,15 @@ import '../../styles/admin-form.css';
   <ConfirmModal />
 </AdminLayout>
 
-<script is:inline>
-  import {
-    criarCategoria,
-    editarCategoria,
-    deletarCategoria,
-    getCategorias,
-  } from '../../lib/crud';
-  window.criarCategoria = criarCategoria;
-  window.editarCategoria = editarCategoria;
-  window.deletarCategoria = deletarCategoria;
-  window.getCategorias = getCategorias;
+<script>
+  import('../../lib/crud.js').then((crud) => {
+    window.criarCategoria = crud.criarCategoria;
+    window.editarCategoria = crud.editarCategoria;
+    window.deletarCategoria = crud.deletarCategoria;
+    window.getCategorias = crud.getCategorias;
+  });
 </script>
+
 <script is:inline>
   const form = document.getElementById('category-form');
   const nameInput = document.getElementById('category-name');
