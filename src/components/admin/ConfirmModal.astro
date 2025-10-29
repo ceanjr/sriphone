@@ -34,7 +34,7 @@
   .confirm-modal {
     position: fixed;
     inset: 0;
-    z-index: 9999;
+    z-index: 999;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -204,20 +204,13 @@
     interface Window {
       confirmModal: ConfirmModal;
       confirm(title: string, message: string): Promise<boolean>;
-      asyncConfirm(title: string, message: string): Promise<boolean>;
     }
   }
 
   window.confirmModal = new ConfirmModal();
 
-  // Preserve native confirm for synchronous usage
-  // Do not override window.confirm with an async function
-  // Instead, provide asyncConfirm for custom modal usage
-
-  window.asyncConfirm = function (
-    title: string,
-    message: string,
-  ): Promise<boolean> {
-    return window.confirmModal.show(title, message);
+  // Override do confirm padrão
+  window.confirm = (message: string) => {
+    return window.confirmModal.show('Confirmar', message);
   };
 </script>
