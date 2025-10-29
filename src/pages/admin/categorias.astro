@@ -67,7 +67,19 @@ import '../../styles/admin-form.css';
   <ConfirmModal />
 </AdminLayout>
 
-<script src="/js/categorias-client.js"></script>
+<script type="module">
+  import {
+    criarCategoria,
+    editarCategoria,
+    deletarCategoria,
+    getCategorias,
+  } from '../../lib/crud';
+
+  window.criarCategoria = criarCategoria;
+  window.editarCategoria = editarCategoria;
+  window.deletarCategoria = deletarCategoria;
+  window.getCategorias = getCategorias;
+</script>
 
 <script is:inline>
   const form = document.getElementById('category-form');

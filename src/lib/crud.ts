@@ -13,10 +13,18 @@ export async function getCategorias() {
       throw new Error(result.error || 'Erro ao buscar categorias');
     }
     
-    return result;
+    // ✅ CORRIGIDO: Garante que sempre retorna { success, data }
+    return {
+      success: true,
+      data: result.data || result.categorias || [] // Aceita ambos os formatos
+    };
   } catch (error: any) {
     console.error('Erro ao buscar categorias:', error);
-    return { success: false, error: error.message || 'Erro ao buscar categorias' };
+    return { 
+      success: false, 
+      error: error.message || 'Erro ao buscar categorias',
+      data: [] // Sempre retorna array vazio em caso de erro
+    };
   }
 }
 
@@ -37,6 +45,7 @@ export async function criarCategoria(nome: string) {
     let result = null;
     const text = await response.text();
     console.log('[criarCategoria] Resposta da API:', text);
+    
     if (text) {
       try {
         result = JSON.parse(text);
@@ -45,9 +54,11 @@ export async function criarCategoria(nome: string) {
         throw new Error('Resposta inválida da API: ' + text);
       }
     }
+    
     if (!response.ok) {
       throw new Error((result && result.error) || 'Erro ao criar categoria');
     }
+    
     return result;
   } catch (error: any) {
     console.error('Erro ao criar categoria:', error);
@@ -110,105 +121,5 @@ export async function deletarCategoria(id: string) {
   } catch (error: any) {
     console.error('Erro ao deletar categoria:', error);
     return { success: false, error: error.message || 'Erro ao deletar categoria' };
-  }
-}
-
-// ============================================
-// PRODUTOS
-// ============================================
-
-export async function criarProduto(produto: any) {
-  try {
-    // Remover campo 'ativo' do payload
-    const { ativo, ...produtoSemAtivo } = produto;
-    console.log('[criarProduto] Enviando para API:', produtoSemAtivo);
-    const response = await fetch('/api/admin/produtos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(produtoSemAtivo),
-    });
-
-    const result = await response.json();
-    console.log('[criarProduto] Resposta da API:', result);
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Erro ao criar produto');
-    }
-
-    return result;
-  } catch (error: any) {
-    console.error('Erro ao criar produto:', error);
-    return { success: false, error: error.message || 'Erro ao criar produto' };
-  }
-}
-
-export async function editarProduto(id: string, produto: any) {
-  try {
-    if (!id) {
-      return { success: false, error: 'ID é obrigatório' };
-    }
-
-    // Remover campo 'ativo' do payload
-    const { ativo, ...produtoSemAtivo } = produto;
-    console.log('[editarProduto] Enviando para API:', id, produtoSemAtivo);
-    const response = await fetch(`/api/admin/produtos/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(produtoSemAtivo),
-    });
-
-    const result = await response.json();
-    console.log('[editarProduto] Resposta da API:', result);
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Erro ao editar produto');
-    }
-
-    return result;
-  } catch (error: any) {
-    console.error('Erro ao editar produto:', error);
-    return { success: false, error: error.message || 'Erro ao editar produto' };
-  }
-}
-
-export async function deletarProduto(id: string) {
-  try {
-    if (!id) {
-      console.log('[deletarProduto] ID vazio:', id);
-      return { success: false, error: 'ID é obrigatório' };
-    }
-
-    console.log('[deletarProduto] Enviando para API:', id);
-    const response = await fetch(`/api/admin/produtos/${id}`, {
-      method: 'DELETE',
-    });
-
-    const result = await response.json();
-    console.log('[deletarProduto] Resposta da API:', result);
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Erro ao deletar produto');
-    }
-
-    return result;
-  } catch (error: any) {
-    console.error('Erro ao deletar produto:', error);
-    return { success: false, error: error.message || 'Erro ao deletar produto' };
-  }
-}
-
-export async function getProdutos() {
-  try {
-    const response = await fetch('/api/admin/produtos');
-    const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Erro ao buscar produtos');
-    }
-    
-    return result;
-  } catch (error: any) {
-    console.error('Erro ao buscar produtos:', error);
-    return { success: false, error: error.message || 'Erro ao buscar produtos' };
   }
 }
