@@ -17,7 +17,8 @@ const { title, description = 'Painel administrativo Sr. IPHONE VCA' } =
 // Proteção de rota admin
 console.log('[AdminLayout] Iniciando verificação de autenticação...');
 const currentPath = Astro.url.pathname;
-const isLoginPage = currentPath === '/admin/login' || currentPath === '/admin/login/';
+const isLoginPage =
+  currentPath === '/admin/login' || currentPath === '/admin/login/';
 
 console.log('[AdminLayout] Caminho atual:', currentPath);
 console.log('[AdminLayout] É página de login?', isLoginPage);
@@ -30,7 +31,9 @@ try {
   console.log('[AdminLayout] Resultado da autenticação:', isAuthenticated);
 
   if (!isAuthenticated && !isLoginPage) {
-    console.log('[AdminLayout] Não autenticado, redirecionando para /admin/login');
+    console.log(
+      '[AdminLayout] Não autenticado, redirecionando para /admin/login',
+    );
     return Astro.redirect('/admin/login');
   }
 } catch (err) {
@@ -39,8 +42,6 @@ try {
     return Astro.redirect('/admin/login');
   }
 }
----
-
 ---
 
 <Layout title={title} description={description}>

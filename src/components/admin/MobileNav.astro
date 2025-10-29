@@ -7,7 +7,7 @@ const menuItems = [
 const currentPath = Astro.url.pathname;
 ---
 
-<header class="mobile-nav hidden">
+<header class="mobile-nav">
   <div class="mobile-nav-header">
     <div class="mobile-nav-brand">
       <div class="mobile-nav-logo">
@@ -22,7 +22,7 @@ const currentPath = Astro.url.pathname;
     <button
       type="button"
       id="mobile-menu-btn"
-      class="mobile-menu-btn"
+      class="mobile-menu-btn hidden"
       aria-label="Abrir menu"
     >
       <svg id="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
