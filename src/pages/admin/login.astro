@@ -10,9 +10,18 @@ import '../../styles/pages/admin/login.css';
   <div class="login-page">
     <div class="login-container">
       <!-- Botão Voltar -->
-      <a href="/" class="login-back-btn" aria-label="Voltar para página inicial">
+      <a
+        href="/"
+        class="login-back-btn"
+        aria-label="Voltar para página inicial"
+      >
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M19 12H5M5 12L12 19M5 12L12 5"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
         </svg>
         Voltar
       </a>
@@ -76,17 +85,6 @@ import '../../styles/pages/admin/login.css';
   import { authService } from '../../lib/supabase';
 
   // Verificar se já há uma sessão existente ao carregar a página
-  (async () => {
-    try {
-      const isAuth = await authService.isAuthenticated();
-      if (isAuth) {
-        console.log('🔁 Sessão detectada, redirecionando...');
-        window.location.replace('/admin/dashboard');
-      }
-    } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
-    }
-  })();
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById(

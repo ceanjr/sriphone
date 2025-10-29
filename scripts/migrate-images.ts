@@ -1,5 +1,5 @@
 // scripts/migrate-images.ts
-// Script de migração de imagens para 16 produtos
+// Script de migração de imagens para produtos
 
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
