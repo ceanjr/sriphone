@@ -5,6 +5,7 @@ const { data: categorias } = await supabaseAdmin
   .from('categorias')
   .select('*')
   .order('nome');
+console.log('[GerirCategorias] Categorias recebidas:', categorias);
 ---
 
 <div class="mb-8">
