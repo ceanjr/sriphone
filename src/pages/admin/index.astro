@@ -2,8 +2,6 @@
 // Check if user is authenticated and redirect accordingly
 import { supabase } from '../../lib/supabase';
 
-export const prerender = false;
-
 // Try to get the session from cookie
 const accessToken = Astro.cookies.get('sb-access-token')?.value;
 const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;

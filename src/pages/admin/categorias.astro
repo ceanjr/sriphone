@@ -5,8 +5,6 @@ import { supabase } from '../../lib/supabase';
 import '../../styles/admin-list.css';
 import '../../styles/admin-form.css';
 
-export const prerender = false;
-
 const { data: categorias } = await supabase
   .from('categorias')
   .select('*')

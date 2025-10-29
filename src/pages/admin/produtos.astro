@@ -4,8 +4,6 @@ import { supabase } from '../../lib/supabase';
 import '../../styles/admin-list.css';
 import '../../styles/admin-form.css';
 
-export const prerender = false;
-
 // Buscar todas as categorias para o filtro
 const { data: categorias } = await supabase
   .from('categorias')

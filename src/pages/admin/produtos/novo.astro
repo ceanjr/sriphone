@@ -3,8 +3,6 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import '../../../styles/admin-form.css';
 
-export const prerender = false;
-
 const { data: categorias } = await supabase
   .from('categorias')
   .select('*')
