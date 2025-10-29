@@ -60,7 +60,6 @@ import '../../styles/admin-form.css';
 </AdminLayout>
 
 <script>
-  // ✅ CORRIGIDO: Usar dynamic import com caminho absoluto via API
   const form = document.getElementById('category-form') as HTMLFormElement;
   const nameInput = document.getElementById(
     'category-name',
@@ -79,7 +78,7 @@ import '../../styles/admin-form.css';
   ) as HTMLButtonElement;
   const listRoot = document.getElementById('category-list-root') as HTMLElement;
 
-  // ==================== API Diretas (sem depender de crud.ts) ====================
+  // ==================== API Functions ====================
   async function getCategorias() {
     try {
       const response = await fetch('/api/admin/categorias');
@@ -229,7 +228,7 @@ import '../../styles/admin-form.css';
               </div>
             </div>
             <div class="admin-list-item-actions">
-              <button class="admin-list-item-btn" data-action="edit" data-cat='${JSON.stringify(cat).replace(/'/g, '&apos;')}' title="Editar categoria">
+              <button class="admin-list-item-btn" data-action="edit" data-id="${cat.id}" data-nome="${cat.nome}" title="Editar categoria">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               </button>
               <button class="admin-list-item-btn danger" data-action="delete" data-id="${cat.id}" data-nome="${cat.nome}" title="Deletar categoria">
@@ -254,10 +253,12 @@ import '../../styles/admin-form.css';
   function bindListEvents() {
     document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const catStr = (btn as HTMLElement).dataset.cat || '{}';
-        const cat = JSON.parse(catStr);
-        nameInput.value = cat.nome;
-        editIdInput.value = cat.id;
+        const el = btn as HTMLElement;
+        const id = el.dataset.id || '';
+        const nome = el.dataset.nome || '';
+
+        nameInput.value = nome;
+        editIdInput.value = id;
         submitText.textContent = 'Salvar';
         cancelBtn.classList.remove('hidden');
         nameInput.focus();
@@ -281,7 +282,8 @@ import '../../styles/admin-form.css';
           const result = await deletarCategoria(id);
           if (result.success) {
             (window as any).showToast('Categoria deletada!', 'success');
-            renderCategoryList();
+            // ✅ CRÍTICO: Atualizar lista imediatamente
+            await renderCategoryList();
           } else {
             (window as any).showToast(
               result.error || 'Erro ao deletar',
@@ -323,7 +325,9 @@ import '../../styles/admin-form.css';
       editIdInput.value = '';
       cancelBtn.classList.add('hidden');
       submitText.textContent = 'Adicionar';
-      renderCategoryList();
+
+      // ✅ CRÍTICO: Atualizar lista imediatamente
+      await renderCategoryList();
     } catch (error: any) {
       (window as any).showToast(error.message || 'Erro ao salvar', 'error');
     } finally {
@@ -343,3 +347,36 @@ import '../../styles/admin-form.css';
   // Initial render
   renderCategoryList();
 </script>
+
+<style>
+  /* Garantir que o modal de confirmação não fique gigante */
+  .confirm-modal {
+    z-index: 9999 !important;
+  }
+
+  .confirm-dialog {
+    max-width: 400px !important;
+  }
+
+  .confirm-icon {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .confirm-icon svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* Loading/Error states */
+  .admin-list-loading,
+  .admin-list-error {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #a0a0a0;
+  }
+
+  .admin-list-error {
+    color: #ef4444;
+  }
+</style>
