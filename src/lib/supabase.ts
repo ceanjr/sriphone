@@ -321,8 +321,8 @@ export const authService = {
       console.error('Erro ao fazer logout:', error);
     }
     console.log('Usuário deslogado com sucesso.');
-    // Limpar storage manual caso necessário
-    localStorage.removeItem('sb-auth-token');
+    // Limpar todos os tokens do localStorage
+    import('./authUtils').then(({ clearAuthToken }) => clearAuthToken());
   },
 
   async getSession() {
