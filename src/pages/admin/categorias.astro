@@ -174,9 +174,9 @@ export const prerender = false;
 
         if (!id) return;
 
-        const confirmed = await (window as any).confirmModal.show(
-          'Deletar Categoria',
-          `Tem certeza que deseja deletar "${nome}"? Esta ação não pode ser desfeita.`,
+        // Usar confirm nativo do navegador (mais discreto)
+        const confirmed = confirm(
+          `Tem certeza que deseja deletar "${nome}"?\nEsta ação não pode ser desfeita.`,
         );
 
         if (confirmed) {
@@ -250,25 +250,6 @@ export const prerender = false;
 </script>
 
 <style>
-  /* Garantir que o modal de confirmação não fique gigante */
-  .confirm-modal {
-    z-index: 9999 !important;
-  }
-
-  .confirm-dialog {
-    max-width: 400px !important;
-  }
-
-  .confirm-icon {
-    width: 48px !important;
-    height: 48px !important;
-  }
-
-  .confirm-icon svg {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
   /* Loading/Error states */
   .admin-list-loading,
   .admin-list-error {

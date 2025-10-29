@@ -274,9 +274,9 @@ const { data: produtos } = await supabaseAdmin
       const id = element.dataset.id;
       const nome = element.dataset.nome;
 
-      const confirmed = await window.confirmModal.show(
-        'Deletar Produto',
-        `Tem certeza que deseja deletar "${nome}"? Esta ação não pode ser desfeita.`,
+      // Usar confirm nativo do navegador (mais discreto)
+      const confirmed = confirm(
+        `Tem certeza que deseja deletar "${nome}"?\nEsta ação não pode ser desfeita.`,
       );
 
       if (confirmed && id) {
