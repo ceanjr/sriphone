@@ -1,7 +1,7 @@
 ---
-import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabaseAdmin';
 
-const { data: categorias } = await supabase
+const { data: categorias } = await supabaseAdmin
   .from('categorias')
   .select('*')
   .order('nome');
@@ -19,19 +19,21 @@ const { data: categorias } = await supabase
   </div>
 
   <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-    {categorias?.map((cat) => (
-      <div class="rounded-lg border border-gray-700 bg-gray-800 p-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-semibold text-white">{cat.nome}</h3>
-          <button
-            class="text-red-400 hover:text-red-300"
-            data-delete-cat={cat.id}
-          >
-            Deletar
-          </button>
+    {
+      categorias?.map((cat) => (
+        <div class="rounded-lg border border-gray-700 bg-gray-800 p-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-white">{cat.nome}</h3>
+            <button
+              class="text-red-400 hover:text-red-300"
+              data-delete-cat={cat.id}
+            >
+              Deletar
+            </button>
+          </div>
         </div>
-      </div>
-    ))}
+      ))
+    }
   </div>
 
   <!-- Dialog -->
@@ -46,7 +48,11 @@ const { data: categorias } = await supabase
         required
       />
       <div class="flex gap-2 justify-end">
-        <button type="button" id="cancel-cat-btn" class="px-4 py-2 rounded-lg border border-gray-600">
+        <button
+          type="button"
+          id="cancel-cat-btn"
+          class="px-4 py-2 rounded-lg border border-gray-600"
+        >
           Cancelar
         </button>
         <button type="submit" class="px-4 py-2 rounded-lg bg-white text-black">
@@ -60,13 +66,19 @@ const { data: categorias } = await supabase
 <script>
   import { criarCategoria, deletarCategoria } from '../lib/crud';
 
-  const dialog = document.getElementById('categoria-dialog') as HTMLDialogElement;
+  const dialog = document.getElementById(
+    'categoria-dialog',
+  ) as HTMLDialogElement;
   const form = document.getElementById('categoria-form') as HTMLFormElement;
-  const nomeInput = document.getElementById('categoria-nome') as HTMLInputElement;
+  const nomeInput = document.getElementById(
+    'categoria-nome',
+  ) as HTMLInputElement;
 
-  document.getElementById('nova-categoria-btn')?.addEventListener('click', () => {
-    dialog?.showModal();
-  });
+  document
+    .getElementById('nova-categoria-btn')
+    ?.addEventListener('click', () => {
+      dialog?.showModal();
+    });
 
   document.getElementById('cancel-cat-btn')?.addEventListener('click', () => {
     dialog?.close();
@@ -74,9 +86,9 @@ const { data: categorias } = await supabase
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const result = await criarCategoria(nomeInput.value);
-    
+
     if (result.success) {
       alert('Categoria criada!');
       location.reload();
@@ -88,11 +100,11 @@ const { data: categorias } = await supabase
   document.querySelectorAll('[data-delete-cat]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const id = (e.target as HTMLElement).dataset.deleteCat;
-      
+
       if (!id || !confirm('Deletar categoria?')) return;
-      
+
       const result = await deletarCategoria(id);
-      
+
       if (result.success) {
         alert('Categoria deletada!');
         location.reload();
