@@ -71,28 +71,26 @@ import '../../styles/pages/admin/login.css';
   const { data: listener } = supabase.auth.onAuthStateChange(
     (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        console.log('✅ Sessão criada, redirecionando...');
-        window.location.replace('/admin/dashboard'); // recarrega a página e passa pelo middleware
+        console.log('✅ Usuário logado, redirecionando...');
+        setTimeout(() => {
+          window.location.replace('/admin/dashboard');
+        }, 500); // pequeno atraso para garantir que o cookie esteja salvo
       }
     },
   );
 
-  checkIfAlreadyAuthenticated();
-
-  // Verificar se já está autenticado ao carregar a página
-  async function checkIfAlreadyAuthenticated() {
+  // 🔥 Após 500ms, verificar se já há uma sessão existente (ex: usuário volta à página logado)
+  setTimeout(async () => {
     try {
       const isAuth = await authService.isAuthenticated();
-      // Só redireciona se realmente estiver autenticado (sessão válida)
       if (isAuth) {
-        window.location.href = '/admin/dashboard';
+        console.log('🔁 Sessão detectada, redirecionando...');
+        window.location.replace('/admin/dashboard');
       }
     } catch (error) {
-      // Não faz nada se não estiver autenticado
-      // Apenas loga o erro para debug
       console.error('Erro ao verificar autenticação:', error);
     }
-  }
+  }, 500);
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById(
