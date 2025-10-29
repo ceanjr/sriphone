@@ -92,8 +92,8 @@ import '../../styles/admin-form.css';
   // Helper: fetch categories and count products
   async function listarCategoriasComContagem() {
     const res = await window.getCategorias();
-    if (!res || !res.success || !Array.isArray(res.categorias)) return [];
-    return res.categorias;
+    if (!res || !res.success || !Array.isArray(res.data)) return [];
+    return res.data;
   }
 
   // Render category list
