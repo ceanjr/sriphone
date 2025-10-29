@@ -204,22 +204,16 @@
     interface Window {
       confirmModal: ConfirmModal;
       confirm(title: string, message: string): Promise<boolean>;
+      asyncConfirm(title: string, message: string): Promise<boolean>;
     }
   }
 
   window.confirmModal = new ConfirmModal();
 
-  // Override do confirm padrão
   // Preserve native confirm for synchronous usage
-  window.confirm = function (message?: string): boolean {
-    return window.confirmModal
-      ? window.confirmModal
-          .show('Confirmar', message || '')
-          .then((result) => result)
-      : window.confirm(message || '');
-  };
+  // Do not override window.confirm with an async function
+  // Instead, provide asyncConfirm for custom modal usage
 
-  // Provide async confirm for custom modal usage
   window.asyncConfirm = function (
     title: string,
     message: string,
