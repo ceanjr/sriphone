@@ -141,13 +141,6 @@ export async function criarProduto(produto: any) {
     return { success: false, error: error.message || 'Erro ao criar produto' };
   }
 }
-  // Remover campo 'ativo' do payload
-  const { ativo, ...produtoSemAtivo } = produto;
-  const response = await fetch('/api/admin/produtos', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(produtoSemAtivo),
-  });
 
 export async function editarProduto(id: string, produto: any) {
   try {
