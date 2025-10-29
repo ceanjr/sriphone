@@ -47,27 +47,8 @@ const { data: categorias } = await supabaseAdmin
               style="display: none;"
             />
             <div class="form-image-upload" id="upload-area">
-              <div id="upload-placeholder">
-                <svg
-                  class="form-image-upload-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                <p class="form-image-upload-text">
-                  Clique para adicionar imagens
-                </p>
-                <small class="form-image-upload-hint">JPG, PNG até 5MB cada (máximo 5 imagens)</small>
-              </div>
+              <!-- Conteúdo dinâmico: placeholder ou grid de imagens -->
             </div>
-            <div id="images-preview-grid" style="display: none; margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;"></div>
           </div>
 
           <!-- Nome -->
@@ -195,8 +176,6 @@ const { data: categorias } = await supabaseAdmin
   const submitText = document.getElementById('submit-text') as HTMLSpanElement;
   const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
   const uploadArea = document.getElementById('upload-area');
-  const uploadPlaceholder = document.getElementById('upload-placeholder');
-  const imagesPreviewGrid = document.getElementById('images-preview-grid');
 
   // Estado de imagens carregadas
   interface UploadedImage {
@@ -208,7 +187,10 @@ const { data: categorias } = await supabaseAdmin
   let formSaved = false; // Flag para saber se salvou com sucesso
 
   // Click na área de upload abre o file input
-  uploadArea?.addEventListener('click', () => {
+  uploadArea?.addEventListener('click', (e) => {
+    // Se clicou em um botão específico, não abrir o file input
+    if ((e.target as HTMLElement).closest('button')) return;
+
     if (uploadedImages.length < MAX_IMAGES) {
       fileInput?.click();
     } else {
@@ -316,35 +298,90 @@ const { data: categorias } = await supabaseAdmin
 
   // Renderizar preview das imagens
   function renderImagesPreviews() {
-    if (!imagesPreviewGrid) return;
+    if (!uploadArea) return;
 
     if (uploadedImages.length === 0) {
-      imagesPreviewGrid.style.display = 'none';
-      if (uploadPlaceholder) uploadPlaceholder.style.display = 'block';
+      // Mostrar placeholder quando não há imagens
+      uploadArea.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px;">
+          <svg
+            style="width: 48px; height: 48px; color: #9ca3af; margin-bottom: 16px;"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            ></path>
+          </svg>
+          <p style="font-size: 14px; font-weight: 500; color: #6b7280; margin-bottom: 4px;">
+            Clique para adicionar imagens
+          </p>
+          <small style="font-size: 12px; color: #9ca3af;">JPG, PNG até 10MB cada (máximo 5 imagens)</small>
+        </div>
+      `;
       return;
     }
 
-    imagesPreviewGrid.style.display = 'grid';
-    if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
-
-    imagesPreviewGrid.innerHTML = uploadedImages
+    // Mostrar grid de imagens quando há uploads
+    const imagesHtml = uploadedImages
       .map(
         (img, index) => `
-        <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb;">
+        <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; background: #f9fafb;">
           <img src="${img.url}" alt="Preview ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;" />
           <button
             type="button"
             onclick="window.removeImage(${index})"
-            style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px;"
+            style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; font-weight: bold; transition: all 0.2s;"
+            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.1)'"
+            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
             title="Remover imagem"
           >
             ×
           </button>
-          ${index === 0 ? '<span style="position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.7); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px;">Principal</span>' : ''}
+          ${index === 0 ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.8); color: white; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: 500;">Principal</span>' : ''}
         </div>
       `,
       )
       .join('');
+
+    // Adicionar botão "+" se ainda não atingiu o máximo
+    const addButtonHtml =
+      uploadedImages.length < MAX_IMAGES
+        ? `
+        <div
+          style="
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 2px dashed #d1d5db;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #f9fafb;
+            transition: all 0.2s;
+          "
+          onmouseover="this.style.borderColor='#9ca3af'; this.style.background='#f3f4f6'"
+          onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb'"
+        >
+          <svg style="width: 32px; height: 32px; color: #9ca3af; margin-bottom: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span style="font-size: 12px; color: #6b7280; font-weight: 500;">Adicionar</span>
+        </div>
+      `
+        : '';
+
+    uploadArea.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding: 16px;">
+        ${imagesHtml}
+        ${addButtonHtml}
+      </div>
+    `;
   }
 
   // Função global para remover imagem
@@ -486,4 +523,7 @@ const { data: categorias } = await supabaseAdmin
       submitText.textContent = 'Adicionar Produto';
     }
   });
+
+  // Renderizar estado inicial (placeholder)
+  renderImagesPreviews();
 </script>
