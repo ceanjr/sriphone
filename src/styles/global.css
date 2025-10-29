@@ -395,3 +395,19 @@ html, body {
   position: relative;
   overflow-x: hidden;
 }
+
+/* Melhorar contraste em dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: var(--cor-fundo-escuro);
+      --cor-primaria: #ffffff; /* Branco (Usado para texto principal) */
+  --cor-secundaria: #000000; /* Preto (Usado para fundo) */
+  --cor-texto: #e0e0e0; /* Cinza claro para texto */
+  --cor-fundo-claro: #eaeaea; /* Cinza escuro para seções leves */
+  --cor-fundo-escuro: #030303; /* Preto mais profundo para o corpo */
+  --cor-destaque: #e0e0e0; /* Azul iOS (funciona bem em dark mode) */
+
+  --cor-texto-claro-on-escuro: var(--cor-primaria); /* #FFFFFF */
+  --cor-texto-escuro-on-claro: var(--cor-secundaria); /* #000000 */
+  }
+}
