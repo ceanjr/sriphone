@@ -65,7 +65,19 @@ import '../../styles/pages/admin/login.css';
 </Layout>
 
 <script>
-  import { authService } from '../../lib/supabase';
+  import { supabase, authService } from '../../lib/supabase';
+
+  // 🔥 1. Listener de autenticação (executa automaticamente após login)
+  const { data: listener } = supabase.auth.onAuthStateChange(
+    (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log('✅ Sessão criada, redirecionando...');
+        window.location.replace('/admin/dashboard'); // recarrega a página e passa pelo middleware
+      }
+    },
+  );
+
+  checkIfAlreadyAuthenticated();
 
   // Verificar se já está autenticado ao carregar a página
   async function checkIfAlreadyAuthenticated() {
@@ -80,11 +92,6 @@ import '../../styles/pages/admin/login.css';
       // Apenas loga o erro para debug
       console.error('Erro ao verificar autenticação:', error);
     }
-  }
-
-  // Executar verificação imediatamente, mas apenas se não houver tentativa de login em andamento
-  if (!localStorage.getItem('sb-auth-token')) {
-    checkIfAlreadyAuthenticated();
   }
 
   const form = document.getElementById('login-form') as HTMLFormElement;
@@ -116,9 +123,6 @@ import '../../styles/pages/admin/login.css';
     try {
       // Fazer login usando o authService
       await authService.signIn(email, password);
-
-      // Aguardar um pouco para garantir que a sessão foi salva
-      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Verificar se realmente está autenticado
       const isAuth = await authService.isAuthenticated();
