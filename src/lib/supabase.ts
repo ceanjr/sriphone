@@ -330,25 +330,34 @@ export const authService = {
   },
 
   async getSession() {
-    // ✅ NOVO: Verificar localStorage primeiro
     const token = localStorage.getItem('sb-access-token');
     const authTime = localStorage.getItem('sb-auth-time');
-    
-    // Se token existe e não expirou (7 dias)
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
     if (token && authTime) {
       const elapsed = Date.now() - parseInt(authTime);
-      const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      
       if (elapsed < sevenDays) {
-        // Token ainda válido, retornar sessão mockada
-        return { access_token: token };
+        // Token ainda válido, garantir sessão real do Supabase
+        // Tenta restaurar sessão usando o token
+        // Supabase já deve ter restaurado a sessão se o token foi salvo corretamente
+        const { data } = await supabase.auth.getSession();
+        if (data.session && data.session.access_token === token) {
+          return data.session;
+        }
+        // Se não, tenta forçar o setSession
+        try {
+          const { data: setData, error } = await supabase.auth.setSession({
+            access_token: token,
+            refresh_token: '', // refresh_token não disponível no localStorage
+          });
+          if (!error && setData.session) {
+            return setData.session;
+          }
+        } catch {}
       } else {
-        // Token expirado, limpar
         localStorage.removeItem('sb-access-token');
         localStorage.removeItem('sb-auth-time');
       }
     }
-    
     // Fallback: tentar obter do Supabase
     const { data } = await supabase.auth.getSession();
     return data.session;
