@@ -6,11 +6,11 @@
   background: #0a0a0a;
   border-bottom: 1px solid #2a2a2a;
   padding: 16px 20px;
-  position: sticky;
+  position: fixed;
   top: 0;
   right: 0;
   left: 0;
-  z-index: 10;
+  z-index: 999;
 }
 
 .dashboard-header-left {

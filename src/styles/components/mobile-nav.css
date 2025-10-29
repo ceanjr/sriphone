@@ -11,7 +11,7 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  z-index: 100;
+  z-index: 999;
 }
 
 .mobile-nav-item {
@@ -46,7 +46,7 @@
 /* Compensa o espaço ocupado pela barra inferior */
 body {
   margin: 0;
-  padding-bottom: 64px; /* evita que o conteúdo fique sob a nav */
+  padding-bottom: 72; /* evita que o conteúdo fique sob a nav */
 }
 
 /* Ocultar no desktop */
