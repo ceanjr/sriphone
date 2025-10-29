@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v25-dev-fix';
+const CACHE_VERSION = 'v26-dev-fix';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;

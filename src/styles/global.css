@@ -43,8 +43,8 @@ html {
 
 body {
   font-family: var(--fonte-padrao);
-  color: var(--cor-texto);
-  background-color: var(--cor-fundo-escuro); /* Fundo principal mais escuro */
+  color: var(--cor-texto) !important;
+  background-color: var(--cor-fundo-escuro) !important; /* Fundo principal mais escuro */
   line-height: 1.6;
   min-height: 100vh;
 }
@@ -97,6 +97,25 @@ iframe {
   }
   .container {
     padding: 0 2rem;
+  }
+}
+
+/* Forçar tema escuro mesmo se o sistema estiver em modo claro */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: dark !important;
+    --cor-primaria: #ffffff;
+    --cor-secundaria: #000000;
+    --cor-texto: #e0e0e0;
+    --cor-fundo-claro: #eaeaea;
+    --cor-fundo-escuro: #030303;
+    --cor-destaque: #e0e0e0;
+    --cor-texto-claro-on-escuro: var(--cor-primaria);
+    --cor-texto-escuro-on-claro: var(--cor-secundaria);
+  }
+  body {
+    background-color: var(--cor-fundo-escuro) !important;
+    color: var(--cor-texto) !important;
   }
 }
 
