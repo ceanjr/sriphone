@@ -7,14 +7,25 @@
   <div class="confirm-dialog">
     <div class="confirm-icon">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        ></path>
       </svg>
     </div>
     <h3 id="confirm-title" class="confirm-title">Confirmar ação</h3>
-    <p id="confirm-message" class="confirm-message">Tem certeza que deseja continuar?</p>
+    <p id="confirm-message" class="confirm-message">
+      Tem certeza que deseja continuar?
+    </p>
     <div class="confirm-actions">
-      <button id="confirm-cancel" class="confirm-btn confirm-btn-cancel">Cancelar</button>
-      <button id="confirm-ok" class="confirm-btn confirm-btn-danger">Confirmar</button>
+      <button id="confirm-cancel" class="confirm-btn confirm-btn-cancel"
+        >Cancelar</button
+      >
+      <button id="confirm-ok" class="confirm-btn confirm-btn-danger"
+        >Confirmar</button
+      >
     </div>
   </div>
 </div>
@@ -23,7 +34,7 @@
   .confirm-modal {
     position: fixed;
     inset: 0;
-    z-index: 999;
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -170,10 +181,10 @@
     show(title: string, message: string): Promise<boolean> {
       return new Promise((resolve) => {
         this.resolveCallback = resolve;
-        
+
         if (this.titleEl) this.titleEl.textContent = title;
         if (this.messageEl) this.messageEl.textContent = message;
-        
+
         this.modal?.classList.remove('hidden');
         this.okBtn?.focus();
       });
@@ -197,9 +208,22 @@
   }
 
   window.confirmModal = new ConfirmModal();
-  
+
   // Override do confirm padrão
-  window.confirm = (message: string) => {
-    return window.confirmModal.show('Confirmar', message);
+  // Preserve native confirm for synchronous usage
+  window.confirm = function (message?: string): boolean {
+    return window.confirmModal
+      ? window.confirmModal
+          .show('Confirmar', message || '')
+          .then((result) => result)
+      : window.confirm(message || '');
+  };
+
+  // Provide async confirm for custom modal usage
+  window.asyncConfirm = function (
+    title: string,
+    message: string,
+  ): Promise<boolean> {
+    return window.confirmModal.show(title, message);
   };
 </script>

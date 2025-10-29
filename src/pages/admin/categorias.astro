@@ -308,28 +308,43 @@ import '../../styles/admin-form.css';
     submitText.textContent = isEdit ? 'Salvando...' : 'Adicionando...';
 
     try {
+      console.log('🔄 Submetendo:', { nome, isEdit, editId });
+
       const result = isEdit
         ? await editarCategoria(editId, nome)
         : await criarCategoria(nome);
+
+      console.log('📥 Resultado:', result);
 
       if (!result.success) {
         throw new Error(result.error || 'Erro ao salvar');
       }
 
-      (window as any).showToast(
-        isEdit ? 'Categoria atualizada!' : 'Categoria criada!',
-        'success',
-      );
+      // ✅ Toast de sucesso
+      if (typeof window.showToast === 'function') {
+        window.showToast(
+          isEdit ? 'Categoria atualizada!' : 'Categoria criada!',
+          'success',
+        );
+      }
 
+      // ✅ Resetar formulário
       form.reset();
       editIdInput.value = '';
       cancelBtn.classList.add('hidden');
       submitText.textContent = 'Adicionar';
 
-      // ✅ CRÍTICO: Atualizar lista imediatamente
-      await renderCategoryList();
+      // ✅ CRÍTICO: Atualizar lista após pequeno delay
+      console.log('🔄 Atualizando lista...');
+      setTimeout(async () => {
+        await renderCategoryList();
+        console.log('✅ Lista atualizada!');
+      }, 100);
     } catch (error: any) {
-      (window as any).showToast(error.message || 'Erro ao salvar', 'error');
+      console.error('❌ Erro:', error);
+      if (typeof window.showToast === 'function') {
+        window.showToast(error.message || 'Erro ao salvar', 'error');
+      }
     } finally {
       submitBtn.disabled = false;
       submitText.textContent = isEdit ? 'Salvar' : 'Adicionar';
