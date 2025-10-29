@@ -65,22 +65,10 @@ import '../../styles/pages/admin/login.css';
 </Layout>
 
 <script>
-  import { supabase, authService } from '../../lib/supabase';
+  import { authService } from '../../lib/supabase';
 
-  // 🔥 1. Listener de autenticação (executa automaticamente após login)
-  const { data: listener } = supabase.auth.onAuthStateChange(
-    (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        console.log('✅ Usuário logado, redirecionando...');
-        setTimeout(() => {
-          window.location.replace('/admin/dashboard');
-        }, 500); // pequeno atraso para garantir que o cookie esteja salvo
-      }
-    },
-  );
-
-  // 🔥 Após 500ms, verificar se já há uma sessão existente (ex: usuário volta à página logado)
-  setTimeout(async () => {
+  // Verificar se já há uma sessão existente ao carregar a página
+  (async () => {
     try {
       const isAuth = await authService.isAuthenticated();
       if (isAuth) {
@@ -90,7 +78,7 @@ import '../../styles/pages/admin/login.css';
     } catch (error) {
       console.error('Erro ao verificar autenticação:', error);
     }
-  }, 500);
+  })();
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById(
@@ -119,18 +107,27 @@ import '../../styles/pages/admin/login.css';
     submitBtn.textContent = 'Entrando...';
 
     try {
-      // Fazer login usando o authService
+      // 1. Fazer login usando o authService (salva no localStorage)
       await authService.signIn(email, password);
 
-      // Verificar se realmente está autenticado
-      const isAuth = await authService.isAuthenticated();
+      // 2. Chamar API para salvar cookies no servidor
+      const response = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (isAuth) {
-        // Sucesso! Redirecionar para dashboard
-        window.location.href = '/admin/dashboard';
-      } else {
-        throw new Error('Falha ao estabelecer sessão');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao fazer login');
       }
+
+      // 3. Sucesso! Redirecionar para dashboard
+      console.log('✅ Login realizado com sucesso!');
+      window.location.href = '/admin/dashboard';
     } catch (error: any) {
       console.error('Erro no login:', error);
 

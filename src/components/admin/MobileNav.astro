@@ -148,8 +148,23 @@ const currentPath = Astro.url.pathname;
 
     logoutBtn?.addEventListener('click', async () => {
       if (confirm('Tem certeza que deseja sair?')) {
-        await authService.signOut();
-        window.location.href = '/admin/login';
+        try {
+          // Fazer logout no Supabase (limpa localStorage)
+          await authService.signOut();
+
+          // Chamar endpoint para limpar cookies do servidor
+          await fetch('/api/admin/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          // Redirecionar para login
+          window.location.href = '/admin/login';
+        } catch (error) {
+          console.error('Erro ao fazer logout:', error);
+          // Mesmo com erro, redirecionar para login
+          window.location.href = '/admin/login';
+        }
       }
     });
   });

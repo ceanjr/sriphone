@@ -1,5 +1,4 @@
-<script>
-  if (typeof window !== 'undefined' && !localStorage.getItem('sb-auth-token')) {
-    window.location.href = '/admin/login';
-  }
-</script>
+---
+// Redirecionar para dashboard - o middleware já protege esta rota
+return Astro.redirect('/admin/dashboard');
+---
