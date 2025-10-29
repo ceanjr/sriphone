@@ -1,12 +1,4 @@
 ---
-declare global {
-  interface Window {
-    criarCategoria: typeof criarCategoria;
-    editarCategoria: typeof editarCategoria;
-    deletarCategoria: typeof deletarCategoria;
-    getCategorias: typeof getCategorias;
-  }
-}
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import ConfirmModal from '../../components/admin/ConfirmModal.astro';
 import '../../styles/admin-list.css';
@@ -67,42 +59,148 @@ import '../../styles/admin-form.css';
   <ConfirmModal />
 </AdminLayout>
 
-<script type="module">
-  import {
-    criarCategoria,
-    editarCategoria,
-    deletarCategoria,
-    getCategorias,
-  } from '../../lib/crud';
+<script>
+  // ✅ CORRIGIDO: Usar dynamic import com caminho absoluto via API
+  const form = document.getElementById('category-form') as HTMLFormElement;
+  const nameInput = document.getElementById(
+    'category-name',
+  ) as HTMLInputElement;
+  const editIdInput = document.getElementById(
+    'edit-category-id',
+  ) as HTMLInputElement;
+  const submitBtn = document.getElementById(
+    'submit-category-btn',
+  ) as HTMLButtonElement;
+  const submitText = document.getElementById(
+    'submit-category-text',
+  ) as HTMLSpanElement;
+  const cancelBtn = document.getElementById(
+    'cancel-edit-btn',
+  ) as HTMLButtonElement;
+  const listRoot = document.getElementById('category-list-root') as HTMLElement;
 
-  window.criarCategoria = criarCategoria;
-  window.editarCategoria = editarCategoria;
-  window.deletarCategoria = deletarCategoria;
-  window.getCategorias = getCategorias;
-</script>
+  // ==================== API Diretas (sem depender de crud.ts) ====================
+  async function getCategorias() {
+    try {
+      const response = await fetch('/api/admin/categorias');
+      const result = await response.json();
 
-<script is:inline>
-  const form = document.getElementById('category-form');
-  const nameInput = document.getElementById('category-name');
-  const editIdInput = document.getElementById('edit-category-id');
-  const submitBtn = document.getElementById('submit-category-btn');
-  const submitText = document.getElementById('submit-category-text');
-  const cancelBtn = document.getElementById('cancel-edit-btn');
-  const listRoot = document.getElementById('category-list-root');
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao buscar categorias');
+      }
 
-  // Helper: fetch categories and count products
-  async function listarCategoriasComContagem() {
-    const res = await window.getCategorias();
-    if (!res || !res.success || !Array.isArray(res.data)) return [];
-    return res.data;
+      return {
+        success: true,
+        data: result.data || [],
+      };
+    } catch (error: any) {
+      console.error('Erro ao buscar categorias:', error);
+      return {
+        success: false,
+        error: error.message,
+        data: [],
+      };
+    }
   }
 
-  // Render category list
-  async function renderCategoryList() {
-    listRoot.innerHTML = '<div class="admin-list-loading">Carregando...</div>';
+  async function criarCategoria(nome: string) {
     try {
-      const categorias = await listarCategoriasComContagem();
-      if (!categorias || categorias.length === 0) {
+      if (!nome || nome.trim() === '') {
+        return { success: false, error: 'Nome é obrigatório' };
+      }
+
+      const response = await fetch('/api/admin/categorias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: nome.trim() }),
+      });
+
+      const text = await response.text();
+      let result = null;
+
+      if (text) {
+        try {
+          result = JSON.parse(text);
+        } catch (e) {
+          throw new Error('Resposta inválida da API');
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(result?.error || 'Erro ao criar categoria');
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('Erro ao criar categoria:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async function editarCategoria(id: string, nome: string) {
+    try {
+      if (!id || !nome?.trim()) {
+        return { success: false, error: 'ID e nome são obrigatórios' };
+      }
+
+      const response = await fetch(`/api/admin/categorias/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: nome.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao editar categoria');
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('Erro ao editar categoria:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async function deletarCategoria(id: string) {
+    try {
+      if (!id) {
+        return { success: false, error: 'ID é obrigatório' };
+      }
+
+      const response = await fetch(`/api/admin/categorias/${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao deletar categoria');
+      }
+
+      return result;
+    } catch (error: any) {
+      console.error('Erro ao deletar categoria:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ==================== Render ====================
+  async function renderCategoryList() {
+    if (!listRoot) return;
+
+    listRoot.innerHTML = '<div class="admin-list-loading">Carregando...</div>';
+
+    try {
+      const res = await getCategorias();
+
+      if (!res.success) {
+        throw new Error(res.error || 'Erro ao carregar');
+      }
+
+      const categorias = res.data || [];
+
+      if (categorias.length === 0) {
         listRoot.innerHTML = `<div class="admin-empty-state">
           <div class="admin-empty-state-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
@@ -112,10 +210,11 @@ import '../../styles/admin-form.css';
         </div>`;
         return;
       }
+
       listRoot.innerHTML = `<div class="admin-list-items">
         ${categorias
           .map(
-            (cat) => `
+            (cat: any) => `
           <div class="admin-list-item">
             <div class="admin-list-item-image placeholder">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
@@ -130,7 +229,7 @@ import '../../styles/admin-form.css';
               </div>
             </div>
             <div class="admin-list-item-actions">
-              <button class="admin-list-item-btn" data-action="edit" data-cat='${JSON.stringify(cat)}' title="Editar categoria">
+              <button class="admin-list-item-btn" data-action="edit" data-cat='${JSON.stringify(cat).replace(/'/g, '&apos;')}' title="Editar categoria">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               </button>
               <button class="admin-list-item-btn danger" data-action="delete" data-id="${cat.id}" data-nome="${cat.nome}" title="Deletar categoria">
@@ -142,18 +241,21 @@ import '../../styles/admin-form.css';
           )
           .join('')}
       </div>`;
-      // Re-bind edit/delete events
+
       bindListEvents();
-    } catch (err) {
-      listRoot.innerHTML =
-        '<div class="admin-list-error">Erro ao carregar categorias</div>';
+    } catch (err: any) {
+      console.error('Erro ao renderizar:', err);
+      listRoot.innerHTML = `<div class="admin-list-error">
+        Erro ao carregar categorias: ${err.message || 'Desconhecido'}
+      </div>`;
     }
   }
 
   function bindListEvents() {
     document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const cat = JSON.parse(btn.dataset.cat || '{}');
+      btn.addEventListener('click', () => {
+        const catStr = (btn as HTMLElement).dataset.cat || '{}';
+        const cat = JSON.parse(catStr);
         nameInput.value = cat.nome;
         editIdInput.value = cat.id;
         submitText.textContent = 'Salvar';
@@ -161,23 +263,30 @@ import '../../styles/admin-form.css';
         nameInput.focus();
       });
     });
+
     document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        const el = btn;
+      btn.addEventListener('click', async () => {
+        const el = btn as HTMLElement;
         const id = el.dataset.id;
         const nome = el.dataset.nome;
+
         if (!id) return;
-        const confirmed = await window.confirmModal.show(
+
+        const confirmed = await (window as any).confirmModal.show(
           'Deletar Categoria',
           `Tem certeza que deseja deletar "${nome}"? Esta ação não pode ser desfeita.`,
         );
+
         if (confirmed) {
-          const result = await window.deletarCategoria(id);
+          const result = await deletarCategoria(id);
           if (result.success) {
-            window.showToast('Categoria deletada!', 'success');
+            (window as any).showToast('Categoria deletada!', 'success');
             renderCategoryList();
           } else {
-            window.showToast(result.error || 'Erro ao deletar', 'error');
+            (window as any).showToast(
+              result.error || 'Erro ao deletar',
+              'error',
+            );
           }
         }
       });
@@ -190,27 +299,33 @@ import '../../styles/admin-form.css';
     const nome = nameInput.value.trim();
     const editId = editIdInput.value;
     const isEdit = !!editId;
+
     if (!nome) return;
+
     submitBtn.disabled = true;
     submitText.textContent = isEdit ? 'Salvando...' : 'Adicionando...';
+
     try {
       const result = isEdit
-        ? await window.editarCategoria(editId, nome)
-        : await window.criarCategoria(nome);
+        ? await editarCategoria(editId, nome)
+        : await criarCategoria(nome);
+
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.error || 'Erro ao salvar');
       }
-      window.showToast(
+
+      (window as any).showToast(
         isEdit ? 'Categoria atualizada!' : 'Categoria criada!',
         'success',
       );
+
       form.reset();
       editIdInput.value = '';
       cancelBtn.classList.add('hidden');
       submitText.textContent = 'Adicionar';
       renderCategoryList();
-    } catch (error) {
-      window.showToast(error.message || 'Erro ao salvar', 'error');
+    } catch (error: any) {
+      (window as any).showToast(error.message || 'Erro ao salvar', 'error');
     } finally {
       submitBtn.disabled = false;
       submitText.textContent = isEdit ? 'Salvar' : 'Adicionar';
