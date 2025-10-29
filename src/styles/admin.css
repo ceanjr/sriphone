@@ -243,6 +243,7 @@
 }
 
 .mobile-menu-dropdown {
+  display: none;
   position: absolute;
   left: 12px;
   right: 12px;
@@ -257,8 +258,8 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
-.mobile-menu-dropdown.hidden {
-  display: none;
+.mobile-menu-dropdown:not(.hidden) {
+  display: block;
 }
 
 .mobile-menu-nav {
@@ -469,6 +470,6 @@
 
 /* ==================== UTILITY CLASSES ==================== */
 .hidden {
-  display: none;
+  display: none !important;
 }
 
