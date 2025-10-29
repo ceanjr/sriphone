@@ -1,0 +1,282 @@
+/* Admin List View - Similar ao catálogo */
+
+.admin-list-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-list-title-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.admin-list-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 4px;
+}
+
+.admin-list-subtitle {
+  font-size: 14px;
+  color: #a0a0a0;
+  margin: 0;
+}
+
+.admin-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.admin-add-btn:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+}
+
+.admin-add-btn:active {
+  transform: translateY(0);
+}
+
+.admin-add-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* List Items */
+.admin-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-list-item {
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s;
+}
+
+.admin-list-item:hover {
+  border-color: #3a3a3a;
+  background: #1a1a1a;
+}
+
+.admin-list-item-image {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.admin-list-item-image.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0a0a0;
+}
+
+.admin-list-item-image.placeholder svg {
+  width: 32px;
+  height: 32px;
+}
+
+.admin-list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-list-item-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-list-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-list-item-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #a0a0a0;
+}
+
+.admin-list-item-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.admin-list-item-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin-right: 16px;
+}
+
+.admin-list-item-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-list-item-status.active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.admin-list-item-status.inactive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.admin-list-item-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-list-item-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-list-item-btn:hover {
+  background: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+.admin-list-item-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.admin-list-item-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Empty State */
+.admin-empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  background: #0a0a0a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+}
+
+.admin-empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  color: #a0a0a0;
+}
+
+.admin-empty-state-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.admin-empty-state-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 8px;
+}
+
+.admin-empty-state-text {
+  font-size: 14px;
+  color: #a0a0a0;
+  margin: 0 0 24px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-list-container {
+    padding: 16px;
+  }
+
+  .admin-list-header {
+    margin-bottom: 24px;
+  }
+
+  .admin-list-title {
+    font-size: 24px;
+  }
+
+  .admin-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-list-item {
+    flex-wrap: wrap;
+  }
+
+  .admin-list-item-price {
+    margin-right: 0;
+    order: 1;
+  }
+
+  .admin-list-item-actions {
+    width: 100%;
+    order: 2;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #2a2a2a;
+  }
+
+  .admin-list-item-actions button {
+    flex: 1;
+  }
+}

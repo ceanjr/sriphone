@@ -1,6 +1,9 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import ConfirmModal from '../../components/admin/ConfirmModal.astro';
 import { supabase } from '../../lib/supabase';
+import '../../styles/admin-list.css';
+import '../../styles/admin-form.css';
 
 const { data: categorias } = await supabase
   .from('categorias')
@@ -14,100 +17,127 @@ const categoriasComContagem = await Promise.all(
       .select('*', { count: 'exact', head: true })
       .eq('categoria_id', cat.id);
     return { ...cat, produtos_count: count || 0 };
-  })
+  }),
 );
 ---
 
 <AdminLayout title="Categorias">
-  <div class="flex flex-col">
-    <div class="flex min-h-[64px] items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 md:px-6">
-      <div class="min-w-0 flex-1">
-        <h1 class="truncate text-lg font-bold text-white md:text-xl">Categorias</h1>
+  <div class="admin-list-container">
+    <div class="admin-list-header">
+      <div class="admin-list-title-group">
+        <h1 class="admin-list-title">Categorias</h1>
+        <p class="admin-list-subtitle">Organize seus produtos por categorias</p>
       </div>
     </div>
 
-    <div class="flex-1 p-4 md:p-6">
-      <!-- Add Category Form -->
-      <div class="mb-6 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-4">
-        <h2 class="mb-3 text-sm font-semibold text-white">Adicionar Nova Categoria</h2>
-        <form id="add-category-form" class="flex gap-2">
-          <input type="hidden" id="edit-category-id" />
+    <!-- Form Card -->
+    <div class="form-card" style="margin-bottom: 24px;">
+      <form id="category-form" style="display: flex; gap: 12px; align-items: flex-end;">
+        <input type="hidden" id="edit-category-id" />
+        <div class="form-group" style="flex: 1; margin: 0;">
+          <label class="form-label" for="category-name">
+            Nome da Categoria
+            <span class="form-label-required">*</span>
+          </label>
           <input
             id="category-name"
             type="text"
-            placeholder="Nome da categoria"
+            class="form-input"
+            placeholder="Ex: iPhones, Acessórios..."
             required
-            class="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-white placeholder-[#a0a0a0] focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
           />
-          <button
-            type="submit"
-            id="submit-category-btn"
-            class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
-          >
-            <span id="submit-category-text">Adicionar</span>
-          </button>
-          <button
-            type="button"
-            id="cancel-edit-btn"
-            class="hidden rounded-lg border border-[#2a2a2a] bg-transparent px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1a1a1a]"
-          >
-            Cancelar
-          </button>
-        </form>
-      </div>
-
-      {!categoriasComContagem || categoriasComContagem.length === 0 ? (
-        <div class="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-12 text-center">
-          <h3 class="text-lg font-medium text-white">Nenhuma categoria</h3>
-          <p class="mt-2 text-sm text-[#a0a0a0]">
-            Use o formulário acima para adicionar sua primeira categoria.
-          </p>
         </div>
-      ) : (
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {categoriasComContagem.map((cat) => (
-            <div class="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-6">
-              <div class="flex items-start justify-between">
-                <div class="flex-1 min-w-0">
-                  <h3 class="text-lg font-semibold text-white truncate">{cat.nome}</h3>
-                  <p class="mt-1 text-sm text-[#a0a0a0]">
-                    {cat.produtos_count} produto{cat.produtos_count !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div class="flex gap-2 ml-2">
-                  <button
-                    class="rounded-lg bg-white/10 p-2 text-white hover:bg-white/20"
-                    data-action="edit"
-                    data-cat={JSON.stringify(cat)}
-                  >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    class="rounded-lg bg-red-500/10 p-2 text-red-500 hover:bg-red-500/20"
-                    data-action="delete"
-                    data-id={cat.id}
-                    data-nome={cat.nome}
-                  >
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
+        <button
+          type="submit"
+          id="submit-category-btn"
+          class="form-btn form-btn-submit"
+          style="flex-shrink: 0;"
+        >
+          <span id="submit-category-text">Adicionar</span>
+        </button>
+        <button
+          type="button"
+          id="cancel-edit-btn"
+          class="form-btn form-btn-cancel hidden"
+          style="flex-shrink: 0;"
+        >
+          Cancelar
+        </button>
+      </form>
+    </div>
+
+    {!categoriasComContagem || categoriasComContagem.length === 0 ? (
+      <div class="admin-empty-state">
+        <div class="admin-empty-state-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+        </div>
+        <h3 class="admin-empty-state-title">Nenhuma categoria criada</h3>
+        <p class="admin-empty-state-text">Use o formulário acima para criar sua primeira categoria</p>
+      </div>
+    ) : (
+      <div class="admin-list-items">
+        {categoriasComContagem.map((cat) => (
+          <div class="admin-list-item">
+            <div class="admin-list-item-image placeholder">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </div>
+            
+            <div class="admin-list-item-content">
+              <h3 class="admin-list-item-title">{cat.nome}</h3>
+              <div class="admin-list-item-meta">
+                <span class="admin-list-item-badge">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  {cat.produtos_count} produto{cat.produtos_count !== 1 ? 's' : ''}
+                </span>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+
+            <div class="admin-list-item-actions">
+              <button
+                class="admin-list-item-btn"
+                data-action="edit"
+                data-cat={JSON.stringify(cat)}
+                title="Editar categoria"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                class="admin-list-item-btn danger"
+                data-action="delete"
+                data-id={cat.id}
+                data-nome={cat.nome}
+                title="Deletar categoria"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
+
+  <ConfirmModal />
 </AdminLayout>
 
 <script>
-  import { criarCategoria, editarCategoria, deletarCategoria } from '../../lib/crud';
+  import {
+    criarCategoria,
+    editarCategoria,
+    deletarCategoria,
+  } from '../../lib/crud';
 
-  const form = document.getElementById('add-category-form') as HTMLFormElement;
+  const form = document.getElementById('category-form') as HTMLFormElement;
   const nameInput = document.getElementById('category-name') as HTMLInputElement;
   const editIdInput = document.getElementById('edit-category-id') as HTMLInputElement;
   const submitBtn = document.getElementById('submit-category-btn') as HTMLButtonElement;
@@ -117,7 +147,7 @@ const categoriasComContagem = await Promise.all(
   // Submit form
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const nome = nameInput.value.trim();
     const editId = editIdInput.value;
     const isEdit = !!editId;
@@ -138,7 +168,7 @@ const categoriasComContagem = await Promise.all(
 
       window.showToast(
         isEdit ? 'Categoria atualizada!' : 'Categoria criada!',
-        'success'
+        'success',
       );
 
       form.reset();
@@ -166,7 +196,9 @@ const categoriasComContagem = await Promise.all(
   // Edit buttons
   document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const cat = JSON.parse((e.currentTarget as HTMLElement).dataset.cat || '{}');
+      const cat = JSON.parse(
+        (e.currentTarget as HTMLElement).dataset.cat || '{}',
+      );
       nameInput.value = cat.nome;
       editIdInput.value = cat.id;
       submitText.textContent = 'Salvar';
@@ -181,16 +213,23 @@ const categoriasComContagem = await Promise.all(
       const el = e.currentTarget as HTMLElement;
       const id = el.dataset.id;
       const nome = el.dataset.nome;
-      
-      if (!id || !confirm(`Deletar "${nome}"?`)) return;
 
-      const result = await deletarCategoria(id);
-      
-      if (result.success) {
-        window.showToast('Categoria deletada!', 'success');
-        setTimeout(() => window.location.reload(), 300);
-      } else {
-        window.showToast(result.error || 'Erro ao deletar', 'error');
+      if (!id) return;
+
+      const confirmed = await window.confirmModal.show(
+        'Deletar Categoria',
+        `Tem certeza que deseja deletar "${nome}"? Esta ação não pode ser desfeita.`
+      );
+
+      if (confirmed) {
+        const result = await deletarCategoria(id);
+
+        if (result.success) {
+          window.showToast('Categoria deletada!', 'success');
+          setTimeout(() => window.location.reload(), 300);
+        } else {
+          window.showToast(result.error || 'Erro ao deletar', 'error');
+        }
       }
     });
   });

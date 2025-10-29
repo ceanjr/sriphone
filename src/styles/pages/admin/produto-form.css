@@ -1,0 +1,78 @@
+/* Novo Produto Page Styles */
+
+.image-upload-area {
+  border: 2px dashed #2a2a2a;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #0a0a0a;
+}
+
+.image-upload-area:hover {
+  border-color: #fff;
+  background: #1a1a1a;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #a0a0a0;
+}
+
+.upload-placeholder.hidden {
+  display: none;
+}
+
+.upload-placeholder svg {
+  color: #a0a0a0;
+}
+
+.upload-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.image-preview-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.image-preview-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-preview-item img {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
+  background: #1a1a1a;
+}
+
+.remove-image {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.remove-image:hover {
+  background: rgba(255, 0, 0, 0.8);
+}

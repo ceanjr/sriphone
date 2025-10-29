@@ -1,6 +1,14 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { supabase } from '../../lib/supabase';
+import '../../styles/admin-list.css';
+import '../../styles/admin-form.css';
+
+// Buscar todas as categorias para o filtro
+const { data: categorias } = await supabase
+  .from('categorias')
+  .select('*')
+  .order('nome');
 
 // Buscar todos os produtos
 const { data: produtos, error } = await supabase
@@ -10,143 +18,173 @@ const { data: produtos, error } = await supabase
 ---
 
 <AdminLayout title="Produtos" description="Gerenciar produtos do catálogo">
-  <div class="flex flex-col">
-    <!-- Header -->
-    <div class="flex min-h-[64px] items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-3 md:px-6">
-      <div class="min-w-0 flex-1">
-        <h1 class="truncate text-lg font-bold text-white md:text-xl">Produtos</h1>
-        <p class="hidden text-sm text-[#a0a0a0] sm:block">Gerenciar produtos do catálogo</p>
+  <div class="admin-list-container">
+    <div class="admin-list-header">
+      <div class="admin-list-title-group">
+        <h1 class="admin-list-title">Produtos</h1>
+        <p class="admin-list-subtitle">Gerencie seu catálogo de produtos</p>
       </div>
-      <a
-        href="/admin/produtos/novo"
-        class="rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
-      >
-        <span class="hidden sm:inline">Adicionar Produto</span>
-        <span class="sm:hidden">Adicionar</span>
+      <a href="/admin/produtos/novo" class="admin-add-btn">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Adicionar Produto
       </a>
     </div>
 
-    <!-- Content -->
-    <div class="flex-1 p-4 md:p-6">
-      {!produtos || produtos.length === 0 ? (
-        <div class="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-12 text-center">
-          <svg class="mx-auto h-12 w-12 text-[#a0a0a0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Filtros -->
+    {categorias && categorias.length > 0 && (
+      <div class="form-card" style="margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <label class="form-label" style="margin: 0; flex-shrink: 0;">Filtrar por categoria:</label>
+          <select id="categoria-filter" class="form-select" style="max-width: 300px; flex: 1; min-width: 200px;">
+            <option value="todos">Todas as Categorias</option>
+            {categorias.map((cat) => (
+              <option value={cat.id}>{cat.nome}</option>
+            ))}
+          </select>
+          <span id="count-badge" class="admin-list-item-badge" style="margin-left: auto;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <span id="count-text">{produtos?.length || 0} produtos</span>
+          </span>
+        </div>
+      </div>
+    )}
+
+    {!produtos || produtos.length === 0 ? (
+      <div class="admin-empty-state">
+        <div class="admin-empty-state-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
-          <h3 class="mt-4 text-lg font-medium text-white">Nenhum produto cadastrado</h3>
-          <p class="mt-2 text-sm text-[#a0a0a0]">
-            Comece adicionando seu primeiro produto.
-          </p>
-          <a
-            href="/admin/produtos/novo"
-            class="mt-4 inline-block rounded-lg bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-[#e0e0e0]"
-          >
-            Adicionar Produto
-          </a>
         </div>
-      ) : (
-        <div class="overflow-x-auto rounded-lg border border-[#2a2a2a] bg-[#0a0a0a]">
-          <table class="w-full">
-            <thead class="border-b border-[#2a2a2a] bg-[#0a0a0a]">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:px-6">
-                  Produto
-                </th>
-                <th class="hidden px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:table-cell">
-                  Categoria
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:px-6">
-                  Preço
-                </th>
-                <th class="hidden px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#a0a0a0] sm:table-cell">
-                  Status
-                </th>
-                <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-[#a0a0a0] md:px-6">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-[#2a2a2a]">
-              {produtos.map((produto) => (
-                <tr class="hover:bg-[#1a1a1a] transition">
-                  <td class="px-4 py-4 md:px-6">
-                    <div class="flex items-center gap-3">
-                      {produto.foto_principal && (
-                        <img
-                          src={produto.foto_principal}
-                          alt={produto.nome}
-                          class="h-10 w-10 flex-shrink-0 rounded-md object-cover"
-                        />
-                      )}
-                      <div class="min-w-0">
-                        <p class="text-sm font-medium text-white truncate">{produto.nome}</p>
-                        <p class="text-xs text-[#a0a0a0]">{produto.codigo}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="hidden px-6 py-4 md:table-cell">
-                    <span class="text-sm text-white">{produto.categoria?.nome || 'Sem categoria'}</span>
-                  </td>
-                  <td class="px-4 py-4 md:px-6">
-                    <span class="text-sm font-medium text-white">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(produto.preco)}
-                    </span>
-                  </td>
-                  <td class="hidden px-6 py-4 sm:table-cell">
-                    <span
-                      class={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        produto.ativo
-                          ? 'bg-green-500/10 text-green-500'
-                          : 'bg-red-500/10 text-red-500'
-                      }`}
-                    >
-                      {produto.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                  <td class="px-4 py-4 md:px-6">
-                    <div class="flex items-center justify-end gap-2">
-                      <button
-                        class="rounded-lg bg-white/10 p-2 text-white transition hover:bg-white/20"
-                        data-action="edit"
-                        data-produto={JSON.stringify(produto)}
-                        title="Editar"
-                      >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        class="rounded-lg bg-red-500/10 p-2 text-red-500 transition hover:bg-red-500/20"
-                        data-action="delete"
-                        data-id={produto.id}
-                        data-nome={produto.nome}
-                        title="Deletar"
-                      >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+        <h3 class="admin-empty-state-title">Nenhum produto cadastrado</h3>
+        <p class="admin-empty-state-text">Comece adicionando seu primeiro produto ao catálogo</p>
+        <a href="/admin/produtos/novo" class="admin-add-btn">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Adicionar Primeiro Produto
+        </a>
+      </div>
+    ) : (
+      <div class="admin-list-items" id="produtos-list">
+        {produtos.map((produto) => (
+          <div class="admin-list-item" data-categoria-id={produto.categoria_id || ''}>
+            {produto.imagens?.[0] ? (
+              <img
+                src={produto.imagens[0]}
+                alt={produto.nome}
+                class="admin-list-item-image"
+              />
+            ) : (
+              <div class="admin-list-item-image placeholder">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
+            
+            <div class="admin-list-item-content">
+              <h3 class="admin-list-item-title">{produto.nome}</h3>
+              <div class="admin-list-item-meta">
+                {produto.codigo && (
+                  <span class="admin-list-item-badge">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                    {produto.codigo}
+                  </span>
+                )}
+                <span class="admin-list-item-badge">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                  {produto.categoria?.nome || 'Sem categoria'}
+                </span>
+                <span class={`admin-list-item-status ${produto.ativo ? 'active' : 'inactive'}`}>
+                  {produto.ativo ? 'Ativo' : 'Inativo'}
+                </span>
+              </div>
+            </div>
+
+            <span class="admin-list-item-price">
+              {new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              }).format(produto.preco)}
+            </span>
+
+            <div class="admin-list-item-actions">
+              <button
+                class="admin-list-item-btn"
+                data-action="edit"
+                data-id={produto.id}
+                title="Editar produto"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                class="admin-list-item-btn danger"
+                data-action="delete"
+                data-id={produto.id}
+                data-nome={produto.nome}
+                title="Deletar produto"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
 </AdminLayout>
 
 <script>
-  // Botões de editar - redirect to edit page (criar depois)
+  // Filtro por categoria
+  const categoriaFilter = document.getElementById('categoria-filter') as HTMLSelectElement;
+  const produtosList = document.getElementById('produtos-list');
+  const countText = document.getElementById('count-text');
+
+  function filterProdutos() {
+    const selectedCategoria = categoriaFilter?.value;
+    const items = produtosList?.querySelectorAll('.admin-list-item');
+    let visibleCount = 0;
+
+    items?.forEach((item) => {
+      const itemCategoria = (item as HTMLElement).dataset.categoriaId;
+      
+      if (selectedCategoria === 'todos' || selectedCategoria === itemCategoria) {
+        (item as HTMLElement).style.display = 'flex';
+        visibleCount++;
+      } else {
+        (item as HTMLElement).style.display = 'none';
+      }
+    });
+
+    if (countText) {
+      countText.textContent = `${visibleCount} produto${visibleCount !== 1 ? 's' : ''}`;
+    }
+  }
+
+  categoriaFilter?.addEventListener('change', filterProdutos);
+
+  // Botões de editar
   document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const produtoJson = (e.currentTarget as HTMLElement).dataset.produto;
-      if (produtoJson) {
-        const produto = JSON.parse(produtoJson);
-        // TODO: Criar página de edição /admin/produtos/[id]/editar
-        window.location.href = `/admin/produtos/novo?edit=${produto.id}`;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = (e.currentTarget as HTMLElement).dataset.id;
+      console.log('Edit clicked, ID:', id);
+      if (id) {
+        window.location.href = `/admin/produtos/${id}/editar`;
       }
     });
   });
@@ -154,15 +192,22 @@ const { data: produtos, error } = await supabase
   // Botões de deletar
   document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const element = e.currentTarget as HTMLElement;
       const id = element.dataset.id;
       const nome = element.dataset.nome;
-      
-      if (confirm(`Tem certeza que deseja deletar "${nome}"?`)) {
+
+      const confirmed = await window.confirmModal.show(
+        'Deletar Produto',
+        `Tem certeza que deseja deletar "${nome}"? Esta ação não pode ser desfeita.`
+      );
+
+      if (confirmed && id) {
         try {
           const { deletarProduto } = await import('../../lib/crud');
-          const result = await deletarProduto(id!);
-          
+          const result = await deletarProduto(id);
+
           if (result.success) {
             window.showToast('Produto deletado com sucesso!', 'success');
             setTimeout(() => {

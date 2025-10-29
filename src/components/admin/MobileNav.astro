@@ -3,66 +3,55 @@ const menuItems = [
   { title: 'Dashboard', icon: 'layout-dashboard', href: '/admin/dashboard' },
   { title: 'Produtos', icon: 'package', href: '/admin/produtos' },
   { title: 'Categorias', icon: 'folder-tree', href: '/admin/categorias' },
-  { title: 'Banners', icon: 'image', href: '/admin/banners' },
-  { title: 'Analytics', icon: 'bar-chart-3', href: '/admin/analytics' },
 ];
 
 const currentPath = Astro.url.pathname;
 ---
 
-<header class="sticky top-0 z-50 border-b border-[#2a2a2a] bg-[#0a0a0a]/95 px-4 py-3 backdrop-blur lg:hidden">
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="relative h-10 w-10 overflow-hidden rounded-md border border-[#2a2a2a] bg-[#1a1a1a]">
-        <img src="/images/logo-fundo.webp" alt="Sr. IPHONE Logo" class="h-full w-full object-contain" />
+<header class="mobile-nav">
+  <div class="mobile-nav-header">
+    <div class="mobile-nav-brand">
+      <div class="mobile-nav-logo">
+        <img src="/images/logo-fundo.webp" alt="Sr. IPHONE Logo" />
       </div>
-      <div class="leading-tight">
-        <p class="text-sm font-semibold text-white">Painel Admin</p>
-        <span class="text-xs text-[#a0a0a0]">Gestão administrativa</span>
+      <div class="mobile-nav-text">
+        <p>Painel Admin</p>
+        <span>Gestão administrativa</span>
       </div>
     </div>
 
     <button
       type="button"
       id="mobile-menu-btn"
-      class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#2a2a2a] bg-[#0a0a0a] text-white transition hover:border-[#3a3a3a] hover:bg-[#1a1a1a]"
+      class="mobile-menu-btn"
       aria-label="Abrir menu"
     >
-      <svg id="menu-icon" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg id="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
       </svg>
-      <svg id="close-icon" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg id="close-icon" class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
   </div>
 
   <!-- Menu Dropdown -->
-  <div id="mobile-menu" class="hidden absolute left-3 right-3 top-full z-50 mt-3 overflow-hidden rounded-2xl border border-[#2a2a2a] bg-[#0a0a0a]/95 shadow-xl backdrop-blur">
-    <nav class="flex flex-col divide-y divide-[#2a2a2a]/80">
+  <div id="mobile-menu" class="mobile-menu-dropdown hidden">
+    <nav class="mobile-menu-nav">
       {menuItems.map((item) => {
         const isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
         return (
           <a
             href={item.href}
-            class={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition ${
-              isActive ? 'text-white' : 'text-[#a0a0a0] hover:text-white'
-            }`}
+            class={`mobile-menu-item ${isActive ? 'active' : ''}`}
           >
-            <span
-              class={`flex h-9 w-9 items-center justify-center rounded-lg border ${
-                isActive
-                  ? 'border-white/50 bg-white/10 text-white'
-                  : 'border-[#2a2a2a] bg-[#1a1a1a] text-[#a0a0a0]'
-              }`}
-            >
-              <!-- Icon SVG placeholder -->
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="mobile-menu-icon">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" stroke-width="2" />
               </svg>
             </span>
             <span>{item.title}</span>
-            {isActive && <span class="ml-auto text-xs uppercase tracking-wider text-white/80">ativo</span>}
+            {isActive && <span class="mobile-menu-badge">ativo</span>}
           </a>
         );
       })}
@@ -72,10 +61,10 @@ const currentPath = Astro.url.pathname;
         href="/catalogo"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#a0a0a0] transition hover:text-white"
+        class="mobile-menu-item"
       >
-        <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] text-[#a0a0a0]">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span class="mobile-menu-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
         </span>
@@ -84,12 +73,12 @@ const currentPath = Astro.url.pathname;
     </nav>
 
     <!-- Logout -->
-    <div class="border-t border-[#2a2a2a]/80 bg-[#0a0a0a]/90 px-4 py-3">
+    <div class="mobile-menu-footer">
       <button
         id="mobile-logout-btn"
-        class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[#e0e0e0] transition hover:bg-[#1a1a1a] hover:text-white"
+        class="mobile-logout-btn"
       >
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
         </svg>
         Sair da conta
@@ -102,7 +91,7 @@ const currentPath = Astro.url.pathname;
 <button
   type="button"
   id="mobile-backdrop"
-  class="fixed inset-0 z-40 hidden bg-black/40 lg:hidden"
+  class="mobile-backdrop hidden"
   aria-label="Fechar menu"
 ></button>
 

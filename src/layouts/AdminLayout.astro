@@ -1,8 +1,9 @@
 ---
+import Layout from './Layout.astro';
 import Sidebar from '../components/admin/Sidebar.astro';
 import MobileNav from '../components/admin/MobileNav.astro';
 import Toast from '../components/admin/Toast.astro';
-import Analytics from '@vercel/analytics/astro';
+import ConfirmModal from '../components/admin/ConfirmModal.astro';
 import '../styles/admin.css';
 
 interface Props {
@@ -10,45 +11,28 @@ interface Props {
   description?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description = 'Painel administrativo Sr. IPHONE VCA' } = Astro.props;
 ---
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>{title} | Admin - Sr. IPHONE</title>
-    {description && <meta name="description" content={description} />}
-    <link rel="icon" type="image/webp" href="/favicon.webp" />
-    <link rel="shortcut icon" href="/favicon.webp" />
-    <script src="/clear-cache.js" is:inline></script>
-  </head>
-  <body>
-    <div class="flex min-h-screen flex-col bg-black lg:flex-row lg:overflow-hidden">
-      <MobileNav />
-      
-      <!-- Sidebar Desktop -->
-      <aside class="hidden w-64 lg:block">
-        <Sidebar />
-      </aside>
+<Layout title={title} description={description}>
+  <div class="admin-layout">
+    <!-- Sidebar Desktop -->
+    <aside class="admin-sidebar">
+      <Sidebar />
+    </aside>
 
-      <!-- Main Content -->
-      <main class="flex-1 overflow-y-auto">
-        <div class="min-h-screen">
-    <!-- FORÇA ATUALIZAÇÃO - CRÍTICO -->
-    <script src="/force-update.js" is:inline></script>
+    <!-- Mobile Navigation -->
+    <MobileNav />
 
-          <slot />
-        </div>
-      </main>
-    </div>
+    <!-- Main Content -->
+    <main class="admin-main">
+      <slot />
+    </main>
+  </div>
 
-    <!-- Toast Notifications -->
-    <Toast />
-
-    <!-- Vercel Analytics -->
-    <Analytics />
-  </body>
-</html>
+  <!-- Toast Notifications -->
+  <Toast />
+  
+  <!-- Confirm Modal -->
+  <ConfirmModal />
+</Layout>

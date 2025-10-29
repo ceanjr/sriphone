@@ -1,78 +1,376 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Admin Styles - Pure CSS without Tailwind */
 
-@layer base {
-  :root {
-    /* ==================== CORES DA MARCA - SR iPhone VCA ==================== */
-    --cor-primaria: #ffffff;      /* Branco - texto principal */
-    --cor-secundaria: #000000;    /* Preto - fundo */
-    --cor-texto: #e0e0e0;         /* Cinza claro para texto */
-    --cor-fundo-escuro: #030303;  /* Preto mais profundo */
-    --cor-destaque: #ffffff;      /* Branco para destaques */
+/* ==================== ADMIN LAYOUT ==================== */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #000;
+}
 
-    /* ==================== CORES DE FUNDO - ÁREA ADMIN ==================== */
-    --bg-primary: #000000;
-    --bg-secondary: #0a0a0a;
-    --bg-card: #1a1a1a;
+.admin-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  display: none;
+}
 
-    /* ==================== CORES DE TEXTO ==================== */
-    --text-primary: #ffffff;
-    --text-secondary: #e0e0e0;
-    --text-muted: #a0a0a0;
+.admin-main {
+  flex: 1;
+  margin-left: 0;
+  min-height: 100vh;
+}
 
-    /* ==================== CORES DE BORDA ==================== */
-    --border-primary: #2a2a2a;
-    --border-secondary: #1a1a1a;
-
-    /* ==================== CORES DE ESTADO ==================== */
-    --color-success: #22c55e;
-    --color-error: #ef4444;
-    --color-warning: #f59e0b;
-    --color-info: #ffffff;
-
-    /* ==================== OUTRAS CONFIGURAÇÕES ==================== */
-    --radius-md: 0.5rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
+/* Desktop */
+@media (min-width: 1024px) {
+  .admin-sidebar {
+    display: block;
   }
-
-  /* ==================== BASE DO SITE ==================== */
-  body {
-    @apply bg-black text-white antialiased;
-  }
-
-  input,
-  select,
-  textarea,
-  button {
-    font-family: inherit;
-    color: inherit;
-    background-color: transparent;
-  }
-
-  a {
-    color: var(--text-secondary);
-    text-decoration: none;
-  }
-
-  a:hover {
-    color: var(--cor-destaque);
-  }
-
-  /* ==================== SCROLLBAR ==================== */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border-primary);
-    border-radius: 4px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
+  
+  .admin-main {
+    margin-left: 280px;
   }
 }
+
+/* ==================== SIDEBAR ==================== */
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid #2a2a2a;
+  background: #0a0a0a;
+}
+
+.sidebar-logo {
+  display: flex;
+  height: 64px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #2a2a2a;
+  padding: 0 24px;
+  transition: opacity 0.3s;
+  text-decoration: none;
+}
+
+.sidebar-logo:hover {
+  opacity: 0.8;
+}
+
+.sidebar-logo-image {
+  position: relative;
+  height: 40px;
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.sidebar-logo-image img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+.sidebar-logo-text h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.sidebar-logo-text p {
+  font-size: 12px;
+  color: #a0a0a0;
+  margin: 0;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: #a0a0a0;
+  text-decoration: none;
+}
+
+.sidebar-menu-item:hover {
+  background: #1a1a1a;
+  color: white;
+}
+
+.sidebar-menu-item.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.sidebar-menu-item svg {
+  height: 20px;
+  width: 20px;
+}
+
+.sidebar-divider {
+  margin: 8px 0;
+  border-top: 1px solid #2a2a2a;
+}
+
+.sidebar-footer {
+  border-top: 1px solid #2a2a2a;
+  padding: 16px;
+}
+
+.sidebar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #a0a0a0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar-logout-btn:hover {
+  background: #1a1a1a;
+  color: white;
+}
+
+.sidebar-logout-btn svg {
+  height: 20px;
+  width: 20px;
+}
+
+/* ==================== MOBILE NAV ==================== */
+.mobile-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid #2a2a2a;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 12px 16px;
+}
+
+.mobile-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-nav-logo {
+  position: relative;
+  height: 40px;
+  width: 40px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid #2a2a2a;
+  background: #1a1a1a;
+}
+
+.mobile-nav-logo img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+
+.mobile-nav-text {
+  line-height: 1.2;
+}
+
+.mobile-nav-text p {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+
+.mobile-nav-text span {
+  font-size: 12px;
+  color: #a0a0a0;
+}
+
+.mobile-menu-btn {
+  display: inline-flex;
+  height: 40px;
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #2a2a2a;
+  background: #0a0a0a;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-menu-btn:hover {
+  border-color: #3a3a3a;
+  background: #1a1a1a;
+}
+
+.mobile-menu-btn svg {
+  height: 20px;
+  width: 20px;
+}
+
+.mobile-menu-dropdown {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 100%;
+  z-index: 50;
+  margin-top: 12px;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid #2a2a2a;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.mobile-menu-dropdown.hidden {
+  display: none;
+}
+
+.mobile-menu-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #a0a0a0;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(42, 42, 42, 0.8);
+  transition: color 0.2s;
+}
+
+.mobile-menu-item:hover {
+  color: white;
+}
+
+.mobile-menu-item.active {
+  color: white;
+}
+
+.mobile-menu-icon {
+  display: flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #2a2a2a;
+  background: #1a1a1a;
+  color: #a0a0a0;
+}
+
+.mobile-menu-item.active .mobile-menu-icon {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.mobile-menu-icon svg {
+  height: 16px;
+  width: 16px;
+}
+
+.mobile-menu-badge {
+  margin-left: auto;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mobile-menu-footer {
+  border-top: 1px solid rgba(42, 42, 42, 0.8);
+  background: rgba(10, 10, 10, 0.9);
+  padding: 12px 16px;
+}
+
+.mobile-logout-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #e0e0e0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-logout-btn:hover {
+  background: #1a1a1a;
+  color: white;
+}
+
+.mobile-logout-btn svg {
+  height: 16px;
+  width: 16px;
+}
+
+.mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.mobile-backdrop.hidden {
+  display: none;
+}
+
+/* Hide mobile nav on desktop */
+@media (min-width: 1024px) {
+  .mobile-nav,
+  .mobile-backdrop {
+    display: none;
+  }
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+.hidden {
+  display: none;
+}
+

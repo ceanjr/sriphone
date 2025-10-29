@@ -1,0 +1,207 @@
+/* Novo Produto Page Styles */
+
+.produto-novo-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.produto-novo-header {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #2a2a2a;
+  background-color: #0a0a0a;
+  padding: 0.75rem 1rem;
+}
+
+.produto-novo-header-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.produto-novo-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.produto-novo-subtitle {
+  display: none;
+  font-size: 0.875rem;
+  color: #a0a0a0;
+}
+
+.produto-novo-cancel-btn {
+  border-radius: 0.5rem;
+  border: 1px solid #2a2a2a;
+  background-color: transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ffffff;
+  text-decoration: none;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.produto-novo-cancel-btn:hover {
+  background-color: #1a1a1a;
+}
+
+.produto-novo-body {
+  flex: 1;
+  padding: 1rem;
+}
+
+.produto-novo-form-container {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+
+.produto-novo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.produto-novo-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e0e0e0;
+  margin-bottom: 0.5rem;
+}
+
+.produto-novo-form-group input,
+.produto-novo-form-group select,
+.produto-novo-form-group textarea {
+  margin-top: 0.25rem;
+  display: block;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #2a2a2a;
+  background-color: #1a1a1a;
+  padding: 0.5rem 0.75rem;
+  color: #ffffff;
+}
+
+.produto-novo-form-group input::placeholder,
+.produto-novo-form-group textarea::placeholder {
+  color: #a0a0a0;
+}
+
+.produto-novo-form-group input:focus,
+.produto-novo-form-group select:focus,
+.produto-novo-form-group textarea:focus {
+  border-color: #ffffff;
+  outline: none;
+  box-shadow: 0 0 0 1px #ffffff;
+}
+
+.produto-novo-form-row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.produto-novo-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.produto-novo-checkbox-label input[type="checkbox"] {
+  height: 1rem;
+  width: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #2a2a2a;
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.produto-novo-checkbox-label span {
+  font-size: 0.875rem;
+  color: #e0e0e0;
+}
+
+.produto-novo-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.produto-novo-btn-cancel {
+  flex: 1;
+  border-radius: 0.5rem;
+  border: 1px solid #2a2a2a;
+  background-color: transparent;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ffffff;
+  text-decoration: none;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.produto-novo-btn-cancel:hover {
+  background-color: #1a1a1a;
+}
+
+.produto-novo-btn-submit {
+  flex: 1;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #000000;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.produto-novo-btn-submit:hover {
+  background-color: #e0e0e0;
+}
+
+.produto-novo-btn-submit:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #000000;
+}
+
+.produto-novo-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.label-required {
+  color: #ef4444;
+}
+
+@media (min-width: 640px) {
+  .produto-novo-subtitle {
+    display: block;
+  }
+  
+  .produto-novo-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 768px) {
+  .produto-novo-header {
+    padding: 0.75rem 1.5rem;
+  }
+  
+  .produto-novo-title {
+    font-size: 1.25rem;
+  }
+  
+  .produto-novo-body {
+    padding: 1.5rem;
+  }
+}

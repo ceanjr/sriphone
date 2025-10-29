@@ -1,0 +1,205 @@
+---
+// Modal de confirmação personalizado
+---
+
+<div id="confirm-modal" class="confirm-modal hidden">
+  <div class="confirm-backdrop"></div>
+  <div class="confirm-dialog">
+    <div class="confirm-icon">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+    <h3 id="confirm-title" class="confirm-title">Confirmar ação</h3>
+    <p id="confirm-message" class="confirm-message">Tem certeza que deseja continuar?</p>
+    <div class="confirm-actions">
+      <button id="confirm-cancel" class="confirm-btn confirm-btn-cancel">Cancelar</button>
+      <button id="confirm-ok" class="confirm-btn confirm-btn-danger">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .confirm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .confirm-modal.hidden {
+    display: none;
+  }
+
+  .confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+  }
+
+  .confirm-dialog {
+    position: relative;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.2s ease-out;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .confirm-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .confirm-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .confirm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    margin: 0 0 8px;
+  }
+
+  .confirm-message {
+    font-size: 14px;
+    color: #a0a0a0;
+    text-align: center;
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+
+  .confirm-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .confirm-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .confirm-btn-cancel {
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    color: white;
+  }
+
+  .confirm-btn-cancel:hover {
+    background: #1a1a1a;
+  }
+
+  .confirm-btn-danger {
+    background: #ef4444;
+    color: white;
+  }
+
+  .confirm-btn-danger:hover {
+    background: #dc2626;
+  }
+</style>
+
+<script>
+  class ConfirmModal {
+    private modal: HTMLElement | null;
+    private backdrop: HTMLElement | null;
+    private titleEl: HTMLElement | null;
+    private messageEl: HTMLElement | null;
+    private cancelBtn: HTMLElement | null;
+    private okBtn: HTMLElement | null;
+    private resolveCallback: ((value: boolean) => void) | null = null;
+
+    constructor() {
+      this.modal = document.getElementById('confirm-modal');
+      this.backdrop = this.modal?.querySelector('.confirm-backdrop') || null;
+      this.titleEl = document.getElementById('confirm-title');
+      this.messageEl = document.getElementById('confirm-message');
+      this.cancelBtn = document.getElementById('confirm-cancel');
+      this.okBtn = document.getElementById('confirm-ok');
+
+      this.setupListeners();
+    }
+
+    private setupListeners() {
+      this.cancelBtn?.addEventListener('click', () => this.close(false));
+      this.backdrop?.addEventListener('click', () => this.close(false));
+      this.okBtn?.addEventListener('click', () => this.close(true));
+
+      // ESC key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !this.modal?.classList.contains('hidden')) {
+          this.close(false);
+        }
+      });
+    }
+
+    show(title: string, message: string): Promise<boolean> {
+      return new Promise((resolve) => {
+        this.resolveCallback = resolve;
+        
+        if (this.titleEl) this.titleEl.textContent = title;
+        if (this.messageEl) this.messageEl.textContent = message;
+        
+        this.modal?.classList.remove('hidden');
+        this.okBtn?.focus();
+      });
+    }
+
+    private close(result: boolean) {
+      this.modal?.classList.add('hidden');
+      if (this.resolveCallback) {
+        this.resolveCallback(result);
+        this.resolveCallback = null;
+      }
+    }
+  }
+
+  // Inicializar e expor globalmente
+  declare global {
+    interface Window {
+      confirmModal: ConfirmModal;
+      confirm(title: string, message: string): Promise<boolean>;
+    }
+  }
+
+  window.confirmModal = new ConfirmModal();
+  
+  // Override do confirm padrão
+  window.confirm = (message: string) => {
+    return window.confirmModal.show('Confirmar', message);
+  };
+</script>

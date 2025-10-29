@@ -1,0 +1,135 @@
+/* Login Page Styles */
+
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.login-logo-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.login-logo {
+  margin: 0 auto;
+  height: 5rem;
+  width: 5rem;
+  object-fit: contain;
+}
+
+.login-title {
+  margin-top: 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.login-subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #a0a0a0;
+}
+
+.login-form-wrapper {
+  border-radius: 0.5rem;
+  border: 1px solid #2a2a2a;
+  background-color: #0a0a0a;
+  padding: 1.5rem;
+}
+
+.login-form-title {
+  margin-bottom: 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.login-form-group input {
+  margin-top: 0.25rem;
+  display: block;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #2a2a2a;
+  background-color: #1a1a1a;
+  padding: 0.5rem 0.75rem;
+  color: #ffffff;
+}
+
+.login-form-group input::placeholder {
+  color: #a0a0a0;
+}
+
+.login-form-group input:focus {
+  border-color: #ffffff;
+  outline: none;
+  box-shadow: 0 0 0 1px #ffffff;
+}
+
+.login-error-message {
+  display: none;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: #ef4444;
+}
+
+.login-error-message.show {
+  display: block;
+}
+
+.login-submit-btn {
+  width: 100%;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #000000;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.login-submit-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.login-submit-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #000000;
+}
+
+.login-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-footer {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #a0a0a0;
+}
