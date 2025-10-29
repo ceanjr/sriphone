@@ -12,11 +12,8 @@
   justify-content: space-around;
   align-items: center;
   z-index: 100;
-  backdrop-filter: blur(8px);
-  background: rgba(10, 10, 10, 0.9);
 }
 
-/* Cada item da barra inferior */
 .mobile-nav-item {
   display: flex;
   flex-direction: column;
@@ -41,44 +38,24 @@
   transform: translateY(-2px);
 }
 
-.mobile-nav-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .mobile-nav-icon svg {
   width: 22px;
   height: 22px;
 }
 
-.mobile-nav-label {
-  font-size: 11px;
-}
-
-/* Compensar o espaço da nav inferior */
+/* Compensa o espaço ocupado pela barra inferior */
 body {
-  padding-bottom: 64px; /* mesma altura da barra */
+  margin: 0;
+  padding-bottom: 64px; /* evita que o conteúdo fique sob a nav */
 }
 
-/* Evitar sobreposição de elementos fixos */
-.admin-main,
-.dashboard-content {
-  padding-bottom: 80px; /* dá um respiro extra abaixo */
-}
-
-/* Ocultar em telas grandes */
+/* Ocultar no desktop */
 @media (min-width: 1024px) {
   .mobile-bottom-nav {
     display: none;
   }
 
   body {
-    padding-bottom: 0;
-  }
-
-  .admin-main,
-  .dashboard-content {
     padding-bottom: 0;
   }
 }
