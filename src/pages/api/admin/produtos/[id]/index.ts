@@ -1,94 +1,92 @@
+// src/pages/api/admin/produtos/[id]/index.ts
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 
+export const prerender = false;
+
 /**
- * Atualizar um produto existente
+ * PUT - Atualizar produto
  */
 export const PUT: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;
+    console.log('📝 PUT /api/admin/produtos/' + id);
+    
     if (!id) {
-      return new Response(JSON.stringify({ error: 'Product ID is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'ID é obrigatório' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Tenta converter o corpo da requisição em JSON
-    let produto;
-    try {
-      produto = await request.json();
-    } catch {
-      return new Response(JSON.stringify({ error: 'Invalid or empty JSON body' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    const produto = await request.json();
+    console.log('📦 Dados recebidos:', produto);
 
-    if (!produto || Object.keys(produto).length === 0) {
-      return new Response(JSON.stringify({ error: 'No product data provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    // Preparar dados
+    const produtoData: any = {};
+    if (produto.nome !== undefined) produtoData.nome = produto.nome.trim();
+    if (produto.codigo !== undefined) produtoData.codigo = produto.codigo?.trim() || null;
+    if (produto.preco !== undefined) produtoData.preco = parseFloat(produto.preco);
+    if (produto.bateria !== undefined) produtoData.bateria = produto.bateria ? parseInt(produto.bateria) : null;
+    if (produto.condicao !== undefined) produtoData.condicao = produto.condicao;
+    if (produto.categoria_id !== undefined) produtoData.categoria_id = produto.categoria_id;
+    if (produto.descricao !== undefined) produtoData.descricao = produto.descricao?.trim() || null;
+    if (produto.imagens !== undefined) produtoData.imagens = Array.isArray(produto.imagens) ? produto.imagens : [];
+    if (produto.ativo !== undefined) produtoData.ativo = produto.ativo;
 
-    // Valida campos obrigatórios
-    if (!produto.nome || !produto.preco || !produto.categoria_id) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    console.log('💾 Atualizando no Supabase:', produtoData);
 
-    // Atualiza o produto no banco
     const { data, error } = await supabaseAdmin
       .from('produtos')
-      .update({
-        nome: produto.nome,
-        codigo: produto.codigo || null,
-        preco: produto.preco,
-        bateria: produto.bateria || null,
-        condicao: produto.condicao || 'Novo',
-        categoria_id: produto.categoria_id,
-        descricao: produto.descricao || null,
-        imagens: produto.imagens?.length ? produto.imagens : null,
-      })
+      .update(produtoData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
-      console.error('Error updating product:', error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      console.error('❌ Erro Supabase:', error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    return new Response(JSON.stringify({ success: true, data }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
-    console.error('Error in PUT /api/admin/produtos/[id]:', error);
+    console.log('✅ Produto atualizado:', data);
+
+    // Revalidar cache
+    try {
+      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/catalogo`);
+      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/produto/${id}`);
+    } catch (e) {
+      console.warn('⚠️ Erro ao revalidar cache:', e);
+    }
+
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ success: true, data }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  } catch (error: any) {
+    console.error('❌ Erro crítico em PUT:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 };
 
 /**
- * Deletar um produto
+ * DELETE - Deletar produto
  */
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;
+    console.log('🗑️ DELETE /api/admin/produtos/' + id);
+    
     if (!id) {
-      return new Response(JSON.stringify({ error: 'Product ID is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ success: false, error: 'ID é obrigatório' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
     const { error } = await supabaseAdmin
@@ -97,22 +95,125 @@ export const DELETE: APIRoute = async ({ params }) => {
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting product:', error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      console.error('❌ Erro Supabase:', error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
-    console.error('Error in DELETE /api/admin/produtos/[id]:', error);
+    console.log('✅ Produto deletado');
+
+    // Revalidar cache
+    try {
+      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/catalogo`);
+    } catch (e) {
+      console.warn('⚠️ Erro ao revalidar cache:', e);
+    }
+
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ success: true }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  } catch (error: any) {
+    console.error('❌ Erro crítico em DELETE:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+};
+
+// POST - Criar produto (arquivo separado)
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    console.log('📥 POST /api/admin/produtos - Iniciando...');
+    
+    const produto = await request.json();
+    console.log('📦 Dados recebidos:', produto);
+
+    // Validações
+    if (!produto.nome || !produto.preco || !produto.categoria_id) {
+      console.error('❌ Validação falhou:', { produto });
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Campos obrigatórios faltando: nome, preco, categoria_id' 
+        }),
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Preparar dados
+    const produtoData = {
+      nome: produto.nome.trim(),
+      codigo: produto.codigo?.trim() || null,
+      preco: parseFloat(produto.preco),
+      bateria: produto.bateria ? parseInt(produto.bateria) : null,
+      condicao: produto.condicao || 'Novo',
+      categoria_id: produto.categoria_id,
+      descricao: produto.descricao?.trim() || null,
+      imagens: Array.isArray(produto.imagens) ? produto.imagens : [],
+      ativo: produto.ativo !== false,
+    };
+
+    console.log('💾 Salvando no Supabase:', produtoData);
+
+    // Usar supabaseAdmin para bypassar RLS
+    const { data, error } = await supabaseAdmin
+      .from('produtos')
+      .insert([produtoData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Erro Supabase:', error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: error.message || 'Erro ao criar produto' 
+        }),
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log('✅ Produto criado:', data);
+
+    // CRITICAL: Revalidar cache ISR
+    try {
+      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/catalogo`);
+    } catch (e) {
+      console.warn('⚠️ Erro ao revalidar cache:', e);
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        data,
+        message: 'Produto criado com sucesso!' 
+      }),
+      { 
+        status: 201, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
+    );
+  } catch (error: any) {
+    console.error('❌ Erro crítico em POST /api/admin/produtos:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Erro interno do servidor' 
+      }),
+      { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
     );
   }
 };
