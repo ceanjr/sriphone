@@ -40,36 +40,55 @@ const currentPath = Astro.url.pathname;
   <!-- Menu -->
   <nav class="sidebar-nav">
     <ul class="sidebar-menu">
-      {menuItems.map((item) => {
-        const isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
-        return (
-          <li>
-            <a
-              href={item.href}
-              class={`sidebar-menu-item ${isActive ? 'active' : ''}`}
-            >
-              <span aria-hidden="true">
-                {item.icon === 'layout-dashboard' && (
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                )}
-                {item.icon === 'package' && (
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                )}
-                {item.icon === 'folder-tree' && (
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                  </svg>
-                )}
-              </span>
-              {item.title}
-            </a>
-          </li>
-        );
-      })}
+      {
+        menuItems.map((item) => {
+          const isActive =
+            currentPath === item.href ||
+            currentPath.startsWith(item.href + '/');
+          return (
+            <li>
+              <a
+                href={item.href}
+                class={`sidebar-menu-item ${isActive ? 'active' : ''}`}
+              >
+                <span aria-hidden="true">
+                  {item.icon === 'layout-dashboard' && (
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                      />
+                    </svg>
+                  )}
+                  {item.icon === 'package' && (
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                      />
+                    </svg>
+                  )}
+                  {item.icon === 'folder-tree' && (
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                      />
+                    </svg>
+                  )}
+                </span>
+                {item.title}
+              </a>
+            </li>
+          );
+        })
+      }
     </ul>
 
     <div class="sidebar-divider"></div>
@@ -85,7 +104,12 @@ const currentPath = Astro.url.pathname;
         >
           <span aria-hidden="true">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              ></path>
             </svg>
           </span>
           Ver Catálogo
@@ -96,13 +120,15 @@ const currentPath = Astro.url.pathname;
 
   <!-- Botão de Logout -->
   <div class="sidebar-footer">
-    <button
-      id="logout-btn"
-      class="sidebar-logout-btn"
-    >
+    <button id="logout-btn" class="sidebar-logout-btn">
       <span aria-hidden="true">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+          ></path>
         </svg>
       </span>
       Sair
@@ -116,7 +142,7 @@ const currentPath = Astro.url.pathname;
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     if (confirm('Tem certeza que deseja sair?')) {
       await authService.signOut();
-      window.location.href = '/admin/login';
+      window.location.reload();
     }
   });
 </script>
