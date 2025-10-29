@@ -395,10 +395,3 @@ html, body {
   position: relative;
   overflow-x: hidden;
 }
-
-/* Melhorar contraste em dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-  }
-}
