@@ -7,6 +7,14 @@ export const prerender = false;
 ---
 
 <AdminLayout title="Categorias">
+  <script>
+    if (
+      typeof window !== 'undefined' &&
+      !localStorage.getItem('sb-auth-token')
+    ) {
+      window.location.href = '/admin/login';
+    }
+  </script>
   <div class="admin-list-container">
     <div class="admin-list-header">
       <div class="admin-list-title-group">

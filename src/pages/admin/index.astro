@@ -1,27 +1,7 @@
 ---
-// Check if user is authenticated and redirect accordingly
-import { supabase } from '../../lib/supabase';
-
-// Try to get the session from cookie
-const accessToken = Astro.cookies.get('sb-access-token')?.value;
-const refreshToken = Astro.cookies.get('sb-refresh-token')?.value;
-
-let isAuthenticated = false;
-
-if (accessToken && refreshToken) {
-  // Verify the session
-  const { data, error } = await supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
-
-  isAuthenticated = !error && !!data.session;
-}
-
-// Redirect based on authentication status
-if (isAuthenticated) {
-  return Astro.redirect('/admin/dashboard');
-} else {
-  return Astro.redirect('/admin/login');
-}
+<script is:inline>
+  if (typeof window !== 'undefined' && !localStorage.getItem('sb-auth-token')) {
+    window.location.href = '/admin/login';
+  }
+</script>
 ---
