@@ -36,41 +36,90 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
 <!doctype html>
 <html lang="pt-br">
   <head>
+    <script>
+      (function () {
+        try {
+          // Forçar o tema sempre para 'dark'
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.classList.add('dark');
+
+          // opcional: gravar preferência para futuras visitas (server-side pode ler cookie)
+          try {
+            localStorage.setItem('theme', 'dark');
+          } catch (e) {}
+          // opcional: setar cookie (usuários sem JS podem ignorar)
+          document.cookie =
+            'theme=dark; path=/; max-age=' +
+            60 * 60 * 24 * 365 +
+            '; SameSite=Lax';
+        } catch (e) {
+          /* degrade silently */
+        }
+      })();
+    </script>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <meta name="description" content={description} />
     <title>{title}</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="shortcut icon" href="/favicon.webp" />
-    
+
     <meta name="generator" content={Astro.generator} />
 
     <!-- PWA Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta
+      name="theme-color"
+      content="#000000"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-title" content="Sr. IPHONE" />
     <meta name="application-name" content="Sr. IPHONE" />
     <meta name="theme-color" content="#000000" />
     <meta name="msapplication-TileColor" content="#000000" />
     <meta name="msapplication-tap-highlight" content="no" />
-    
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
-    
+
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link
+      rel="apple-touch-icon"
+      sizes="152x152"
+      href="/icons/icon-152x152.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/icons/apple-touch-icon.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
 
     <!-- Resource hints críticos para performance -->
-    <link rel="preconnect" href={import.meta.env.PUBLIC_SUPABASE_URL} crossorigin />
+    <link
+      rel="preconnect"
+      href={import.meta.env.PUBLIC_SUPABASE_URL}
+      crossorigin
+    />
     <link rel="dns-prefetch" href={import.meta.env.PUBLIC_SUPABASE_URL} />
-    
+
     <!-- ✅ OTIMIZAÇÃO: Preconnect para analytics -->
     <link rel="preconnect" href="https://vercel-analytics.com" crossorigin />
     <link rel="dns-prefetch" href="https://vercel-analytics.com" />
@@ -80,16 +129,31 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <link rel="prefetch" href="/api/produtos" />
 
     <!-- Preload recursos críticos que existem -->
-    <link rel="preload" href="/fonts/Halenoir-Bold.otf" as="font" type="font/otf" crossorigin />
+    <link
+      rel="preload"
+      href="/fonts/Halenoir-Bold.otf"
+      as="font"
+      type="font/otf"
+      crossorigin
+    />
     <!-- ✅ OTIMIZAÇÃO: Preload hero image com priority -->
-    <link rel="preload" href="/images/Barbudo.webp" as="image" type="image/webp" fetchpriority="high" />
+    <link
+      rel="preload"
+      href="/images/Barbudo.webp"
+      as="image"
+      type="image/webp"
+      fetchpriority="high"
+    />
     <link rel="preload" href="/favicon.webp" as="image" />
 
     <!-- Critical CSS Inline para eliminar render-blocking -->
     {criticalCSS && <style is:inline set:html={criticalCSS} />}
 
     <!-- Additional SEO -->
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
     <meta name="googlebot" content="index, follow" />
     <meta name="bingbot" content="index, follow" />
     <link rel="alternate" hreflang="pt-br" href={Astro.url.href} />
@@ -111,13 +175,16 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
           try {
             const reg = await navigator.serviceWorker.register('/sw.js');
             console.log('✅ Service Worker registrado');
-            
+
             // Atualizar quando disponível, mas SEM reload automático
             reg.addEventListener('updatefound', () => {
               const newWorker = reg.installing;
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  if (
+                    newWorker.state === 'installed' &&
+                    navigator.serviceWorker.controller
+                  ) {
                     console.log('🆕 Nova versão disponível');
                     // Mostrar notificação mas não recarregar
                     newWorker.postMessage({ type: 'SKIP_WAITING' });
@@ -125,7 +192,6 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
                 });
               }
             });
-            
           } catch (error) {
             console.warn('Service Worker error:', error);
           }
