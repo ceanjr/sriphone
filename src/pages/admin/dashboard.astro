@@ -3,6 +3,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import { createClient } from '@supabase/supabase-js';
 import '../../styles/pages/admin/dashboard.css';
 
+export const prerender = false;
+
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -26,7 +28,10 @@ const { data: topProdutos } = await supabase
   .limit(5);
 ---
 
-<AdminLayout title="Dashboard" description="Visão geral do catálogo de produtos">
+<AdminLayout
+  title="Dashboard"
+  description="Visão geral do catálogo de produtos"
+>
   <div class="dashboard-page">
     <!-- Header -->
     <div class="dashboard-header">

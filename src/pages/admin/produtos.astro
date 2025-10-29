@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 import '../../styles/admin-list.css';
 import '../../styles/admin-form.css';
 
+export const prerender = false;
+
 // Buscar todas as categorias para o filtro
 const { data: categorias } = await supabase
   .from('categorias')
@@ -26,130 +28,201 @@ const { data: produtos, error } = await supabase
       </div>
       <a href="/admin/produtos/novo" class="admin-add-btn">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"></path>
         </svg>
         Adicionar Produto
       </a>
     </div>
 
     <!-- Filtros -->
-    {categorias && categorias.length > 0 && (
-      <div class="form-card" style="margin-bottom: 24px;">
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <label class="form-label" style="margin: 0; flex-shrink: 0;">Filtrar por categoria:</label>
-          <select id="categoria-filter" class="form-select" style="max-width: 300px; flex: 1; min-width: 200px;">
-            <option value="todos">Todas as Categorias</option>
-            {categorias.map((cat) => (
-              <option value={cat.id}>{cat.nome}</option>
-            ))}
-          </select>
-          <span id="count-badge" class="admin-list-item-badge" style="margin-left: auto;">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            <span id="count-text">{produtos?.length || 0} produtos</span>
-          </span>
+    {
+      categorias && categorias.length > 0 && (
+        <div class="form-card" style="margin-bottom: 24px;">
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <label class="form-label" style="margin: 0; flex-shrink: 0;">
+              Filtrar por categoria:
+            </label>
+            <select
+              id="categoria-filter"
+              class="form-select"
+              style="max-width: 300px; flex: 1; min-width: 200px;"
+            >
+              <option value="todos">Todas as Categorias</option>
+              {categorias.map((cat) => (
+                <option value={cat.id}>{cat.nome}</option>
+              ))}
+            </select>
+            <span
+              id="count-badge"
+              class="admin-list-item-badge"
+              style="margin-left: auto;"
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              </svg>
+              <span id="count-text">{produtos?.length || 0} produtos</span>
+            </span>
+          </div>
         </div>
-      </div>
-    )}
+      )
+    }
 
-    {!produtos || produtos.length === 0 ? (
-      <div class="admin-empty-state">
-        <div class="admin-empty-state-icon">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-        </div>
-        <h3 class="admin-empty-state-title">Nenhum produto cadastrado</h3>
-        <p class="admin-empty-state-text">Comece adicionando seu primeiro produto ao catálogo</p>
-        <a href="/admin/produtos/novo" class="admin-add-btn">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Adicionar Primeiro Produto
-        </a>
-      </div>
-    ) : (
-      <div class="admin-list-items" id="produtos-list">
-        {produtos.map((produto) => (
-          <div class="admin-list-item" data-categoria-id={produto.categoria_id || ''}>
-            {produto.imagens?.[0] ? (
-              <img
-                src={produto.imagens[0]}
-                alt={produto.nome}
-                class="admin-list-item-image"
+    {
+      !produtos || produtos.length === 0 ? (
+        <div class="admin-empty-state">
+          <div class="admin-empty-state-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
               />
-            ) : (
-              <div class="admin-list-item-image placeholder">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            )}
-            
-            <div class="admin-list-item-content">
-              <h3 class="admin-list-item-title">{produto.nome}</h3>
-              <div class="admin-list-item-meta">
-                {produto.codigo && (
+            </svg>
+          </div>
+          <h3 class="admin-empty-state-title">Nenhum produto cadastrado</h3>
+          <p class="admin-empty-state-text">
+            Comece adicionando seu primeiro produto ao catálogo
+          </p>
+          <a href="/admin/produtos/novo" class="admin-add-btn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Adicionar Primeiro Produto
+          </a>
+        </div>
+      ) : (
+        <div class="admin-list-items" id="produtos-list">
+          {produtos.map((produto) => (
+            <div
+              class="admin-list-item"
+              data-categoria-id={produto.categoria_id || ''}
+            >
+              {produto.imagens?.[0] ? (
+                <img
+                  src={produto.imagens[0]}
+                  alt={produto.nome}
+                  class="admin-list-item-image"
+                />
+              ) : (
+                <div class="admin-list-item-image placeholder">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              )}
+
+              <div class="admin-list-item-content">
+                <h3 class="admin-list-item-title">{produto.nome}</h3>
+                <div class="admin-list-item-meta">
+                  {produto.codigo && (
+                    <span class="admin-list-item-badge">
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                        />
+                      </svg>
+                      {produto.codigo}
+                    </span>
+                  )}
                   <span class="admin-list-item-badge">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                      />
                     </svg>
-                    {produto.codigo}
+                    {produto.categoria?.nome || 'Sem categoria'}
                   </span>
-                )}
-                <span class="admin-list-item-badge">
+                  <span
+                    class={`admin-list-item-status ${produto.ativo ? 'active' : 'inactive'}`}
+                  >
+                    {produto.ativo ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+              </div>
+
+              <span class="admin-list-item-price">
+                {new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                }).format(produto.preco)}
+              </span>
+
+              <div class="admin-list-item-actions">
+                <button
+                  class="admin-list-item-btn"
+                  data-action="edit"
+                  data-id={produto.id}
+                  title="Editar produto"
+                >
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
-                  {produto.categoria?.nome || 'Sem categoria'}
-                </span>
-                <span class={`admin-list-item-status ${produto.ativo ? 'active' : 'inactive'}`}>
-                  {produto.ativo ? 'Ativo' : 'Inativo'}
-                </span>
+                </button>
+                <button
+                  class="admin-list-item-btn danger"
+                  data-action="delete"
+                  data-id={produto.id}
+                  data-nome={produto.nome}
+                  title="Deletar produto"
+                >
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
-
-            <span class="admin-list-item-price">
-              {new Intl.NumberFormat('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              }).format(produto.preco)}
-            </span>
-
-            <div class="admin-list-item-actions">
-              <button
-                class="admin-list-item-btn"
-                data-action="edit"
-                data-id={produto.id}
-                title="Editar produto"
-              >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button
-                class="admin-list-item-btn danger"
-                data-action="delete"
-                data-id={produto.id}
-                data-nome={produto.nome}
-                title="Deletar produto"
-              >
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
+          ))}
+        </div>
+      )
+    }
   </div>
 </AdminLayout>
 
 <script>
   // Filtro por categoria
-  const categoriaFilter = document.getElementById('categoria-filter') as HTMLSelectElement;
+  const categoriaFilter = document.getElementById(
+    'categoria-filter',
+  ) as HTMLSelectElement;
   const produtosList = document.getElementById('produtos-list');
   const countText = document.getElementById('count-text');
 
@@ -160,8 +233,11 @@ const { data: produtos, error } = await supabase
 
     items?.forEach((item) => {
       const itemCategoria = (item as HTMLElement).dataset.categoriaId;
-      
-      if (selectedCategoria === 'todos' || selectedCategoria === itemCategoria) {
+
+      if (
+        selectedCategoria === 'todos' ||
+        selectedCategoria === itemCategoria
+      ) {
         (item as HTMLElement).style.display = 'flex';
         visibleCount++;
       } else {
@@ -200,7 +276,7 @@ const { data: produtos, error } = await supabase
 
       const confirmed = await window.confirmModal.show(
         'Deletar Produto',
-        `Tem certeza que deseja deletar "${nome}"? Esta ação não pode ser desfeita.`
+        `Tem certeza que deseja deletar "${nome}"? Esta ação não pode ser desfeita.`,
       );
 
       if (confirmed && id) {

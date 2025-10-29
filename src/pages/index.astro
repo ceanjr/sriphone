@@ -1,7 +1,7 @@
 ---
 // src/pages/index.astro
 // Habilita prerender para melhor performance (SSG)
-export const prerender = true;
+export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
@@ -16,39 +16,38 @@ import Mapa from '../components/Mapa.astro';
 // PWAInstallPrompt removido conforme solicitação
 ---
 
-<Layout 
+<Layout
     title="Sr. IPHONE | Seu iPhone, com Classe e Confiança"
     description="Revisamos, avaliamos e garantimos. Cada detalhe do processo assegura a entrega do melhor da tecnologia, com segurança e qualidade garantida."
 >
     <Header />
-    
+
     <main>
         <Hero />
-        
+
         <div class="section-divider"></div>
-        
+
         <Seminovos />
-        
+
         <div class="section-divider-dark"></div>
-        
-        
+
         <AcessoCatalogo />
-        
+
         <div class="section-divider"></div>
-        
+
         <Experiencia />
-        
+
         <div class="section-divider-dark"></div>
 
         <Instagram />
-        
+
         <div class="section-divider"></div>
-        
+
         <Mapa />
     </main>
 
     <Footer />
-    
+
     <!-- PWAInstallPrompt removido -->
 </Layout>
 
