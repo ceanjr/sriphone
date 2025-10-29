@@ -117,18 +117,18 @@ export interface Categoria {
 }
 
 export async function getCategorias(): Promise<ApiResponse<Categoria[]>> {
-  const result = await apiRequest<{ categorias: Categoria[] }>(
+  const result = await apiRequest<Categoria[]>(
     '/api/admin/categorias'
   );
-  
+
   if (result.success && result.data) {
     return {
       success: true,
-      data: result.data.categorias || [],
+      data: result.data,
     };
   }
-  
-  return result;
+
+  return { success: false, error: result.error, data: [] };
 }
 
 export async function criarCategoria(nome: string): Promise<ApiResponse<Categoria>> {
@@ -139,7 +139,7 @@ export async function criarCategoria(nome: string): Promise<ApiResponse<Categori
     };
   }
 
-  const result = await apiRequest<{ categoria: Categoria }>(
+  const result = await apiRequest<Categoria>(
     '/api/admin/categorias',
     {
       method: 'POST',
@@ -150,11 +150,11 @@ export async function criarCategoria(nome: string): Promise<ApiResponse<Categori
   if (result.success && result.data) {
     return {
       success: true,
-      data: result.data.categoria,
+      data: result.data,
     };
   }
 
-  return result;
+  return { success: false, error: result.error };
 }
 
 export async function editarCategoria(
@@ -175,7 +175,7 @@ export async function editarCategoria(
     };
   }
 
-  const result = await apiRequest<{ categoria: Categoria }>(
+  const result = await apiRequest<Categoria>(
     `/api/admin/categorias/${id}`,
     {
       method: 'PUT',
@@ -186,11 +186,11 @@ export async function editarCategoria(
   if (result.success && result.data) {
     return {
       success: true,
-      data: result.data.categoria,
+      data: result.data,
     };
   }
 
-  return result;
+  return { success: false, error: result.error };
 }
 
 export async function deletarCategoria(id: string): Promise<ApiResponse<void>> {
@@ -225,18 +225,18 @@ export interface Produto {
 }
 
 export async function getProdutos(): Promise<ApiResponse<Produto[]>> {
-  const result = await apiRequest<{ produtos: Produto[] }>(
+  const result = await apiRequest<Produto[]>(
     '/api/admin/produtos'
   );
 
   if (result.success && result.data) {
     return {
       success: true,
-      data: result.data.produtos || [],
+      data: result.data,
     };
   }
 
-  return result;
+  return { success: false, error: result.error, data: [] };
 }
 
 export async function criarProduto(dados: Partial<Produto>): Promise<ApiResponse<Produto>> {
@@ -245,13 +245,6 @@ export async function criarProduto(dados: Partial<Produto>): Promise<ApiResponse
     return {
       success: false,
       error: 'Nome do produto é obrigatório',
-    };
-  }
-
-  if (!dados.codigo || dados.codigo.trim() === '') {
-    return {
-      success: false,
-      error: 'Código do produto é obrigatório',
     };
   }
 
@@ -269,7 +262,7 @@ export async function criarProduto(dados: Partial<Produto>): Promise<ApiResponse
     };
   }
 
-  const result = await apiRequest<{ produto: Produto }>(
+  const result = await apiRequest<Produto>(
     '/api/admin/produtos',
     {
       method: 'POST',
@@ -280,11 +273,11 @@ export async function criarProduto(dados: Partial<Produto>): Promise<ApiResponse
   if (result.success && result.data) {
     return {
       success: true,
-      data: result.data.produto,
+      data: result.data,
     };
   }
 
-  return result;
+  return { success: false, error: result.error };
 }
 
 export async function editarProduto(
@@ -298,7 +291,7 @@ export async function editarProduto(
     };
   }
 
-  const result = await apiRequest<{ produto: Produto }>(
+  const result = await apiRequest<Produto>(
     `/api/admin/produtos/${id}`,
     {
       method: 'PUT',
@@ -309,11 +302,11 @@ export async function editarProduto(
   if (result.success && result.data) {
     return {
       success: true,
-      data: result.data.produto,
+      data: result.data,
     };
   }
 
-  return result;
+  return { success: false, error: result.error };
 }
 
 export async function deletarProduto(id: string): Promise<ApiResponse<void>> {

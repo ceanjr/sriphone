@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v17-2025-10-28';
+const CACHE_VERSION = 'v18-2025-10-29';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -95,13 +95,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // NUNCA cachear APIs de admin (escrita)
-  if (url.pathname.startsWith('/api/admin/') && request.method !== 'GET') {
+  // NUNCA cachear APIs de admin (leitura E escrita)
+  if (url.pathname.startsWith('/api/admin/')) {
     return;
   }
 
   // NUNCA cachear páginas de admin
-  if (url.pathname.startsWith('/admin/')) {
+  if (url.pathname.startsWith('/admin')) {
     return;
   }
 

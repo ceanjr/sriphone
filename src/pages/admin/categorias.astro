@@ -3,6 +3,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import ConfirmModal from '../../components/admin/ConfirmModal.astro';
 import '../../styles/admin-list.css';
 import '../../styles/admin-form.css';
+
+export const prerender = false;
 ---
 
 <AdminLayout title="Categorias">
@@ -60,6 +62,13 @@ import '../../styles/admin-form.css';
 </AdminLayout>
 
 <script>
+  import {
+    getCategorias,
+    criarCategoria,
+    editarCategoria,
+    deletarCategoria,
+  } from '../../lib/api';
+
   const form = document.getElementById('category-form') as HTMLFormElement;
   const nameInput = document.getElementById(
     'category-name',
@@ -78,112 +87,6 @@ import '../../styles/admin-form.css';
   ) as HTMLButtonElement;
   const listRoot = document.getElementById('category-list-root') as HTMLElement;
 
-  // ==================== API Functions ====================
-  async function getCategorias() {
-    try {
-      const response = await fetch('/api/admin/categorias');
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao buscar categorias');
-      }
-
-      return {
-        success: true,
-        data: result.data || [],
-      };
-    } catch (error: any) {
-      console.error('Erro ao buscar categorias:', error);
-      return {
-        success: false,
-        error: error.message,
-        data: [],
-      };
-    }
-  }
-
-  async function criarCategoria(nome: string) {
-    try {
-      if (!nome || nome.trim() === '') {
-        return { success: false, error: 'Nome é obrigatório' };
-      }
-
-      const response = await fetch('/api/admin/categorias', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: nome.trim() }),
-      });
-
-      const text = await response.text();
-      let result = null;
-
-      if (text) {
-        try {
-          result = JSON.parse(text);
-        } catch (e) {
-          throw new Error('Resposta inválida da API');
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(result?.error || 'Erro ao criar categoria');
-      }
-
-      return result;
-    } catch (error: any) {
-      console.error('Erro ao criar categoria:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  async function editarCategoria(id: string, nome: string) {
-    try {
-      if (!id || !nome?.trim()) {
-        return { success: false, error: 'ID e nome são obrigatórios' };
-      }
-
-      const response = await fetch(`/api/admin/categorias/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: nome.trim() }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao editar categoria');
-      }
-
-      return result;
-    } catch (error: any) {
-      console.error('Erro ao editar categoria:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  async function deletarCategoria(id: string) {
-    try {
-      if (!id) {
-        return { success: false, error: 'ID é obrigatório' };
-      }
-
-      const response = await fetch(`/api/admin/categorias/${id}`, {
-        method: 'DELETE',
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao deletar categoria');
-      }
-
-      return result;
-    } catch (error: any) {
-      console.error('Erro ao deletar categoria:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
   // ==================== Render ====================
   async function renderCategoryList() {
     if (!listRoot) return;
@@ -197,6 +100,7 @@ import '../../styles/admin-form.css';
         throw new Error(res.error || 'Erro ao carregar');
       }
 
+      // api.ts já retorna { success, data: [...] }
       const categorias = res.data || [];
 
       if (categorias.length === 0) {

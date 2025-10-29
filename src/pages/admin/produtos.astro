@@ -13,7 +13,7 @@ const { data: categorias } = await supabaseAdmin
   .order('nome');
 
 // Buscar todos os produtos
-const { data: produtos, error } = await supabaseAdmin
+const { data: produtos } = await supabaseAdmin
   .from('produtos')
   .select('*, categoria:categoria_id(id, nome)')
   .order('created_at', { ascending: false });
@@ -281,7 +281,7 @@ const { data: produtos, error } = await supabaseAdmin
 
       if (confirmed && id) {
         try {
-          const { deletarProduto } = await import('../../lib/crud');
+          const { deletarProduto } = await import('../../lib/api');
           const result = await deletarProduto(id);
 
           if (result.success) {

@@ -6,8 +6,8 @@ export default defineConfig({
   site: 'https://sriphonevca.com.br',
   output: 'server', // Astro 5.x: usar 'server' com prerender seletivo
   adapter: vercel({
-    // ISR no Vercel
-    isr: true,
+    // ISR desabilitado (incompatível com SSR puro)
+    isr: false,
   }),
   
   // Otimização de imagens com Astro

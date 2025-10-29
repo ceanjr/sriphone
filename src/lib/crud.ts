@@ -1,4 +1,8 @@
 // ============================================
+// @deprecated Este arquivo está deprecado.
+// Use src/lib/api.ts para todas as operações CRUD.
+// Este arquivo será removido em versão futura.
+// ============================================
 // CATEGORIAS - CORRIGIDO
 // ============================================
 

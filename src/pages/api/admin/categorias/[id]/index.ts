@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 
+export const prerender = false;
+
 export const PUT: APIRoute = async ({ params, request }) => {
   try {
     const { id } = params;

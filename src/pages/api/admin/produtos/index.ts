@@ -70,8 +70,8 @@ export const POST: APIRoute = async ({ request }) => {
     
     const body = await request.text();
     console.log('📄 Body recebido (raw):', body.substring(0, 200));
-    
-    let produto;
+
+    let produto: any;
     try {
       produto = JSON.parse(body);
       console.log('📦 Dados parseados:', produto);
