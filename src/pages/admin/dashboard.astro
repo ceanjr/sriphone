@@ -1,5 +1,6 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import DashboardHeader from '../../components/admin/DashboardHeader.astro';
 import { supabaseAdmin } from '../../lib/supabaseAdmin';
 import '../../styles/pages/admin/dashboard.css';
 
@@ -29,13 +30,7 @@ const { data: topProdutos } = await supabaseAdmin
   description="Visão geral do catálogo de produtos"
 >
   <div class="dashboard-page">
-    <!-- Header -->
-    <div class="dashboard-header">
-      <div class="dashboard-header-content">
-        <h1 class="dashboard-title">Dashboard</h1>
-        <p class="dashboard-subtitle">Visão geral do catálogo de produtos</p>
-      </div>
-    </div>
+    <DashboardHeader />
 
     <!-- Content -->
     <div class="dashboard-content">
