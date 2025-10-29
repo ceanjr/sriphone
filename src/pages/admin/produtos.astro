@@ -162,11 +162,6 @@ const { data: produtos } = await supabaseAdmin
                     </svg>
                     {produto.categoria?.nome || 'Sem categoria'}
                   </span>
-                  <span
-                    class={`admin-list-item-status ${produto.ativo ? 'active' : 'inactive'}`}
-                  >
-                    {produto.ativo ? 'Ativo' : 'Inativo'}
-                  </span>
                 </div>
               </div>
 

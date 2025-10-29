@@ -16,7 +16,6 @@ export interface Produto {
   bateria: number | null;
   categoria_id: string;
   imagens: string[];
-  ativo: boolean;
   created_at: string;
 }
 

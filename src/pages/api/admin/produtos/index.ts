@@ -126,7 +126,6 @@ export const POST: APIRoute = async ({ request }) => {
       categoria_id: produto.categoria_id,
       descricao: produto.descricao?.trim() || null,
       imagens: Array.isArray(produto.imagens) ? produto.imagens : [],
-      ativo: produto.ativo !== false,
     };
 
     console.log('💾 Salvando no Supabase:', produtoData);

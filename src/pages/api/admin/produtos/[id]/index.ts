@@ -32,7 +32,6 @@ export const PUT: APIRoute = async ({ params, request }) => {
     if (produto.categoria_id !== undefined) produtoData.categoria_id = produto.categoria_id;
     if (produto.descricao !== undefined) produtoData.descricao = produto.descricao?.trim() || null;
     if (produto.imagens !== undefined) produtoData.imagens = Array.isArray(produto.imagens) ? produto.imagens : [];
-    if (produto.ativo !== undefined) produtoData.ativo = produto.ativo;
 
     console.log('💾 Atualizando no Supabase:', produtoData);
 
@@ -162,7 +161,6 @@ export const POST: APIRoute = async ({ request }) => {
       categoria_id: produto.categoria_id,
       descricao: produto.descricao?.trim() || null,
       imagens: Array.isArray(produto.imagens) ? produto.imagens : [],
-      ativo: produto.ativo !== false,
     };
 
     console.log('💾 Salvando no Supabase:', produtoData);

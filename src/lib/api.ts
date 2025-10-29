@@ -226,7 +226,6 @@ export interface Produto {
   categoria_id: string;
   descricao?: string;
   foto_principal?: string;
-  ativo: boolean;
   created_at?: string;
 }
 
