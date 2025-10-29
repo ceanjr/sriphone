@@ -12,7 +12,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase credentials are required. Check your .env file.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// 🚫 Cria client com fetch global sem cache
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    fetch: (input, init) =>
+      fetch(input, {
+        ...init,
+        cache: 'no-store', // Impede cache em requisições
+        headers: {
+          ...init?.headers,
+          'Cache-Control': 'no-store, max-age=0, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }),
+  },
+});
+
 
 // Tipos do banco de dados
 export interface Product {
