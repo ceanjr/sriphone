@@ -376,16 +376,13 @@
     display: block;
   }
 
-  /* Adicionar padding top no main para não ficar sob a nav */
+  /* Adicionar padding horizontal no main */
   .admin-main {
-    padding-top: 72px;
-    min-height: calc(100vh - 72px);
-  }
-
-  /* Melhorar espaçamento do conteúdo em mobile */
-  .admin-main > * {
     padding-left: 16px;
     padding-right: 16px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    min-height: 100vh;
   }
 
   /* Ajustar tabelas para mobile */

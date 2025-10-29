@@ -160,6 +160,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     <section class="produtos-section">
       <div class="container">
+        <!-- Título da categoria ativa -->
+        <div id="categoria-titulo-container" style="display: none; margin-bottom: 2rem;">
+          <h2 id="categoria-titulo" style="font-size: 2rem; font-weight: 700; color: var(--cor-primaria); margin: 0;"></h2>
+          <p id="categoria-contador" style="font-size: 0.9rem; color: #777; margin-top: 0.5rem;"></p>
+        </div>
+
         <div id="produtos-skeleton" style="display: none;">
           <div class="produtos-grid grade">
             <ProductCardSkeleton />
@@ -267,6 +273,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     ) as HTMLSelectElement,
     categoriaBtns: document.querySelectorAll('.categoria-btn'),
     viewModeBtns: document.querySelectorAll('.view-btn'),
+    categoriaTituloContainer: document.getElementById('categoria-titulo-container'),
+    categoriaTitulo: document.getElementById('categoria-titulo'),
+    categoriaContador: document.getElementById('categoria-contador'),
   };
 
   // Handlers modulares
@@ -514,6 +523,20 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       );
 
       console.log('✅ Filtered/sorted:', produtosFiltrados.length, 'products');
+
+      // Atualizar título da categoria
+      if (currentState.categoriaAtiva !== 'todos' && elementos.categoriaTituloContainer) {
+        const categoriaAtual = currentState.categorias.find(
+          (c) => c.id === currentState.categoriaAtiva
+        );
+        if (categoriaAtual && elementos.categoriaTitulo && elementos.categoriaContador) {
+          elementos.categoriaTitulo.textContent = categoriaAtual.nome;
+          elementos.categoriaContador.textContent = `${produtosFiltrados.length} ${produtosFiltrados.length === 1 ? 'produto' : 'produtos'}`;
+          elementos.categoriaTituloContainer.style.display = 'block';
+        }
+      } else if (elementos.categoriaTituloContainer) {
+        elementos.categoriaTituloContainer.style.display = 'none';
+      }
 
       if (produtosFiltrados.length === 0) {
         elementos.produtosContainer.innerHTML = '';

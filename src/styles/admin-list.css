@@ -6,6 +6,14 @@
   margin: 0 auto;
 }
 
+/* Mobile adjustments */
+@media (max-width: 1023px) {
+  .admin-list-container {
+    padding: 0;
+    margin: 0;
+  }
+}
+
 .admin-list-header {
   display: flex;
   align-items: center;
