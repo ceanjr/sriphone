@@ -12,14 +12,19 @@ interface Props {
   description?: string;
 }
 
-const { title, description = 'Painel administrativo Sr. IPHONE VCA' } = Astro.props;
+const { title, description = 'Painel administrativo Sr. IPHONE VCA' } =
+  Astro.props;
 
 // Proteção de rota admin
-const isAuthenticated = await verifyAuth(Astro.cookies, Astro.request.headers.get('Authorization'));
+const isAuthenticated = await verifyAuth(
+  Astro.cookies,
+  Astro.request.headers.get('Authorization'),
+);
 if (!isAuthenticated && Astro.request.url !== '/admin/login') {
   return Astro.redirect('/admin/login');
 }
 ---
+
 ---
 
 <Layout title={title} description={description}>
@@ -40,7 +45,7 @@ if (!isAuthenticated && Astro.request.url !== '/admin/login') {
 
   <!-- Toast Notifications -->
   <Toast />
-  
+
   <!-- Confirm Modal -->
   <ConfirmModal />
 </Layout>
