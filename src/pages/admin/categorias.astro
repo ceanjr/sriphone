@@ -11,6 +11,7 @@ const { data: categorias } = await supabaseAdmin
   .from('categorias')
   .select('*')
   .order('nome');
+console.log('[categorias.astro SSR] Categorias recebidas:', categorias);
 
 const categoriasComContagem = await Promise.all(
   (categorias || []).map(async (cat) => {
