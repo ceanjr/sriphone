@@ -28,15 +28,6 @@ const { data: topProdutos } = await supabaseAdmin
   title="Dashboard"
   description="Visão geral do catálogo de produtos"
 >
-  <script>
-    // Proteção client-side: redireciona se não houver token
-    if (
-      typeof window !== 'undefined' &&
-      !localStorage.getItem('sb-auth-token')
-    ) {
-      window.location.href = '/admin/login';
-    }
-  </script>
   <div class="dashboard-page">
     <!-- Header -->
     <div class="dashboard-header">

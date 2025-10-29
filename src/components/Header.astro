@@ -381,7 +381,8 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
 
         function handleLogin() {
             // Simples redirecionamento para login
-            window.location.href = '/admin/login';
+            // window.location.href = '/admin/login';
+            window.location.replace('/admin/login');
         }
 
         async function handleLogout() {
