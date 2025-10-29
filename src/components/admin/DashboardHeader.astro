@@ -31,7 +31,9 @@ import '../../styles/admin-header.css';
     Sair
   </button>
 
-  <script is:inline>
+  <script>
+    import { authService } from '../../lib/supabase';
+
     document.addEventListener('DOMContentLoaded', () => {
       const logoutBtn = document.getElementById('logout-btn');
       logoutBtn?.addEventListener('click', async () => {

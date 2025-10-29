@@ -112,14 +112,16 @@ const { data: produtos } = await supabaseAdmin
               class="admin-list-item"
               data-categoria-id={produto.categoria_id || ''}
             >
-              {produto.imagens?.[0] ? (
-                <img
-                  src={produto.imagens[0]}
-                  alt={produto.nome}
-                  class="admin-list-item-image"
-                />
+              {produto.imagens && produto.imagens.length > 0 ? (
+                <div class="admin-list-item-image">
+                  <img
+                    src={produto.imagens[0]}
+                    alt={produto.nome}
+                    loading="lazy"
+                  />
+                </div>
               ) : (
-                <div class="admin-list-item-image placeholder">
+                <div class="admin-list-item-image">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
@@ -151,17 +153,73 @@ const { data: produtos } = await supabaseAdmin
                       {produto.codigo}
                     </span>
                   )}
-                  <span class="admin-list-item-badge">
+                  {produto.bateria && (
+                    <span class="admin-list-item-badge">
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 10h18M3 14h18M5 8h14a2 2 0 012 2v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4a2 2 0 012-2z"
+                        />
+                      </svg>
+                      {produto.bateria}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div class="admin-list-item-menu">
+                <button
+                  class="admin-list-item-menu-btn"
+                  data-menu-toggle
+                  aria-label="Opções"
+                >
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+                    />
+                  </svg>
+                </button>
+                <div class="admin-list-item-dropdown">
+                  <button
+                    class="admin-list-item-dropdown-item"
+                    data-action="edit"
+                    data-id={produto.id}
+                  >
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                       />
                     </svg>
-                    {produto.categoria?.nome || 'Sem categoria'}
-                  </span>
+                    Editar
+                  </button>
+                  <button
+                    class="admin-list-item-dropdown-item danger"
+                    data-action="delete"
+                    data-id={produto.id}
+                    data-nome={produto.nome}
+                  >
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    Deletar
+                  </button>
                 </div>
               </div>
 
@@ -171,40 +229,6 @@ const { data: produtos } = await supabaseAdmin
                   currency: 'BRL',
                 }).format(produto.preco)}
               </span>
-
-              <div class="admin-list-item-actions">
-                <button
-                  class="admin-list-item-btn"
-                  data-action="edit"
-                  data-id={produto.id}
-                  title="Editar produto"
-                >
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  class="admin-list-item-btn danger"
-                  data-action="delete"
-                  data-id={produto.id}
-                  data-nome={produto.nome}
-                  title="Deletar produto"
-                >
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-              </div>
             </div>
           ))}
         </div>
@@ -233,10 +257,10 @@ const { data: produtos } = await supabaseAdmin
         selectedCategoria === 'todos' ||
         selectedCategoria === itemCategoria
       ) {
-        (item as HTMLElement).style.display = 'flex';
+        (item as HTMLElement).classList.remove('hidden');
         visibleCount++;
       } else {
-        (item as HTMLElement).style.display = 'none';
+        (item as HTMLElement).classList.add('hidden');
       }
     });
 
@@ -246,6 +270,40 @@ const { data: produtos } = await supabaseAdmin
   }
 
   categoriaFilter?.addEventListener('change', filterProdutos);
+
+  // Overflow Menu Toggle
+  document.querySelectorAll('[data-menu-toggle]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dropdown = btn.nextElementSibling as HTMLElement;
+      const isActive = dropdown.classList.contains('active');
+
+      // Fechar todos os dropdowns
+      document
+        .querySelectorAll('.admin-list-item-dropdown.active')
+        .forEach((d) => {
+          d.classList.remove('active');
+        });
+
+      // Alternar o dropdown atual
+      if (!isActive) {
+        dropdown.classList.add('active');
+      }
+    });
+  });
+
+  // Fechar dropdown ao clicar fora
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.admin-list-item-menu')) {
+      document
+        .querySelectorAll('.admin-list-item-dropdown.active')
+        .forEach((d) => {
+          d.classList.remove('active');
+        });
+    }
+  });
 
   // Botões de editar
   document.querySelectorAll('[data-action="edit"]').forEach((btn) => {

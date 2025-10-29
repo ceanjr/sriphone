@@ -15,14 +15,11 @@ export const prerender = false;
       </div>
     </div>
 
-    <!-- Form Card -->
+    <!-- Form Card Responsivo -->
     <div class="form-card" style="margin-bottom: 24px;">
-      <form
-        id="category-form"
-        style="display: flex; gap: 12px; align-items: flex-end;"
-      >
+      <form id="category-form" class="category-form-flex">
         <input type="hidden" id="edit-category-id" />
-        <div class="form-group" style="flex: 1; margin: 0;">
+        <div class="form-group" style="margin: 0;">
           <label class="form-label" for="category-name">
             Nome da Categoria
             <span class="form-label-required">*</span>
@@ -35,28 +32,93 @@ export const prerender = false;
             required
           />
         </div>
-        <button
-          type="submit"
-          id="submit-category-btn"
-          class="form-btn form-btn-submit"
-          style="flex-shrink: 0;"
-        >
-          <span id="submit-category-text">Adicionar</span>
-        </button>
-        <button
-          type="button"
-          id="cancel-edit-btn"
-          class="form-btn form-btn-cancel hidden"
-          style="flex-shrink: 0;"
-        >
-          Cancelar
-        </button>
+        <div class="category-form-actions">
+          <button
+            type="submit"
+            id="submit-category-btn"
+            class="form-btn form-btn-submit"
+          >
+            <span id="submit-category-text">Adicionar</span>
+          </button>
+          <button
+            type="button"
+            id="cancel-edit-btn"
+            class="form-btn form-btn-cancel hidden"
+          >
+            Cancelar
+          </button>
+        </div>
       </form>
     </div>
 
     <div id="category-list-root"></div>
   </div>
 </AdminLayout>
+
+<style>
+  /* Form responsivo */
+  .category-form-flex {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .category-form-flex .form-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .category-form-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 640px) {
+    .category-form-flex {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .category-form-flex .form-group {
+      width: 100%;
+    }
+
+    .category-form-actions {
+      width: 100%;
+    }
+
+    .category-form-actions button {
+      flex: 1;
+    }
+  }
+
+  /* Loading/Error states */
+  .admin-list-loading,
+  .admin-list-error {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #a0a0a0;
+  }
+
+  .admin-list-error {
+    color: #ef4444;
+  }
+
+  .placeholder {
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .placeholder svg {
+    width: 40%;
+    height: 40%;
+    color: #3a3a3a;
+  }
+</style>
 
 <script>
   import {
@@ -97,7 +159,6 @@ export const prerender = false;
         throw new Error(res.error || 'Erro ao carregar');
       }
 
-      // api.ts já retorna { success, data: [...] }
       const categorias = res.data || [];
 
       if (categorias.length === 0) {
@@ -119,6 +180,7 @@ export const prerender = false;
             <div class="admin-list-item-image placeholder">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
             </div>
+            
             <div class="admin-list-item-content">
               <h3 class="admin-list-item-title">${cat.nome}</h3>
               <div class="admin-list-item-meta">
@@ -128,13 +190,27 @@ export const prerender = false;
                 </span>
               </div>
             </div>
-            <div class="admin-list-item-actions">
-              <button class="admin-list-item-btn" data-action="edit" data-id="${cat.id}" data-nome="${cat.nome}" title="Editar categoria">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+
+            <div class="admin-list-item-menu">
+              <button class="admin-list-item-menu-btn" data-menu-toggle aria-label="Opções">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                </svg>
               </button>
-              <button class="admin-list-item-btn danger" data-action="delete" data-id="${cat.id}" data-nome="${cat.nome}" title="Deletar categoria">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              </button>
+              <div class="admin-list-item-dropdown">
+                <button class="admin-list-item-dropdown-item" data-action="edit" data-id="${cat.id}" data-nome="${cat.nome}">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                  </svg>
+                  Editar
+                </button>
+                <button class="admin-list-item-dropdown-item danger" data-action="delete" data-id="${cat.id}" data-nome="${cat.nome}">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  Deletar
+                </button>
+              </div>
             </div>
           </div>
         `,
@@ -152,8 +228,45 @@ export const prerender = false;
   }
 
   function bindListEvents() {
+    // Menu toggle
+    document.querySelectorAll('[data-menu-toggle]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const dropdown = btn.nextElementSibling as HTMLElement;
+        const isActive = dropdown.classList.contains('active');
+
+        // Fechar todos os dropdowns
+        document
+          .querySelectorAll('.admin-list-item-dropdown.active')
+          .forEach((d) => {
+            d.classList.remove('active');
+          });
+
+        // Alternar o dropdown atual
+        if (!isActive) {
+          dropdown.classList.add('active');
+        }
+      });
+    });
+
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.admin-list-item-menu')) {
+        document
+          .querySelectorAll('.admin-list-item-dropdown.active')
+          .forEach((d) => {
+            d.classList.remove('active');
+          });
+      }
+    });
+
+    // Editar
     document.querySelectorAll('[data-action="edit"]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const el = btn as HTMLElement;
         const id = el.dataset.id || '';
         const nome = el.dataset.nome || '';
@@ -163,35 +276,54 @@ export const prerender = false;
         submitText.textContent = 'Salvar';
         cancelBtn.classList.remove('hidden');
         nameInput.focus();
+
+        // Fechar dropdown
+        document
+          .querySelectorAll('.admin-list-item-dropdown.active')
+          .forEach((d) => {
+            d.classList.remove('active');
+          });
       });
     });
 
+    // Deletar
     document.querySelectorAll('[data-action="delete"]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const el = btn as HTMLElement;
         const id = el.dataset.id;
         const nome = el.dataset.nome;
 
         if (!id) return;
 
-        // Usar confirm nativo do navegador (mais discreto)
         const confirmed = confirm(
           `Tem certeza que deseja deletar "${nome}"?\nEsta ação não pode ser desfeita.`,
         );
 
         if (confirmed) {
-          const result = await deletarCategoria(id);
-          if (result.success) {
-            (window as any).showToast('Categoria deletada!', 'success');
-            // ✅ CRÍTICO: Atualizar lista imediatamente
-            await renderCategoryList();
-          } else {
+          try {
+            const result = await deletarCategoria(id);
+            if (result.success) {
+              (window as any).showToast('Categoria deletada!', 'success');
+              await renderCategoryList();
+            } else {
+              throw new Error(result.error || 'Erro ao deletar');
+            }
+          } catch (error: any) {
             (window as any).showToast(
-              result.error || 'Erro ao deletar',
+              error.message || 'Erro ao deletar',
               'error',
             );
           }
         }
+
+        // Fechar dropdown
+        document
+          .querySelectorAll('.admin-list-item-dropdown.active')
+          .forEach((d) => {
+            d.classList.remove('active');
+          });
       });
     });
   }
@@ -227,7 +359,6 @@ export const prerender = false;
       cancelBtn.classList.add('hidden');
       submitText.textContent = 'Adicionar';
 
-      // ✅ CRÍTICO: Atualizar lista imediatamente
       await renderCategoryList();
     } catch (error: any) {
       (window as any).showToast(error.message || 'Erro ao salvar', 'error');
@@ -248,17 +379,3 @@ export const prerender = false;
   // Initial render
   renderCategoryList();
 </script>
-
-<style>
-  /* Loading/Error states */
-  .admin-list-loading,
-  .admin-list-error {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: #a0a0a0;
-  }
-
-  .admin-list-error {
-    color: #ef4444;
-  }
-</style>

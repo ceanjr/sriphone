@@ -350,12 +350,6 @@ body {
   * {
     will-change: auto !important;
   }
-  
-  /* Otimizar scroll mobile */
-  body, html {
-    -webkit-transform: translateZ(0);
-    -webkit-backface-visibility: hidden;
-  }
 }
 
 /* Esconder scrollbar no modo PWA para aparência nativa */

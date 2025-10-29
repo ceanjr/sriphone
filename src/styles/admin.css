@@ -1,5 +1,3 @@
-/* Admin Styles - Pure CSS without Tailwind */
-
 /* ==================== ADMIN LAYOUT ==================== */
 .admin-layout {
   display: flex;
@@ -168,10 +166,10 @@
 
   /* Adicionar padding horizontal no main */
   .admin-main {
-    padding-left: 16px;
-    padding-right: 16px;
-    padding-top: 16px;
-    padding-bottom: 16px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 80px; /* espaço para mobile nav */
     min-height: 100vh;
   }
 
@@ -262,3 +260,34 @@
   display: none !important;
 }
 
+/* ==================== CORREÇÃO DE SCROLL DUPLO ==================== */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* O layout e o conteúdo não devem ter scroll próprio */
+.admin-layout {
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  position: relative;
+}
+
+.admin-main {
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  position: relative;
+}
+
+/* Evitar que headers fixos criem deslocamento indevido */
+.dashboard-page {
+  padding-top: 70px; /* altura aproximada do header fixo */
+}
+
+@media (max-width: 1023px) {
+  .dashboard-page {
+    padding-bottom: 80px; /* espaço pro bottom nav */
+  }
+}

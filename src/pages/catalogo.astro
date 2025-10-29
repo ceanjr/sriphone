@@ -161,9 +161,20 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <section class="produtos-section">
       <div class="container">
         <!-- Título da categoria ativa -->
-        <div id="categoria-titulo-container" style="display: none; margin-bottom: 2rem;">
-          <h2 id="categoria-titulo" style="font-size: 2rem; font-weight: 700; color: var(--cor-primaria); margin: 0;"></h2>
-          <p id="categoria-contador" style="font-size: 0.9rem; color: #777; margin-top: 0.5rem;"></p>
+        <div
+          id="categoria-titulo-container"
+          style="display: none; margin-bottom: 2rem;"
+        >
+          <h2
+            id="categoria-titulo"
+            style="font-size: 2rem; font-weight: 700; color: var(--cor-primaria); margin: 0;"
+          >
+          </h2>
+          <p
+            id="categoria-contador"
+            style="font-size: 0.9rem; color: #777; margin-top: 0.5rem;"
+          >
+          </p>
         </div>
 
         <div id="produtos-skeleton" style="display: none;">
@@ -273,7 +284,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     ) as HTMLSelectElement,
     categoriaBtns: document.querySelectorAll('.categoria-btn'),
     viewModeBtns: document.querySelectorAll('.view-btn'),
-    categoriaTituloContainer: document.getElementById('categoria-titulo-container'),
+    categoriaTituloContainer: document.getElementById(
+      'categoria-titulo-container',
+    ),
     categoriaTitulo: document.getElementById('categoria-titulo'),
     categoriaContador: document.getElementById('categoria-contador'),
   };
@@ -525,11 +538,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       console.log('✅ Filtered/sorted:', produtosFiltrados.length, 'products');
 
       // Atualizar título da categoria
-      if (currentState.categoriaAtiva !== 'todos' && elementos.categoriaTituloContainer) {
+      if (
+        currentState.categoriaAtiva !== 'todos' &&
+        elementos.categoriaTituloContainer
+      ) {
         const categoriaAtual = currentState.categorias.find(
-          (c) => c.id === currentState.categoriaAtiva
+          (c) => c.id === currentState.categoriaAtiva,
         );
-        if (categoriaAtual && elementos.categoriaTitulo && elementos.categoriaContador) {
+        if (
+          categoriaAtual &&
+          elementos.categoriaTitulo &&
+          elementos.categoriaContador
+        ) {
           elementos.categoriaTitulo.textContent = categoriaAtual.nome;
           elementos.categoriaContador.textContent = `${produtosFiltrados.length} ${produtosFiltrados.length === 1 ? 'produto' : 'produtos'}`;
           elementos.categoriaTituloContainer.style.display = 'block';
@@ -727,47 +747,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         handlers.viewModeChange(e);
       });
     });
-
-    // Login
-    elementos.formLogin?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const emailInput = document.getElementById(
-        'login-email',
-      ) as HTMLInputElement;
-      const passwordInput = document.getElementById(
-        'login-password',
-      ) as HTMLInputElement;
-
-      try {
-        const data = await authService.signIn(
-          emailInput.value,
-          passwordInput.value,
-        );
-        elementos.modalLogin?.classList.remove('active');
-        elementos.formLogin?.reset();
-        if (elementos.loginError) {
-          elementos.loginError.textContent = '';
-          elementos.loginError.classList.remove('show');
-        }
-      } catch (error: any) {
-        if (elementos.loginError) {
-          elementos.loginError.textContent =
-            error.message || 'Credenciais inválidas';
-          elementos.loginError.classList.add('show');
-        }
-      }
-    });
-
-    elementos.modalLogin
-      ?.querySelector('.modal-close')
-      ?.addEventListener('click', () => {
-        elementos.modalLogin?.classList.remove('active');
-      });
-    elementos.modalLogin
-      ?.querySelector('.modal-overlay')
-      ?.addEventListener('click', () => {
-        elementos.modalLogin?.classList.remove('active');
-      });
 
     // ✅ Sistema de eventos pub/sub
     onEvent(catalogEvents.FILTROS_CHANGED, () => {

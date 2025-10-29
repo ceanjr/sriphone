@@ -1,17 +1,16 @@
 /* ==================== MOBILE BOTTOM NAV ==================== */
-
 .mobile-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
   height: 64px;
   background: #0a0a0a;
   border-top: 1px solid #2a2a2a;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  z-index: 999;
+  z-index: 9999 !important;
 }
 
 .mobile-nav-item {
@@ -43,19 +42,9 @@
   height: 22px;
 }
 
-/* Compensa o espaço ocupado pela barra inferior */
-body {
-  margin: 0;
-  padding-bottom: 72; /* evita que o conteúdo fique sob a nav */
-}
-
 /* Ocultar no desktop */
 @media (min-width: 1024px) {
   .mobile-bottom-nav {
     display: none;
-  }
-
-  body {
-    padding-bottom: 0;
   }
 }

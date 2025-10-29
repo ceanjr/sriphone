@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v21-2025-10-29';
+const CACHE_VERSION = 'v22-dev-fix';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -92,6 +92,11 @@ self.addEventListener('fetch', (event) => {
 
   // Ignorar chrome-extension e outros protocolos não-http
   if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // DESENVOLVIMENTO: Não cachear localhost
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.port === '4321') {
     return;
   }
 
