@@ -10,10 +10,10 @@ export const GET: APIRoute = async () => {
 
     if (error) throw error;
 
-    return new Response(
-      JSON.stringify({ success: true, data: data || [] }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+return new Response(
+  JSON.stringify({ success: true, data }),
+  { status: 200, headers: { 'Content-Type': 'application/json' } }
+);
   } catch (error: any) {
     console.error('Error fetching categorias:', error);
     return new Response(
@@ -41,12 +41,12 @@ export const POST: APIRoute = async ({ request }) => {
       .single();
 
     if (error) {
-      if (error.code === '23505') {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Categoria já existe' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
+if (error.code === '23505') { // conflito (duplicado)
+  return new Response(
+    JSON.stringify({ success: false, error: 'Categoria já existe' }),
+    { status: 409, headers: { 'Content-Type': 'application/json' } }
+  );
+}
       throw error;
     }
 

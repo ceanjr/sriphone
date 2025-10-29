@@ -14,12 +14,6 @@ import {
   getCategorias,
 } from '../../lib/crud';
 
-if (typeof window !== 'undefined') {
-  window.criarCategoria = criarCategoria;
-  window.editarCategoria = editarCategoria;
-  window.deletarCategoria = deletarCategoria;
-  window.getCategorias = getCategorias;
-}
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import ConfirmModal from '../../components/admin/ConfirmModal.astro';
 import '../../styles/admin-list.css';
@@ -80,6 +74,12 @@ import '../../styles/admin-form.css';
   <ConfirmModal />
 </AdminLayout>
 
+<script is:inline>
+  window.criarCategoria = criarCategoria;
+  window.editarCategoria = editarCategoria;
+  window.deletarCategoria = deletarCategoria;
+  window.getCategorias = getCategorias;
+</script>
 <script is:inline>
   const form = document.getElementById('category-form');
   const nameInput = document.getElementById('category-name');
