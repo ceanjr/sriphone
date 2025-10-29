@@ -364,14 +364,14 @@ const { data: categorias } = await supabaseAdmin
       }
 
       window.showToast('Produto atualizado com sucesso!', 'success');
-      
+
       // Forçar limpeza de cache do navegador
       if ('caches' in window) {
         caches.keys().then((names) => {
           names.forEach((name) => caches.delete(name));
         });
       }
-      
+
       setTimeout(() => {
         // Redirecionar com parâmetro para forçar refresh
         window.location.href = '/admin/produtos?updated=' + Date.now();
