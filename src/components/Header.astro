@@ -131,6 +131,7 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
     .btn-auth {
         display: inline-flex;
         align-items: center;
+        gap: 0.5rem;
         background: transparent;
         border: 1px solid #2a2a2a;
         color: #fff;
@@ -154,10 +155,8 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         height: 18px;
     }
 
-    /* Esconder botão auth no mobile quando logado */
     .btn-auth-desktop {
         display: inline-flex;
-        
     }
 
     @media (max-width: 767px) {
@@ -166,7 +165,6 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         }
     }
 
-    /* Menu Desktop */
     .admin-actions-desktop {
         display: none;
         gap: 0.5rem;
@@ -210,7 +208,6 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         }
     }
 
-    /* Menu Hamburguer Mobile */
     .btn-menu-mobile {
         display: inline-flex;
         align-items: center;
@@ -241,7 +238,6 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         height: 20px;
     }
 
-    /* Dropdown Mobile */
     .dropdown-mobile {
         position: absolute;
         top: calc(100% + 0.5rem);
@@ -331,126 +327,129 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         const dropdownMobile = document.getElementById('dropdown-mobile')
         const btnSairMobile = document.getElementById('btn-sair-mobile')
 
-        // Verificar se está na página do catálogo
-        const isCatalogPage = window.location.pathname === '/catalogo' || 
-                              window.location.pathname === '/catalogo/' ||
-                              window.location.pathname.includes('/catalogo')
+        let isAuthenticated = false;
 
         async function checkAuth() {
-            // Se não estiver na página do catálogo, não fazer nada
-            if (!isCatalogPage) {
-                return
+            try {
+                isAuthenticated = await authService.isAuthenticated();
+                updateUI();
+            } catch (error) {
+                console.error('Erro ao verificar autenticação:', error);
+                isAuthenticated = false;
+                updateUI();
             }
-            
-            const session = await authService.getSession()
-            
-            if (btnAuthDesktop && adminActionsDesktop && btnMenuMobile) {
-                if (session) {
-                    // Usuário autenticado
-                    // Desktop: Mostrar botão Sair
-                    btnAuthDesktop.innerHTML = `
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>Sair</span>
-                    `
-                    
-                    // Desktop: Mostrar ações admin
-                    adminActionsDesktop.style.display = 'flex'
-                    
-                    // Mobile: Esconder botão auth e mostrar hamburguer
-                    btnAuthDesktop.classList.add('hide-mobile')
-                    btnMenuMobile.style.display = 'inline-flex'
-                    
-                    btnAuthDesktop.onclick = async () => {
-                        await authService.signOut()
-                        window.location.reload()
-                    }
-                } else {
-                    // Usuário não autenticado
-                    btnAuthDesktop.innerHTML = `
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>Admin</span>
-                    `
-                    
-                    adminActionsDesktop.style.display = 'none'
-                    btnAuthDesktop.classList.remove('hide-mobile')
-                    btnMenuMobile.style.display = 'none'
+        }
 
-                    btnAuthDesktop.onclick = async () => {
-                        // Verificar se já está autenticado antes de redirecionar
-                        const session = await authService.getSession()
-                        if (session) {
-                            window.location.href = '/admin/dashboard'
-                        } else {
-                            window.location.href = '/admin/login'
-                        }
-                    }
-                }
+        function updateUI() {
+            if (!btnAuthDesktop || !adminActionsDesktop || !btnMenuMobile) return;
+
+            if (isAuthenticated) {
+                // Usuário autenticado
+                btnAuthDesktop.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Sair</span>
+                `;
+                
+                // Desktop: Mostrar ações admin
+                adminActionsDesktop.style.display = 'flex';
+                
+                // Mobile: Esconder botão auth e mostrar hamburguer
+                btnAuthDesktop.classList.add('hide-mobile');
+                btnMenuMobile.style.display = 'inline-flex';
+                
+                // Atualizar handler do botão sair
+                btnAuthDesktop.onclick = handleLogout;
+            } else {
+                // Usuário não autenticado
+                btnAuthDesktop.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Admin</span>
+                `;
+                
+                adminActionsDesktop.style.display = 'none';
+                btnAuthDesktop.classList.remove('hide-mobile');
+                btnMenuMobile.style.display = 'none';
+
+                // Atualizar handler do botão login
+                btnAuthDesktop.onclick = handleLogin;
+            }
+        }
+
+        function handleLogin() {
+            // Simples redirecionamento para login
+            window.location.href = '/admin/login';
+        }
+
+        async function handleLogout() {
+            try {
+                await authService.signOut();
+                isAuthenticated = false;
+                updateUI();
+                // Opcional: recarregar página para limpar estado
+                setTimeout(() => window.location.reload(), 100);
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                alert('Erro ao fazer logout. Tente novamente.');
             }
         }
 
         // Toggle dropdown mobile
         btnMenuMobile?.addEventListener('click', (e) => {
-            e.stopPropagation()
-            dropdownMobile?.classList.toggle('active')
-        })
+            e.stopPropagation();
+            dropdownMobile?.classList.toggle('active');
+        });
 
         // Fechar dropdown ao clicar fora
         document.addEventListener('click', () => {
-            dropdownMobile?.classList.remove('active')
-        })
+            dropdownMobile?.classList.remove('active');
+        });
 
         dropdownMobile?.addEventListener('click', (e) => {
-            e.stopPropagation()
-        })
-
-        // Inicializar
-        checkAuth()
-
-        // Escutar mudanças de autenticação
-        authService.onAuthStateChange(() => {
-            checkAuth()
-        })
-
-        // Re-verificar após carregamento completo da página
-        window.addEventListener('load', () => {
-            checkAuth()
-        })
+            e.stopPropagation();
+        });
 
         // Botões Desktop
-        const btnCriarProdutoDesktop = document.getElementById('btn-criar-produto-desktop')
-        const btnGerirCategoriasDesktop = document.getElementById('btn-gerir-categorias-desktop')
-
-        btnCriarProdutoDesktop?.addEventListener('click', () => {
+        document.getElementById('btn-criar-produto-desktop')?.addEventListener('click', () => {
             window.location.href = '/admin/produtos/novo';
-        })
+        });
 
-        btnGerirCategoriasDesktop?.addEventListener('click', () => {
+        document.getElementById('btn-gerir-categorias-desktop')?.addEventListener('click', () => {
             window.location.href = '/admin/categorias';
-        })
+        });
 
         // Botões Mobile
-        const btnCriarProdutoMobile = document.getElementById('btn-criar-produto-mobile')
-        const btnGerirCategoriasMobile = document.getElementById('btn-gerir-categorias-mobile')
-
-        btnCriarProdutoMobile?.addEventListener('click', () => {
-            dropdownMobile?.classList.remove('active')
+        document.getElementById('btn-criar-produto-mobile')?.addEventListener('click', () => {
+            dropdownMobile?.classList.remove('active');
             window.location.href = '/admin/produtos/novo';
-        })
+        });
 
-        btnGerirCategoriasMobile?.addEventListener('click', () => {
-            dropdownMobile?.classList.remove('active')
+        document.getElementById('btn-gerir-categorias-mobile')?.addEventListener('click', () => {
+            dropdownMobile?.classList.remove('active');
             window.location.href = '/admin/categorias';
-        })
+        });
 
         // Botão Sair Mobile
         btnSairMobile?.addEventListener('click', async () => {
-            dropdownMobile?.classList.remove('active')
-            await authService.signOut()
-            window.location.reload()
-        })
+            dropdownMobile?.classList.remove('active');
+            await handleLogout();
+        });
+
+        // Inicializar
+        checkAuth();
+
+        // Escutar mudanças de autenticação
+        const subscription = authService.onAuthStateChange((session) => {
+            isAuthenticated = session !== null;
+            updateUI();
+        });
+
+        // Cleanup ao desmontar (para SPAs)
+        window.addEventListener('beforeunload', () => {
+            subscription?.unsubscribe();
+        });
     </script>
 )}

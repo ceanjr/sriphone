@@ -33,6 +33,7 @@ import '../../styles/pages/admin/login.css';
               name="email"
               required
               placeholder="seu@email.com"
+              autocomplete="email"
             />
           </div>
 
@@ -44,6 +45,7 @@ import '../../styles/pages/admin/login.css';
               name="password"
               required
               placeholder="••••••••"
+              autocomplete="current-password"
             />
           </div>
 
@@ -65,6 +67,22 @@ import '../../styles/pages/admin/login.css';
 <script>
   import { authService } from '../../lib/supabase';
 
+  // Verificar se já está autenticado ao carregar a página
+  async function checkIfAlreadyAuthenticated() {
+    try {
+      const isAuth = await authService.isAuthenticated();
+      if (isAuth) {
+        // Já está autenticado, redirecionar para dashboard
+        window.location.href = '/admin/dashboard';
+      }
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
+    }
+  }
+
+  // Executar verificação imediatamente
+  checkIfAlreadyAuthenticated();
+
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById(
     'error-message',
@@ -78,45 +96,70 @@ import '../../styles/pages/admin/login.css';
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    // Validação básica
+    if (!email || !password) {
+      showError('Por favor, preencha todos os campos.');
+      return;
+    }
+
     // Hide error message
-    errorMessage.classList.remove('show');
-    errorMessage.textContent = '';
+    hideError();
 
     // Disable button
     submitBtn.disabled = true;
     submitBtn.textContent = 'Entrando...';
 
     try {
-      const response = await fetch('/api/admin/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      // Fazer login usando o authService
+      await authService.signIn(email, password);
 
-      const data = await response.json();
+      // Aguardar um pouco para garantir que a sessão foi salva
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao fazer login');
+      // Verificar se realmente está autenticado
+      const isAuth = await authService.isAuthenticated();
+
+      if (isAuth) {
+        // Sucesso! Redirecionar para dashboard
+        window.location.href = '/admin/dashboard';
+      } else {
+        throw new Error('Falha ao estabelecer sessão');
       }
-
-      // Store access token in localStorage for client-side requests
-      if (data.session?.access_token) {
-        localStorage.setItem('sb-access-token', data.session.access_token);
-      }
-
-      // Redirect to dashboard
-      window.location.href = '/admin/dashboard';
     } catch (error: any) {
-      // Show error message
-      errorMessage.textContent =
-        error.message || 'Erro ao fazer login. Verifique suas credenciais.';
-      errorMessage.classList.add('show');
+      console.error('Erro no login:', error);
+
+      // Mensagens de erro mais amigáveis
+      let errorMsg = 'Erro ao fazer login. Verifique suas credenciais.';
+
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMsg = 'Email ou senha incorretos.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMsg = 'Email não confirmado. Verifique sua caixa de entrada.';
+      } else if (error.message?.includes('Network')) {
+        errorMsg = 'Erro de conexão. Verifique sua internet.';
+      }
+
+      showError(errorMsg);
 
       // Re-enable button
       submitBtn.disabled = false;
       submitBtn.textContent = 'Entrar';
     }
+  });
+
+  function showError(message: string) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add('show');
+  }
+
+  function hideError() {
+    errorMessage.textContent = '';
+    errorMessage.classList.remove('show');
+  }
+
+  // Limpar erro ao digitar
+  const inputs = form?.querySelectorAll('input');
+  inputs?.forEach((input) => {
+    input.addEventListener('input', hideError);
   });
 </script>

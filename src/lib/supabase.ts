@@ -11,7 +11,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase credentials are required. Check your .env file.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'sb-auth-token',
+  }
+});
 
 // Tipos do banco de dados
 export interface Product {
@@ -61,7 +68,6 @@ export const productService = {
       console.error('Erro ao buscar produto por ID:', error);
       return null;
     }
-    // Corrigir categoria para ser objeto, não array
     let categoria: Category | undefined = undefined;
     if (data && Array.isArray(data.categoria) && data.categoria.length > 0) {
       categoria = data.categoria[0];
@@ -90,14 +96,12 @@ export const productService = {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    // Corrigir categoria para ser objeto, não array
     return (data ?? []).map((item: any) => ({
       ...item,
       categoria: Array.isArray(item.categoria) && item.categoria.length > 0 ? item.categoria[0] : undefined
     })) as (Product & { categoria: Category })[];
   },
 
-  // Paginação cursor-based (mais eficiente)
   async getPaginated(cursor?: string | null, limit: number = 30) {
     let query = supabase
       .from('produtos')
@@ -119,7 +123,6 @@ export const productService = {
       .order('created_at', { ascending: false })
       .limit(limit);
     
-    // Cursor-based pagination (mais eficiente que offset)
     if (cursor) {
       query = query.lt('created_at', cursor);
     }
@@ -137,7 +140,6 @@ export const productService = {
     };
   },
 
-  // Paginação por categoria
   async getByCategory(categoriaId: string, cursor?: string | null, limit: number = 30) {
     let query = supabase
       .from('produtos')
@@ -177,7 +179,6 @@ export const productService = {
     };
   },
 
-  // Manter offset-based para compatibilidade (deprecated)
   async getPaginatedOffset(page: number = 0, limit: number = 30) {
     const from = page * limit;
     const to = from + limit - 1;
@@ -240,7 +241,6 @@ export const productService = {
 
   async delete(id: string) {
     const { error } = await supabase.from('produtos').delete().eq('id', id);
-
     if (error) throw error;
   },
 
@@ -256,7 +256,6 @@ export const productService = {
     if (uploadError) throw uploadError;
 
     const { data } = supabase.storage.from('imagens').getPublicUrl(filePath);
-
     return data.publicUrl;
   },
 };
@@ -270,7 +269,6 @@ export const categoryService = {
       .order('nome');
 
     if (error) throw error;
-
     return data as Category[];
   },
 
@@ -299,12 +297,11 @@ export const categoryService = {
 
   async delete(id: string) {
     const { error } = await supabase.from('categorias').delete().eq('id', id);
-
     if (error) throw error;
   },
 };
 
-// Autenticação
+// Autenticação - MELHORADO
 export const authService = {
   async signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -313,59 +310,51 @@ export const authService = {
     });
 
     if (error) throw error;
-    
-    // ✅ Salvar no localStorage para client-side
-    if (data.session?.access_token) {
-      localStorage.setItem('sb-access-token', data.session.access_token);
-      localStorage.setItem('sb-auth-time', Date.now().toString());
-    }
-    
     return data;
   },
 
   async signOut() {
-    await supabase.auth.signOut();
-    localStorage.removeItem('sb-access-token');
-    localStorage.removeItem('sb-auth-time');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+    // Limpar storage manual caso necessário
+    localStorage.removeItem('sb-auth-token');
   },
 
   async getSession() {
-    const token = localStorage.getItem('sb-access-token');
-    const authTime = localStorage.getItem('sb-auth-time');
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    if (token && authTime) {
-      const elapsed = Date.now() - parseInt(authTime);
-      if (elapsed < sevenDays) {
-        // Token ainda válido, garantir sessão real do Supabase
-        // Tenta restaurar sessão usando o token
-        // Supabase já deve ter restaurado a sessão se o token foi salvo corretamente
-        const { data } = await supabase.auth.getSession();
-        if (data.session && data.session.access_token === token) {
-          return data.session;
-        }
-        // Se não, tenta forçar o setSession
-        try {
-          const { data: setData, error } = await supabase.auth.setSession({
-            access_token: token,
-            refresh_token: '', // refresh_token não disponível no localStorage
-          });
-          if (!error && setData.session) {
-            return setData.session;
-          }
-        } catch {}
-      } else {
-        localStorage.removeItem('sb-access-token');
-        localStorage.removeItem('sb-auth-time');
-      }
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Erro ao obter sessão:', error);
+      return null;
     }
-    // Fallback: tentar obter do Supabase
-    const { data } = await supabase.auth.getSession();
+    
     return data.session;
   },
 
+  async getUser() {
+    const { data, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      console.error('Erro ao obter usuário:', error);
+      return null;
+    }
+    
+    return data.user;
+  },
+
   onAuthStateChange(callback: (session: any) => void) {
-    return supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       callback(session);
     });
+    
+    return subscription;
   },
+
+  // Verifica se está autenticado (método mais rápido)
+  async isAuthenticated(): Promise<boolean> {
+    const session = await this.getSession();
+    return session !== null && session.expires_at ? session.expires_at * 1000 > Date.now() : false;
+  }
 };
