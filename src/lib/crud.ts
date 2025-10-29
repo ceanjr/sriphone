@@ -32,12 +32,18 @@ export async function criarCategoria(nome: string) {
       body: JSON.stringify({ nome: nome.trim() }),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Erro ao criar categoria');
+    let result = null;
+    const text = await response.text();
+    if (text) {
+      try {
+        result = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Resposta inválida da API: ' + text);
+      }
     }
-
+    if (!response.ok) {
+      throw new Error((result && result.error) || 'Erro ao criar categoria');
+    }
     return result;
   } catch (error: any) {
     console.error('Erro ao criar categoria:', error);
@@ -103,10 +109,12 @@ export async function deletarCategoria(id: string) {
 
 export async function criarProduto(produto: any) {
   try {
+    // Remover campo 'ativo' do payload
+    const { ativo, ...produtoSemAtivo } = produto;
     const response = await fetch('/api/admin/produtos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(produto),
+      body: JSON.stringify(produtoSemAtivo),
     });
 
     const result = await response.json();
@@ -121,6 +129,13 @@ export async function criarProduto(produto: any) {
     return { success: false, error: error.message || 'Erro ao criar produto' };
   }
 }
+  // Remover campo 'ativo' do payload
+  const { ativo, ...produtoSemAtivo } = produto;
+  const response = await fetch('/api/admin/produtos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(produtoSemAtivo),
+  });
 
 export async function editarProduto(id: string, produto: any) {
   try {
@@ -128,10 +143,12 @@ export async function editarProduto(id: string, produto: any) {
       return { success: false, error: 'ID é obrigatório' };
     }
 
+    // Remover campo 'ativo' do payload
+    const { ativo, ...produtoSemAtivo } = produto;
     const response = await fetch(`/api/admin/produtos/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(produto),
+      body: JSON.stringify(produtoSemAtivo),
     });
 
     const result = await response.json();
