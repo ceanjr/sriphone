@@ -153,13 +153,9 @@ export const prerender = false;
     listRoot.innerHTML = '<div class="admin-list-loading">Carregando...</div>';
 
     try {
-      const res = await getCategorias();
-
-      if (!res.success) {
-        throw new Error(res.error || 'Erro ao carregar');
-      }
-
-      const categorias = res.data || [];
+      const res = await fetch('/api/admin/metricas');
+      const { data } = await res.json();
+      const categorias = data?.categorias || [];
 
       if (categorias.length === 0) {
         listRoot.innerHTML = `<div class="admin-empty-state">

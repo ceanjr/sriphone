@@ -1,4 +1,4 @@
---- 
+---
 // ✅ MUDANÇA: SSR - Gerar página de produto dinamicamente
 export const prerender = false;
 
@@ -36,39 +36,42 @@ function getBateriaColor(bateria: number): string {
 
 // Schema.org structured data para SEO
 const schemaData = {
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": produto.nome,
-  "description": produto.descricao,
-  "image": produto.imagens || [],
-  "brand": {
-    "@type": "Brand",
-    "name": "Apple"
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: produto.nome,
+  description: produto.descricao,
+  image: produto.imagens || [],
+  brand: {
+    '@type': 'Brand',
+    name: 'Apple',
   },
-  "offers": {
-    "@type": "Offer",
-    "price": produto.preco,
-    "priceCurrency": "BRL",
-    "availability": "https://schema.org/InStock",
-    "seller": {
-      "@type": "Organization",
-      "name": "Sr. IPHONE"
-    }
+  offers: {
+    '@type': 'Offer',
+    price: produto.preco,
+    priceCurrency: 'BRL',
+    availability: 'https://schema.org/InStock',
+    seller: {
+      '@type': 'Organization',
+      name: 'Sr. IPHONE',
+    },
   },
-  "category": produto.categoria?.nome || "iPhone",
-  "itemCondition": produto.condicao === "Novo" ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition"
+  category: produto.categoria?.nome || 'iPhone',
+  itemCondition:
+    produto.condicao === 'Novo'
+      ? 'https://schema.org/NewCondition'
+      : 'https://schema.org/UsedCondition',
 };
 ---
 
-<Layout
-  title={`${produto.nome} | Sr. IPHONE`}
-  description={metaDescription}
->
+<Layout title={`${produto.nome} | Sr. IPHONE`} description={metaDescription}>
   <fragment slot="head">
     <link rel="canonical" href={canonicalURL} />
     <meta property="og:title" content={`${produto.nome} | Sr. IPHONE`} />
     <meta property="og:description" content={metaDescription} />
-    <meta property="og:image" content={imagemOg !== '/placeholder.jpg' ? imagemOg : '/og-image.jpg'} />
+    <meta
+      property="og:image"
+      content={imagemOg !== '/placeholder.jpg' ? imagemOg : '/og-image.jpg'}
+    />
     <meta property="og:type" content="product" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:price:amount" content={produto.preco.toString()} />
@@ -78,8 +81,11 @@ const schemaData = {
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={`${produto.nome} | Sr. IPHONE`} />
     <meta name="twitter:description" content={metaDescription} />
-    <meta name="twitter:image" content={imagemOg !== '/placeholder.jpg' ? imagemOg : '/og-image.jpg'} />
-    
+    <meta
+      name="twitter:image"
+      content={imagemOg !== '/placeholder.jpg' ? imagemOg : '/og-image.jpg'}
+    />
+
     <!-- Schema.org JSON-LD -->
     <script type="application/ld+json" set:html={JSON.stringify(schemaData)} />
   </fragment>
@@ -92,59 +98,103 @@ const schemaData = {
         <!-- Galeria de Imagens -->
         <div class="produto-galeria">
           <div class="main-image-container">
-            <img 
+            <img
               id="main-image"
-              src={imagemPrincipal} 
+              src={imagemPrincipal}
               alt={produto.nome}
               class="main-image"
             />
           </div>
 
-          {produto.imagens && produto.imagens.length > 1 && (
-            <div class="thumbnails-container">
-              <div class="thumbnails-track">
-                {produto.imagens.map((img, index) => {
-                  const thumbUrl = utils.getImageUrl(produto.imagens, 'thumbnail', index);
-                  const largeUrl = utils.getImageUrl(produto.imagens, 'large', index);
-                  return (
-                    <button 
-                      class={`thumbnail ${index === 0 ? 'active' : ''}`}
-                      data-image={largeUrl}
-                      aria-label={`Ver imagem ${index + 1}`}
-                    >
-                      <img src={thumbUrl} alt={`${produto.nome} - Imagem ${index + 1}`} />
-                    </button>
-                  );
-                })}
+          {
+            produto.imagens && produto.imagens.length > 1 && (
+              <div class="thumbnails-container">
+                <div class="thumbnails-track">
+                  {produto.imagens.map((img, index) => {
+                    const thumbUrl = utils.getImageUrl(
+                      produto.imagens,
+                      'thumbnail',
+                      index,
+                    );
+                    const largeUrl = utils.getImageUrl(
+                      produto.imagens,
+                      'large',
+                      index,
+                    );
+                    return (
+                      <button
+                        class={`thumbnail ${index === 0 ? 'active' : ''}`}
+                        data-image={largeUrl}
+                        aria-label={`Ver imagem ${index + 1}`}
+                      >
+                        <img
+                          src={thumbUrl}
+                          alt={`${produto.nome} - Imagem ${index + 1}`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
         </div>
 
         <!-- Informações do Produto -->
         <div class="produto-info">
           <div class="produto-header">
             <div class="produto-badges">
-              <span class="badge badge-categoria">{produto.categoria?.nome || 'iPhone'}</span>
-              {produto.bateria && produto.bateria > 0 ? (
-                <span class={`badge badge-bateria ${getBateriaColor(produto.bateria)}`}>
-                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" stroke-width="2"/>
-                    <path d="M20 10H22V14H20" stroke="currentColor" stroke-width="2"/>
-                    <rect x="4" y="9" width={(produto.bateria / 100) * 14} height="6" rx="1" fill="currentColor"/>
-                  </svg>
-                  {produto.bateria}%
-                </span>
-              ) : (
-                <span class="badge badge-condicao">{produto.condicao}</span>
-              )}
+              <span class="badge badge-categoria"
+                >{produto.categoria?.nome || 'iPhone'}</span
+              >
+              {
+                produto.bateria && produto.bateria > 0 ? (
+                  <span
+                    class={`badge badge-bateria ${getBateriaColor(produto.bateria)}`}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect
+                        x="2"
+                        y="7"
+                        width="18"
+                        height="10"
+                        rx="2"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                      <path
+                        d="M20 10H22V14H20"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      />
+                      <rect
+                        x="4"
+                        y="9"
+                        width={(produto.bateria / 100) * 14}
+                        height="6"
+                        rx="1"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    {produto.bateria}%
+                  </span>
+                ) : (
+                  <span class="badge badge-condicao">{produto.condicao}</span>
+                )
+              }
             </div>
-            
+
             <h1>{produto.nome}</h1>
-            
-            {produto.codigo && (
-              <p class="produto-codigo">Cód.: {produto.codigo}</p>
-            )}
+
+            {
+              produto.codigo && (
+                <p class="produto-codigo">Cód.: {produto.codigo}</p>
+              )
+            }
           </div>
 
           <div class="produto-descricao">
@@ -156,17 +206,21 @@ const schemaData = {
               <span class="spec-label">Condição</span>
               <span class="spec-value">{produto.condicao}</span>
             </div>
-            
-            {produto.bateria && produto.bateria > 0 && (
-              <div class="spec-item">
-                <span class="spec-label">Bateria</span>
-                <span class="spec-value">{produto.bateria}%</span>
-              </div>
-            )}
-            
+
+            {
+              produto.bateria && produto.bateria > 0 && (
+                <div class="spec-item">
+                  <span class="spec-label">Bateria</span>
+                  <span class="spec-value">{produto.bateria}%</span>
+                </div>
+              )
+            }
+
             <div class="spec-item">
               <span class="spec-label">Categoria</span>
-              <span class="spec-value">{produto.categoria?.nome || 'iPhone'}</span>
+              <span class="spec-value"
+                >{produto.categoria?.nome || 'iPhone'}</span
+              >
             </div>
           </div>
 
@@ -176,21 +230,36 @@ const schemaData = {
           </div>
 
           <div class="produto-actions">
-            <a 
+            <a
               href={`https://wa.me/5577981022246?text=${encodeURIComponent(`Olá! Tenho interesse no *${produto.nome}*${produto.codigo ? `\nCódigo: ${produto.codigo}` : ''}\n\nLink: ${canonicalURL}`)}`}
               class="btn-whatsapp"
               target="_blank"
               rel="noopener noreferrer"
             >
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582" fill="currentColor"/>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M17.472 14.382C17.015 14.153 14.98 13.146 14.571 12.996C14.162 12.846 13.868 12.771 13.573 13.229C13.278 13.687 12.463 14.617 12.206 14.912C11.949 15.207 11.692 15.245 11.235 15.016C10.778 14.787 9.26 14.285 7.463 12.676C6.06 11.418 5.146 9.867 4.889 9.409C4.632 8.951 4.861 8.712 5.09 8.483C5.296 8.277 5.547 7.947 5.776 7.69C6.005 7.433 6.081 7.252 6.231 6.957C6.381 6.662 6.306 6.405 6.192 6.176C6.081 5.947 5.146 3.912 4.775 2.996C4.418 2.108 4.051 2.228 3.78 2.215C3.522 2.202 3.228 2.202 2.933 2.202C2.638 2.202 2.143 2.316 1.734 2.774C1.325 3.232 0.242 4.239 0.242 6.274C0.242 8.309 1.772 10.269 1.997 10.564C2.226 10.859 5.146 15.229 9.588 17.002C10.627 17.458 11.437 17.725 12.064 17.923C13.108 18.254 14.057 18.206 14.813 18.092C15.654 17.964 17.31 17.077 17.681 16.099C18.052 15.121 18.052 14.305 17.938 14.115C17.824 13.925 17.529 13.811 17.072 13.582"
+                  fill="currentColor"></path>
               </svg>
               Consultar no WhatsApp
             </a>
-            
+
             <a href="/catalogo" class="btn-voltar">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M19 12H5M5 12L12 19M5 12L12 5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
               </svg>
               Voltar ao Catálogo
             </a>
@@ -205,14 +274,30 @@ const schemaData = {
     <button class="modal-close-expandido" aria-label="Fechar">×</button>
     <img id="imagem-expandida" src="" alt="Imagem expandida" />
     <div class="contador-imagens"></div>
-    <button class="nav-btn-expanded nav-prev-expanded" aria-label="Imagem anterior">
+    <button
+      class="nav-btn-expanded nav-prev-expanded"
+      aria-label="Imagem anterior"
+    >
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path
+          d="M15 18L9 12L15 6"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path>
       </svg>
     </button>
-    <button class="nav-btn-expanded nav-next-expanded" aria-label="Próxima imagem">
+    <button
+      class="nav-btn-expanded nav-next-expanded"
+      aria-label="Próxima imagem"
+    >
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path
+          d="M9 18L15 12L9 6"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path>
       </svg>
     </button>
   </div>
@@ -224,16 +309,22 @@ const schemaData = {
   // Galeria de imagens
   const mainImage = document.getElementById('main-image') as HTMLImageElement;
   const thumbnails = document.querySelectorAll('.thumbnail');
-  const modalExpandido = document.getElementById('modal-expandido') as HTMLElement;
-  const imagemExpandida = document.getElementById('imagem-expandida') as HTMLImageElement;
-  const btnCloseExpandido = modalExpandido?.querySelector('.modal-close-expandido');
+  const modalExpandido = document.getElementById(
+    'modal-expandido',
+  ) as HTMLElement;
+  const imagemExpandida = document.getElementById(
+    'imagem-expandida',
+  ) as HTMLImageElement;
+  const btnCloseExpandido = modalExpandido?.querySelector(
+    '.modal-close-expandido',
+  );
   const contadorImagens = modalExpandido?.querySelector('.contador-imagens');
   const navPrevExpanded = modalExpandido?.querySelector('.nav-prev-expanded');
   const navNextExpanded = modalExpandido?.querySelector('.nav-next-expanded');
 
   let currentIndex = 0;
   let imagens: string[] = [];
-  
+
   // Coletar todas as imagens
   thumbnails.forEach((thumb, index) => {
     const imageUrl = (thumb as HTMLElement).dataset.image;
@@ -250,9 +341,9 @@ const schemaData = {
       if (imageUrl && mainImage) {
         mainImage.src = imageUrl;
         currentIndex = index;
-        
+
         // Atualizar thumbnail ativa
-        thumbnails.forEach(t => t.classList.remove('active'));
+        thumbnails.forEach((t) => t.classList.remove('active'));
         thumb.classList.add('active');
       }
     });
@@ -267,14 +358,14 @@ const schemaData = {
 
   function expandirImagem(index: number) {
     if (!imagemExpandida || !modalExpandido) return;
-    
+
     currentIndex = index;
     imagemExpandida.src = imagens[currentIndex];
-    
+
     if (contadorImagens) {
       contadorImagens.textContent = `${currentIndex + 1} / ${imagens.length}`;
     }
-    
+
     updateNavButtonsExpanded();
     modalExpandido.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -295,10 +386,12 @@ const schemaData = {
 
   function updateNavButtonsExpanded() {
     if (navPrevExpanded) {
-      (navPrevExpanded as HTMLElement).style.display = currentIndex > 0 ? 'flex' : 'none';
+      (navPrevExpanded as HTMLElement).style.display =
+        currentIndex > 0 ? 'flex' : 'none';
     }
     if (navNextExpanded) {
-      (navNextExpanded as HTMLElement).style.display = currentIndex < imagens.length - 1 ? 'flex' : 'none';
+      (navNextExpanded as HTMLElement).style.display =
+        currentIndex < imagens.length - 1 ? 'flex' : 'none';
     }
   }
 
@@ -313,7 +406,7 @@ const schemaData = {
   // Navegação por teclado
   document.addEventListener('keydown', (e) => {
     if (!modalExpandido?.classList.contains('active')) return;
-    
+
     if (e.key === 'Escape') fecharExpandido();
     else if (e.key === 'ArrowLeft') navegarExpandida(-1);
     else if (e.key === 'ArrowRight') navegarExpandida(1);
@@ -324,20 +417,28 @@ const schemaData = {
   let touchEndX = 0;
   const minSwipeDistance = 50;
 
-  modalExpandido?.addEventListener('touchstart', (e) => {
-    touchStartX = e.changedTouches[0].screenX;
-  }, { passive: true });
+  modalExpandido?.addEventListener(
+    'touchstart',
+    (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    },
+    { passive: true },
+  );
 
-  modalExpandido?.addEventListener('touchend', (e) => {
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-  }, { passive: true });
+  modalExpandido?.addEventListener(
+    'touchend',
+    (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    },
+    { passive: true },
+  );
 
   function handleSwipe() {
     const swipeDistance = touchEndX - touchStartX;
-    
+
     if (Math.abs(swipeDistance) < minSwipeDistance) return;
-    
+
     if (swipeDistance > 0) {
       // Swipe right - imagem anterior
       navegarExpandida(-1);
@@ -345,5 +446,16 @@ const schemaData = {
       // Swipe left - próxima imagem
       navegarExpandida(1);
     }
+  }
+</script>
+<script>
+  // Registrar visualização (única por sessão)
+  const produtoId = window.location.pathname.split('/').pop();
+  const viewKey = `viewed_${produtoId}`;
+
+  if (!sessionStorage.getItem(viewKey)) {
+    fetch(`/api/produtos/${produtoId}/visualizar`, { method: 'POST' })
+      .then(() => sessionStorage.setItem(viewKey, '1'))
+      .catch(console.error);
   }
 </script>

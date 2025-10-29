@@ -1,28 +1,18 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import DashboardHeader from '../../components/admin/DashboardHeader.astro';
-import { supabaseAdmin } from '../../lib/supabaseAdmin';
 import '../../styles/pages/admin/dashboard.css';
 
 export const prerender = false; // Força SSR sem cache para admin
 
-// Buscar estatísticas
-const { data: produtos } = await supabaseAdmin
-  .from('produtos')
-  .select('id, ativo, visualizacoes_total');
+const { data: metricas } = await fetch(
+  new URL('/api/admin/metricas', Astro.url),
+).then((r) => r.json());
 
-const totalProdutos = produtos?.length || 0;
-const produtosAtivos = produtos?.filter((p) => p.ativo).length || 0;
-const produtosInativos = totalProdutos - produtosAtivos;
-const totalVisualizacoes =
-  produtos?.reduce((acc, p) => acc + (p.visualizacoes_total || 0), 0) || 0;
-
-// Top 5 produtos mais visualizados
-const { data: topProdutos } = await supabaseAdmin
-  .from('produtos')
-  .select('id, nome, visualizacoes_total, foto_principal')
-  .order('visualizacoes_total', { ascending: false })
-  .limit(5);
+const totalProdutos = metricas?.totalProdutos || 0;
+const produtosAtivos = metricas?.produtosAtivos || 0;
+const produtosInativos = metricas?.produtosInativos || 0;
+const totalVisualizacoes = metricas?.totalVisualizacoes || 0;
 ---
 
 <AdminLayout
@@ -56,9 +46,6 @@ const { data: topProdutos } = await supabaseAdmin
           </div>
           <div class="dashboard-stat-card-body">
             <div class="dashboard-stat-card-value">{totalProdutos}</div>
-            <p class="dashboard-stat-card-description">
-              {produtosAtivos} ativos, {produtosInativos} inativos
-            </p>
           </div>
         </div>
 
