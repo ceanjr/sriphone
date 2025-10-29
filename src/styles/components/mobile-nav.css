@@ -12,8 +12,11 @@
   justify-content: space-around;
   align-items: center;
   z-index: 100;
+  backdrop-filter: blur(8px);
+  background: rgba(10, 10, 10, 0.9);
 }
 
+/* Cada item da barra inferior */
 .mobile-nav-item {
   display: flex;
   flex-direction: column;
@@ -53,9 +56,29 @@
   font-size: 11px;
 }
 
+/* Compensar o espaço da nav inferior */
+body {
+  padding-bottom: 64px; /* mesma altura da barra */
+}
+
+/* Evitar sobreposição de elementos fixos */
+.admin-main,
+.dashboard-content {
+  padding-bottom: 80px; /* dá um respiro extra abaixo */
+}
+
 /* Ocultar em telas grandes */
 @media (min-width: 1024px) {
   .mobile-bottom-nav {
     display: none;
+  }
+
+  body {
+    padding-bottom: 0;
+  }
+
+  .admin-main,
+  .dashboard-content {
+    padding-bottom: 0;
   }
 }
