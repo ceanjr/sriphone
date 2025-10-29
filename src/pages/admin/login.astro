@@ -71,17 +71,21 @@ import '../../styles/pages/admin/login.css';
   async function checkIfAlreadyAuthenticated() {
     try {
       const isAuth = await authService.isAuthenticated();
+      // Só redireciona se realmente estiver autenticado (sessão válida)
       if (isAuth) {
-        // Já está autenticado, redirecionar para dashboard
         window.location.href = '/admin/dashboard';
       }
     } catch (error) {
+      // Não faz nada se não estiver autenticado
+      // Apenas loga o erro para debug
       console.error('Erro ao verificar autenticação:', error);
     }
   }
 
-  // Executar verificação imediatamente
-  checkIfAlreadyAuthenticated();
+  // Executar verificação imediatamente, mas apenas se não houver tentativa de login em andamento
+  if (!localStorage.getItem('sb-auth-token')) {
+    checkIfAlreadyAuthenticated();
+  }
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById(
