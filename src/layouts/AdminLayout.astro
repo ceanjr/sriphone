@@ -3,7 +3,6 @@ import Layout from './Layout.astro';
 import Sidebar from '../components/admin/Sidebar.astro';
 import MobileNav from '../components/admin/MobileNav.astro';
 import Toast from '../components/admin/Toast.astro';
-import ConfirmModal from '../components/admin/ConfirmModal.astro';
 import '../styles/admin.css';
 import { verifyAuth } from '../lib/auth';
 
@@ -59,7 +58,4 @@ try {
 
   <!-- Toast Notifications -->
   <Toast />
-
-  <!-- Confirm Modal -->
-  <ConfirmModal />
 </Layout>
