@@ -27,10 +27,24 @@ const currentPath = Astro.url.pathname;
       aria-label="Abrir menu"
     >
       <svg id="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"></path>
       </svg>
-      <svg id="close-icon" class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      <svg
+        id="close-icon"
+        class="hidden"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"></path>
       </svg>
     </button>
   </div>
@@ -38,23 +52,27 @@ const currentPath = Astro.url.pathname;
   <!-- Menu Dropdown -->
   <div id="mobile-menu" class="mobile-menu-dropdown hidden">
     <nav class="mobile-menu-nav">
-      {menuItems.map((item) => {
-        const isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
-        return (
-          <a
-            href={item.href}
-            class={`mobile-menu-item ${isActive ? 'active' : ''}`}
-          >
-            <span class="mobile-menu-icon">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke-width="2" />
-              </svg>
-            </span>
-            <span>{item.title}</span>
-            {isActive && <span class="mobile-menu-badge">ativo</span>}
-          </a>
-        );
-      })}
+      {
+        menuItems.map((item) => {
+          const isActive =
+            currentPath === item.href ||
+            currentPath.startsWith(item.href + '/');
+          return (
+            <a
+              href={item.href}
+              class={`mobile-menu-item ${isActive ? 'active' : ''}`}
+            >
+              <span class="mobile-menu-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" stroke-width="2" />
+                </svg>
+              </span>
+              <span>{item.title}</span>
+              {isActive && <span class="mobile-menu-badge">ativo</span>}
+            </a>
+          );
+        })
+      }
 
       <!-- Link Catálogo -->
       <a
@@ -65,7 +83,12 @@ const currentPath = Astro.url.pathname;
       >
         <span class="mobile-menu-icon">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            ></path>
           </svg>
         </span>
         <span>Ver Catálogo</span>
@@ -74,12 +97,14 @@ const currentPath = Astro.url.pathname;
 
     <!-- Logout -->
     <div class="mobile-menu-footer">
-      <button
-        id="mobile-logout-btn"
-        class="mobile-logout-btn"
-      >
+      <button type="button" id="mobile-logout-btn" class="mobile-logout-btn">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+          ></path>
         </svg>
         Sair da conta
       </button>
@@ -92,10 +117,9 @@ const currentPath = Astro.url.pathname;
   type="button"
   id="mobile-backdrop"
   class="mobile-backdrop hidden"
-  aria-label="Fechar menu"
-></button>
+  aria-label="Fechar menu"></button>
 
-<script>
+<script is:inline>
   import { authService } from '../../lib/supabase';
 
   // Aguardar DOM carregar completamente
@@ -107,7 +131,11 @@ const currentPath = Astro.url.pathname;
     const closeIcon = document.getElementById('close-icon');
     const logoutBtn = document.getElementById('mobile-logout-btn');
 
-    console.log('MobileNav: Elementos carregados', { menuBtn, mobileMenu, backdrop });
+    console.log('MobileNav: Elementos carregados', {
+      menuBtn,
+      mobileMenu,
+      backdrop,
+    });
 
     function toggleMenu() {
       if (!mobileMenu || !backdrop) {
