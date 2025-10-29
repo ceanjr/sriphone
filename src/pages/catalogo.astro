@@ -1,5 +1,6 @@
 ---
-// ✅ OTIMIZAÇÃO: SSG com ISR para melhor performance
+// src/pages/catalogo.astro
+// CRITICAL: SSR puro - sempre busca dados frescos
 export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
@@ -7,7 +8,6 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Toast from '../components/admin/Toast.astro';
 
-// ✅ Componentes modulares do catálogo
 import SearchBar from '../components/catalog/SearchBar.astro';
 import EmptyState from '../components/catalog/EmptyState.astro';
 import LoadingSpinner from '../components/catalog/LoadingSpinner.astro';
@@ -15,38 +15,46 @@ import ViewModeSwitcher from '../components/catalog/ViewModeSwitcher.astro';
 import CategoryFilters from '../components/catalog/CategoryFilters.astro';
 import ProductCardSkeleton from '../components/catalog/ProductCardSkeleton.astro';
 
-// ✅ CSS modular - Critical CSS inline, resto lazy load
-// Apenas o CSS essencial é carregado inicialmente
-import '../styles/catalog/variables.css'; // Tokens CSS (crítico)
+import '../styles/catalog/variables.css';
 import '../styles/pages/catalogo.css';
 import '../styles/catalog/grid.css';
 import '../styles/catalog/card.css';
 import '../styles/catalog/animations.css';
-import '../styles/admin.css'; // Estilos dos modais admin
+import '../styles/admin.css';
 
-
-// ✅ OTIMIZAÇÃO: Buscar dados no servidor para SSG
 import { productService, categoryService } from '../lib/supabase';
+
+// CRITICAL: Desabilitar cache - sempre buscar dados frescos
+Astro.response.headers.set(
+  'Cache-Control',
+  'no-cache, no-store, must-revalidate',
+);
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+
+// Buscar dados frescos sempre
 const produtosIniciais = await productService.getPaginated(undefined, 30);
 const categorias = await categoryService.getAll();
 
+console.log('📊 SSR Catalogo:', {
+  produtos: produtosIniciais.produtos?.length || 0,
+  categorias: categorias?.length || 0,
+  timestamp: new Date().toISOString(),
+});
+
 const metaDescription =
-  'Explore nossa coleção exclusiva de iPhones novos e seminovos com garantia. Preços competitivos e qualidade certificada.';
+  'Explore nossa coleção exclusiva de iPhones novos e seminovos com garantia.';
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
-<Layout
-  title="Catálogo | Sr. IPHONE "
-  description="Explore nossa seleção exclusiva de iPhones seminovos com garantia e qualidade certificada."
->
+<Layout title="Catálogo | Sr. IPHONE" description={metaDescription}>
   <fragment slot="head">
     <link rel="canonical" href={canonicalURL} />
     <meta property="og:title" content="Catálogo Exclusivo | Sr. IPHONE" />
     <meta property="og:description" content={metaDescription} />
-    <meta property="og:image" content="/og-image.jpg" />
-    <meta name="twitter:card" content="summary_large_image" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
+    <meta name="robots" content="index, follow" />
   </fragment>
 
   <Header />
@@ -76,17 +84,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
     <section class="filtros-section">
       <div class="container">
-        <!-- ✅ Componente de busca modular -->
         <SearchBar />
 
-        <!-- Filtros -->
         <div class="filtros-container">
-          <!-- ✅ Filtros de categoria (desktop) -->
           <div class="categoria-filtros desktop-only">
             <CategoryFilters categorias={categorias} categoriaAtiva="todos" />
           </div>
 
-          <!-- ✅ Select de categoria (mobile) -->
           <select id="categoria-select" class="categoria-select mobile-only">
             <option value="todos">Todos</option>
             {
@@ -96,7 +100,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             }
           </select>
 
-          <!-- Outros Filtros -->
           <button class="toggle-filtros" id="toggle-filtros">
             <svg
               viewBox="0 0 24 24"
@@ -147,50 +150,40 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
             </button>
           </div>
 
-          <!-- ✅ Componente de visualização modular -->
           <div class="visualizacao-container">
             <span>Modos de Visualização</span>
             <ViewModeSwitcher />
           </div>
         </div>
       </div>
-
-      <section class="produtos-section">
-        <div class="container">
-          <!-- ✅ Skeleton loading durante carregamento inicial -->
-          <div id="produtos-skeleton" style="display: none;">
-            <div class="produtos-grid grade">
-              <ProductCardSkeleton />
-              <ProductCardSkeleton />
-              <ProductCardSkeleton />
-              <ProductCardSkeleton />
-              <ProductCardSkeleton />
-              <ProductCardSkeleton />
-            </div>
-          </div>
-
-          <!-- ✅ Componente de loading -->
-          <LoadingSpinner />
-
-          <!-- Container de produtos -->
-          <div id="produtos-container"></div>
-
-          <!-- Loading mais produtos -->
-          <div id="loading-more" class="loading-more" style="display: none;">
-            <div class="spinner-small"></div>
-            <p>Carregando mais produtos...</p>
-          </div>
-
-          <!-- Sentinel para scroll infinito -->
-          <div id="scroll-sentinel" style="height: 1px;"></div>
-
-          <!-- ✅ Componente de estado vazio -->
-          <EmptyState />
-        </div>
-      </section>
     </section>
 
-    <!-- ✅ OTIMIZAÇÃO: Dados iniciais inline para SSG -->
+    <section class="produtos-section">
+      <div class="container">
+        <div id="produtos-skeleton" style="display: none;">
+          <div class="produtos-grid grade">
+            <ProductCardSkeleton />
+            <ProductCardSkeleton />
+            <ProductCardSkeleton />
+            <ProductCardSkeleton />
+            <ProductCardSkeleton />
+            <ProductCardSkeleton />
+          </div>
+        </div>
+
+        <LoadingSpinner />
+        <div id="produtos-container"></div>
+
+        <div id="loading-more" class="loading-more" style="display: none;">
+          <div class="spinner-small"></div>
+          <p>Carregando mais produtos...</p>
+        </div>
+
+        <div id="scroll-sentinel" style="height: 1px;"></div>
+        <EmptyState />
+      </div>
+    </section>
+
     <script
       type="application/json"
       id="initial-data"
@@ -198,212 +191,211 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         produtos: produtosIniciais.produtos,
         nextCursor: produtosIniciais.nextCursor,
         categorias: categorias,
+        timestamp: Date.now(),
       })}
     />
 
     <Footer />
   </main>
 
-  <script>
-    // ✅ REFATORAÇÃO COMPLETA: Uso de módulos centralizados
-    import { authService } from '../lib/supabase';
+  <Toast />
+</Layout>
 
-    // ✅ Importações modulares do catálogo
-    import {
-      initState,
-      getState,
-      updateState,
-      updateFiltros,
-    } from '../lib/catalog/core/state';
-    import { CATALOG_CONFIG } from '../lib/catalog/core/config';
-    import {
-      filtrarProdutos,
-      ordenarProdutos,
-      agruparPorCategoria,
-    } from '../lib/catalog/logic';
-    import { renderer } from '../lib/catalog/render/renderer';
-    import { templates } from '../lib/catalog/render/templates';
-    import { createHandlers } from '../lib/catalog/ui/handlers';
-    import {
-      catalogEvents,
-      onEvent,
-      emitEvent,
-    } from '../lib/catalog/ui/events';
-    import { imageLoader } from '../lib/catalog/performance/imageLoader';
-    import { metrics } from '../lib/catalog/performance/metrics';
-    import { utils, getBateriaColor } from '../lib/catalog/utils';
-    import type { CatalogState } from '../lib/catalog/logic/filters';
+<script>
+  import { authService } from '../lib/supabase';
+  import {
+    initState,
+    getState,
+    updateState,
+    updateFiltros,
+  } from '../lib/catalog/core/state';
+  import { CATALOG_CONFIG } from '../lib/catalog/core/config';
+  import {
+    filtrarProdutos,
+    ordenarProdutos,
+    agruparPorCategoria,
+  } from '../lib/catalog/logic';
+  import { renderer } from '../lib/catalog/render/renderer';
+  import { templates } from '../lib/catalog/render/templates';
+  import { createHandlers } from '../lib/catalog/ui/handlers';
+  import { catalogEvents, onEvent, emitEvent } from '../lib/catalog/ui/events';
+  import { imageLoader } from '../lib/catalog/performance/imageLoader';
+  import { metrics } from '../lib/catalog/performance/metrics';
+  import { utils, getBateriaColor } from '../lib/catalog/utils';
 
-    // ==================== Carregar Dados Iniciais ====================
-    const initialDataEl = document.getElementById('initial-data');
-    const initialData = initialDataEl
-      ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}')
-      : {};
+  // Carregar dados iniciais
+  const initialDataEl = document.getElementById('initial-data');
+  const initialData = initialDataEl
+    ? JSON.parse(initialDataEl.innerHTML || initialDataEl.textContent || '{}')
+    : {};
 
-    // ==================== Inicializar Estado ====================
-    const state = initState(initialData);
+  console.log('🚀 Inicializando catálogo com dados:', {
+    produtos: initialData.produtos?.length || 0,
+    timestamp: new Date(initialData.timestamp).toISOString(),
+  });
 
-    // ✅ Habilitar métricas de performance
-    if (CATALOG_CONFIG.performance.enableWebVitals) {
-      metrics.enableWebVitals();
-    }
+  // Inicializar estado
+  const state = initState(initialData);
 
-    // ==================== Elementos DOM ====================
-    const elementos = {
-      searchInput: document.getElementById('search-input') as HTMLInputElement,
-      toggleFiltros: document.getElementById('toggle-filtros'),
-      filtrosAvancados: document.getElementById('filtros-avancados'),
-      btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
-      produtosContainer: document.getElementById('produtos-container'),
-      produtosSkeleton: document.getElementById('produtos-skeleton'),
-      loading: document.getElementById('loading'),
-      loadingMore: document.getElementById('loading-more'),
-      scrollSentinel: document.getElementById('scroll-sentinel'),
-      emptyState: document.getElementById('empty-state'),
-      filtroCondicao: document.getElementById(
-        'filtro-condicao',
-      ) as HTMLSelectElement,
-      filtroBateria: document.getElementById(
-        'filtro-bateria',
-      ) as HTMLSelectElement,
-      filtroOrdenacao: document.getElementById(
-        'filtro-ordenacao',
-      ) as HTMLSelectElement,
-      categoriaSelect: document.getElementById(
-        'categoria-select',
-      ) as HTMLSelectElement,
-      categoriaBtns: document.querySelectorAll('.categoria-btn'),
-      viewModeBtns: document.querySelectorAll('.view-btn'),
+  if (CATALOG_CONFIG.performance.enableWebVitals) {
+    metrics.enableWebVitals();
+  }
+
+  // Elementos DOM
+  const elementos = {
+    searchInput: document.getElementById('search-input') as HTMLInputElement,
+    toggleFiltros: document.getElementById('toggle-filtros'),
+    filtrosAvancados: document.getElementById('filtros-avancados'),
+    btnLimparFiltros: document.getElementById('btn-limpar-filtros'),
+    produtosContainer: document.getElementById('produtos-container'),
+    produtosSkeleton: document.getElementById('produtos-skeleton'),
+    loading: document.getElementById('loading'),
+    loadingMore: document.getElementById('loading-more'),
+    scrollSentinel: document.getElementById('scroll-sentinel'),
+    emptyState: document.getElementById('empty-state'),
+    filtroCondicao: document.getElementById(
+      'filtro-condicao',
+    ) as HTMLSelectElement,
+    filtroBateria: document.getElementById(
+      'filtro-bateria',
+    ) as HTMLSelectElement,
+    filtroOrdenacao: document.getElementById(
+      'filtro-ordenacao',
+    ) as HTMLSelectElement,
+    categoriaSelect: document.getElementById(
+      'categoria-select',
+    ) as HTMLSelectElement,
+    categoriaBtns: document.querySelectorAll('.categoria-btn'),
+    viewModeBtns: document.querySelectorAll('.view-btn'),
+  };
+
+  // Handlers modulares
+  const handlers = createHandlers(elementos);
+
+  // ==================== Ordenação de Categorias ====================
+  function ordenarCategorias(categorias: any[]) {
+    const ordem: { [key: string]: number } = {
+      todos: 0,
+      'iphone 4': 1,
+      'iphone 4s': 2,
+      'iphone 5': 3,
+      'iphone 5c': 4,
+      'iphone 5s': 5,
+      'iphone 6': 6,
+      'iphone 6 plus': 7,
+      'iphone 6s': 8,
+      'iphone 6s plus': 9,
+      'iphone 7': 10,
+      'iphone 7 plus': 11,
+      'iphone 8': 12,
+      'iphone 8 plus': 13,
+      'iphone x': 14,
+      'iphone xr': 15,
+      'iphone xs': 16,
+      'iphone xs max': 17,
+      'iphone 11': 18,
+      'iphone 11 pro': 19,
+      'iphone 11 pro max': 20,
+      'iphone se': 21,
+      'iphone se 2': 22,
+      'iphone se 3': 23,
+      'iphone 12': 24,
+      'iphone 12 mini': 25,
+      'iphone 12 pro': 26,
+      'iphone 12 pro max': 27,
+      'iphone 13': 28,
+      'iphone 13 mini': 29,
+      'iphone 13 pro': 30,
+      'iphone 13 pro max': 31,
+      'iphone 14': 32,
+      'iphone 14 plus': 33,
+      'iphone 14 pro': 34,
+      'iphone 14 pro max': 35,
+      'iphone 15': 36,
+      'iphone 15 plus': 37,
+      'iphone 15 pro': 38,
+      'iphone 15 pro max': 39,
+      'iphone 16': 40,
+      'iphone 16 plus': 41,
+      'iphone 16 pro': 42,
+      'iphone 16 pro max': 43,
+      'iphone 17': 44,
+      'iphone 17 air': 45,
+      'iphone 17 pro': 46,
+      'iphone 17 pro max': 47,
     };
 
-    // ==================== Handlers Modulares ====================
-    const handlers = createHandlers(elementos);
+    return [...categorias].sort((a, b) => {
+      const nomeA = a.nome.toLowerCase().trim();
+      const nomeB = b.nome.toLowerCase().trim();
+      const ordemA = ordem[nomeA];
+      const ordemB = ordem[nomeB];
 
-    // ==================== Ordenação de Categorias ====================
-    function ordenarCategorias(categorias: any[]) {
-      const ordem: { [key: string]: number } = {
-        todos: 0,
-        'iphone 4': 1,
-        'iphone 4s': 2,
-        'iphone 5': 3,
-        'iphone 5c': 4,
-        'iphone 5s': 5,
-        'iphone 6': 6,
-        'iphone 6 plus': 7,
-        'iphone 6s': 8,
-        'iphone 6s plus': 9,
-        'iphone 7': 10,
-        'iphone 7 plus': 11,
-        'iphone 8': 12,
-        'iphone 8 plus': 13,
-        'iphone x': 14,
-        'iphone xr': 15,
-        'iphone xs': 16,
-        'iphone xs max': 17,
-        'iphone 11': 18,
-        'iphone 11 pro': 19,
-        'iphone 11 pro max': 20,
-        'iphone se': 21,
-        'iphone se 2': 22,
-        'iphone se 3': 23,
-        'iphone 12': 24,
-        'iphone 12 mini': 25,
-        'iphone 12 pro': 26,
-        'iphone 12 pro max': 27,
-        'iphone 13': 28,
-        'iphone 13 mini': 29,
-        'iphone 13 pro': 30,
-        'iphone 13 pro max': 31,
-        'iphone 14': 32,
-        'iphone 14 plus': 33,
-        'iphone 14 pro': 34,
-        'iphone 14 pro max': 35,
-        'iphone 15': 36,
-        'iphone 15 plus': 37,
-        'iphone 15 pro': 38,
-        'iphone 15 pro max': 39,
-        'iphone 16': 40,
-        'iphone 16 plus': 41,
-        'iphone 16 pro': 42,
-        'iphone 16 pro max': 43,
-        'iphone 17': 44,
-        'iphone 17 air': 45,
-        'iphone 17 pro': 46,
-        'iphone 17 pro max': 47,
-      };
+      if (ordemA !== undefined && ordemB !== undefined) return ordemA - ordemB;
+      if (ordemA !== undefined) return -1;
+      if (ordemB !== undefined) return 1;
+      return nomeA.localeCompare(nomeB, 'pt-BR');
+    });
+  }
 
-      return [...categorias].sort((a, b) => {
-        const nomeA = a.nome.toLowerCase().trim();
-        const nomeB = b.nome.toLowerCase().trim();
-        const ordemA = ordem[nomeA];
-        const ordemB = ordem[nomeB];
+  // ==================== Helper para extrair URL da imagem ====================
+  function getImageUrl(imagens: any, size = 'medium', index = 0) {
+    if (!imagens || imagens.length === 0) return '/placeholder.jpg';
 
-        if (ordemA !== undefined && ordemB !== undefined)
-          return ordemA - ordemB;
-        if (ordemA !== undefined) return -1;
-        if (ordemB !== undefined) return 1;
-        return nomeA.localeCompare(nomeB, 'pt-BR');
-      });
-    }
+    const image = imagens[index];
+    if (!image) return '/placeholder.jpg';
 
-    // ==================== Helper para extrair URL da imagem ====================
-    function getImageUrl(imagens: any, size = 'medium', index = 0) {
-      if (!imagens || imagens.length === 0) return '/placeholder.jpg';
-
-      const image = imagens[index];
-      if (!image) return '/placeholder.jpg';
-
-      // Se for string JSON, fazer parse
-      if (typeof image === 'string') {
-        if (image.startsWith('{')) {
-          try {
-            const parsed = JSON.parse(image);
-            return (
-              parsed[size] ||
-              parsed.medium ||
-              parsed.thumbnail ||
-              '/placeholder.jpg'
-            );
-          } catch {
-            return image; // URL direta (formato antigo)
-          }
+    // Se for string JSON, fazer parse
+    if (typeof image === 'string') {
+      if (image.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(image);
+          return (
+            parsed[size] ||
+            parsed.medium ||
+            parsed.thumbnail ||
+            '/placeholder.jpg'
+          );
+        } catch {
+          return image; // URL direta (formato antigo)
         }
-        return image; // URL direta (formato antigo)
       }
-
-      // Formato objeto direto
-      if (typeof image === 'object' && image !== null && 'thumbnail' in image) {
-        return (
-          image[size] || image.medium || image.thumbnail || '/placeholder.jpg'
-        );
-      }
-
-      return '/placeholder.jpg';
+      return image; // URL direta (formato antigo)
     }
 
-    // ==================== Templates para Produtos ====================
-    const templatesLocal = {
-      produtoCard(produto: any, modoVisualizacao?: string) {
-        const modo = modoVisualizacao || getState().modoVisualizacao;
-        const precoFormatado = utils.formatarPreco(produto.preco);
-        const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
-        const bateriaColorClass = getBateriaColor(produto.bateria);
-        const imagemPrincipal = getImageUrl(produto.imagens, 'medium', 0);
-        const temBateria = produto.bateria && produto.bateria > 0;
+    // Formato objeto direto
+    if (typeof image === 'object' && image !== null && 'thumbnail' in image) {
+      return (
+        image[size] || image.medium || image.thumbnail || '/placeholder.jpg'
+      );
+    }
 
-        const produtoEditData = JSON.stringify({
-          id: produto.id,
-          codigo: produto.codigo,
-          nome: produto.nome,
-          descricao: produto.descricao,
-          preco: produto.preco,
-          condicao: produto.condicao,
-          bateria: produto.bateria,
-          categoria_id: produto.categoria_id,
-          imagens: produto.imagens || [],
-        }).replace(/"/g, '&quot;');
+    return '/placeholder.jpg';
+  }
 
-        const badges = `
+  // ==================== Templates para Produtos ====================
+  const templatesLocal = {
+    produtoCard(produto: any, modoVisualizacao?: string) {
+      const modo = modoVisualizacao || getState().modoVisualizacao;
+      const precoFormatado = utils.formatarPreco(produto.preco);
+      const bateriaWidth = utils.calcularLarguraBateria(produto.bateria);
+      const bateriaColorClass = getBateriaColor(produto.bateria);
+      const imagemPrincipal = getImageUrl(produto.imagens, 'medium', 0);
+      const temBateria = produto.bateria && produto.bateria > 0;
+
+      const produtoEditData = JSON.stringify({
+        id: produto.id,
+        codigo: produto.codigo,
+        nome: produto.nome,
+        descricao: produto.descricao,
+        preco: produto.preco,
+        condicao: produto.condicao,
+        bateria: produto.bateria,
+        categoria_id: produto.categoria_id,
+        imagens: produto.imagens || [],
+      }).replace(/"/g, '&quot;');
+
+      const badges = `
           ${!temBateria ? `<span class="condicao-badge ${produto.condicao.toLowerCase()}">${produto.condicao}</span>` : ''}
           ${
             temBateria
@@ -420,8 +412,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
           }
         `;
 
-        if (modo === 'lista') {
-          return `
+      if (modo === 'lista') {
+        return `
             <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
               <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -443,9 +435,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
                 </div>
               </div>
             </a>`;
-        }
+      }
 
-        return `
+      return `
           <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
             <button class="btn-editar-produto" data-produto-edit="${produtoEditData}" aria-label="Editar produto">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -485,479 +477,457 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
               </div>
             </div>
           </a>`;
-      },
+    },
 
-      categoriaSecao(
-        nomeCategoria: string,
-        produtos: any[],
-        modoVisualizacao?: string,
-      ) {
-        const modo = modoVisualizacao || getState().modoVisualizacao;
-        return `
+    categoriaSecao(
+      nomeCategoria: string,
+      produtos: any[],
+      modoVisualizacao?: string,
+    ) {
+      const modo = modoVisualizacao || getState().modoVisualizacao;
+      return `
           <div class="categoria-section">
             <h2 class="categoria-titulo">${utils.escapeHtml(nomeCategoria)}</h2>
             <div class="categoria-grid ${modo}">
               ${produtos.map((p: any) => templatesLocal.produtoCard(p, modo)).join('')}
             </div>
           </div>`;
-      },
-    };
+    },
+  };
 
-    // ==================== Renderização ====================
-    const render = {
-      produtos() {
-        console.log('🎨 Rendering products...');
-        if (!elementos.produtosContainer || !elementos.emptyState) {
-          console.error('❌ Containers not found!');
-          return;
-        }
-
-        // ✅ Obter estado atualizado
-        const currentState = getState();
-        console.log('📊 Current state:', {
-          produtos: currentState.produtos.length,
-          categoria: currentState.categoriaAtiva,
-          modo: currentState.modoVisualizacao,
-        });
-
-        elementos.produtosContainer.classList.remove(
-          'coluna',
-          'grade',
-          'lista',
-        );
-        elementos.produtosContainer.classList.add(
-          currentState.modoVisualizacao,
-        );
-        document.querySelectorAll('.categoria-grid').forEach((grid) => {
-          grid.classList.remove('coluna', 'grade', 'lista');
-          grid.classList.add(currentState.modoVisualizacao);
-        });
-
-        let produtosFiltrados = filtrarProdutos(currentState);
-        produtosFiltrados = ordenarProdutos(
-          produtosFiltrados,
-          currentState.filtros.ordenacao,
-        );
-
-        console.log(
-          '✅ Filtered/sorted:',
-          produtosFiltrados.length,
-          'products',
-        );
-
-        if (produtosFiltrados.length === 0) {
-          elementos.produtosContainer.innerHTML = '';
-          elementos.emptyState.style.display = 'block';
-          return;
-        }
-
-        elementos.emptyState.style.display = 'none';
-
-        if (currentState.categoriaAtiva === 'todos') {
-          const grupos = agruparPorCategoria(produtosFiltrados);
-          const categoriasComProdutos = Array.from(grupos.keys()).map(
-            (nomeCategoria) => {
-              const categoria = currentState.categorias.find(
-                (c) => c.nome === nomeCategoria,
-              );
-              return {
-                nome: nomeCategoria,
-                categoria: categoria || {
-                  id: '',
-                  nome: nomeCategoria,
-                  created_at: '',
-                },
-              };
-            },
-          );
-
-          const categoriasOrdenadas = ordenarCategorias(
-            categoriasComProdutos.map((c) => c.categoria),
-          );
-
-          elementos.produtosContainer.innerHTML = categoriasOrdenadas
-            .map((cat) => {
-              const prods = grupos.get(cat.nome);
-              return prods
-                ? templatesLocal.categoriaSecao(
-                    cat.nome,
-                    prods,
-                    currentState.modoVisualizacao,
-                  )
-                : '';
-            })
-            .filter((html) => html !== '')
-            .join('');
-        } else {
-          elementos.produtosContainer.innerHTML = produtosFiltrados
-            .map((p) =>
-              templatesLocal.produtoCard(p, currentState.modoVisualizacao),
-            )
-            .join('');
-        }
-
-        setupEditButtons();
-
-        // ✅ Lazy loading de imagens
-        imageLoader.observe(elementos.produtosContainer);
-      },
-
-      loading(mostrar: boolean) {
-        if (elementos.loading) {
-          elementos.loading.style.display = mostrar ? 'flex' : 'none';
-        }
-        if (elementos.produtosSkeleton) {
-          elementos.produtosSkeleton.style.display = mostrar ? 'block' : 'none';
-        }
-      },
-    };
-
-    // ==================== API ====================
-    const api = {
-      async carregarDados(forceReload = false) {
-        try {
-          render.loading(true);
-
-          const currentState = getState();
-          console.log('📊 Current state before load:', {
-            produtos: currentState.produtos.length,
-            forceReload,
-          });
-
-          if (currentState.produtos.length > 0 && !forceReload) {
-            console.log('✅ Using cached products, rendering...');
-            render.produtos();
-            render.loading(false);
-            return;
-          }
-
-          console.log('🌐 Fetching from API...');
-          const response = await fetch('/api/produtos?limit=30');
-          const data = await response.json();
-
-          if (data.error) throw new Error(data.error);
-
-          console.log(
-            '📦 Received from API:',
-            data.produtos?.length,
-            'products',
-          );
-
-          updateState({
-            produtos: data.produtos || [],
-            nextCursor: data.nextCursor || null,
-          });
-
-          render.produtos();
-        } catch (error) {
-          console.error('❌ Erro ao carregar dados:', error);
-          if (elementos.emptyState)
-            elementos.emptyState.style.display = 'block';
-        } finally {
-          render.loading(false);
-        }
-      },
-
-      async carregarMaisProdutos() {
-        const currentState = getState();
-        if (currentState.paginacao.carregando || !currentState.nextCursor)
-          return;
-
-        try {
-          updateState({
-            paginacao: { ...currentState.paginacao, carregando: true },
-          });
-          if (elementos.loadingMore)
-            elementos.loadingMore.style.display = 'flex';
-
-          const params = new URLSearchParams({
-            cursor: currentState.nextCursor,
-            limit: '30',
-          });
-
-          if (currentState.categoriaAtiva !== 'todos') {
-            params.set('categoria', currentState.categoriaAtiva);
-          }
-
-          const response = await fetch(`/api/produtos?${params}`);
-          const data = await response.json();
-
-          if (data.error) throw new Error(data.error);
-
-          const novosProdutos = [
-            ...currentState.produtos,
-            ...(data.produtos || []),
-          ];
-          updateState({
-            produtos: novosProdutos,
-            nextCursor: data.nextCursor,
-          });
-
-          render.produtos();
-        } catch (error) {
-          console.error('Erro ao carregar mais produtos:', error);
-        } finally {
-          const currentState = getState();
-          updateState({
-            paginacao: { ...currentState.paginacao, carregando: false },
-          });
-          if (elementos.loadingMore)
-            elementos.loadingMore.style.display = 'none';
-        }
-      },
-    };
-
-    // ==================== Event Listeners ====================
-    function setupEventListeners() {
-      // ✅ Usar handlers modulares
-      elementos.searchInput?.addEventListener('input', handlers.searchInput);
-      elementos.toggleFiltros?.addEventListener('click', () =>
-        handlers.toggleFiltros(elementos),
-      );
-      elementos.filtroCondicao?.addEventListener(
-        'change',
-        handlers.condicaoChange,
-      );
-      elementos.filtroBateria?.addEventListener(
-        'change',
-        handlers.bateriaChange,
-      );
-      elementos.filtroOrdenacao?.addEventListener(
-        'change',
-        handlers.ordenacaoChange,
-      );
-      elementos.btnLimparFiltros?.addEventListener('click', () =>
-        handlers.limparFiltros(elementos),
-      );
-
-      // Categorias
-      elementos.categoriaBtns.forEach((btn) => {
-        btn.addEventListener('click', handlers.categoriaClick);
-      });
-      elementos.categoriaSelect?.addEventListener(
-        'change',
-        handlers.categoriaSelectChange,
-      );
-
-      // View mode
-      elementos.viewModeBtns.forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handlers.viewModeChange(e);
-        });
-      });
-
-      // Login
-      elementos.formLogin?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const emailInput = document.getElementById(
-          'login-email',
-        ) as HTMLInputElement;
-        const passwordInput = document.getElementById(
-          'login-password',
-        ) as HTMLInputElement;
-
-        try {
-          const data = await authService.signIn(
-            emailInput.value,
-            passwordInput.value,
-          );
-          elementos.modalLogin?.classList.remove('active');
-          elementos.formLogin?.reset();
-          if (elementos.loginError) {
-            elementos.loginError.textContent = '';
-            elementos.loginError.classList.remove('show');
-          }
-        } catch (error: any) {
-          if (elementos.loginError) {
-            elementos.loginError.textContent =
-              error.message || 'Credenciais inválidas';
-            elementos.loginError.classList.add('show');
-          }
-        }
-      });
-
-      elementos.modalLogin
-        ?.querySelector('.modal-close')
-        ?.addEventListener('click', () => {
-          elementos.modalLogin?.classList.remove('active');
-        });
-      elementos.modalLogin
-        ?.querySelector('.modal-overlay')
-        ?.addEventListener('click', () => {
-          elementos.modalLogin?.classList.remove('active');
-        });
-
-      // ✅ Sistema de eventos pub/sub
-      onEvent(catalogEvents.FILTROS_CHANGED, () => {
-        render.produtos();
-      });
-
-      onEvent(catalogEvents.CATEGORIA_CHANGED, () => {
-        render.produtos();
-      });
-
-      onEvent(catalogEvents.VIEW_MODE_CHANGED, () => {
-        const currentState = getState();
-        localStorage.setItem('modoVisualizacao', currentState.modoVisualizacao);
-        render.produtos();
-      });
-
-      window.addEventListener('produtos-updated', () => {
-        api.carregarDados(true); // Force reload
-      });
-
-      // ✅ Intersection Observer para scroll infinito
-      if (elementos.scrollSentinel) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                const currentState = getState();
-                if (
-                  !currentState.paginacao.carregando &&
-                  currentState.paginacao.hasMore
-                ) {
-                  api.carregarMaisProdutos();
-                }
-              }
-            });
-          },
-          { root: null, rootMargin: '100px', threshold: 0.1 },
-        );
-        observer.observe(elementos.scrollSentinel);
-      }
-    }
-
-    // ==================== Controle de Botões de Editar ====================
-    async function setupEditButtons() {
-      const session = await authService.getSession();
-      const allEditButtons = document.querySelectorAll('.btn-editar-produto');
-
-      allEditButtons.forEach((btn) => {
-        const card = btn.closest('.produto-card');
-        const produtoInfo = card?.querySelector('.produto-info');
-
-        if (!card) {
-          btn.remove();
-          return;
-        }
-
-        if (session) {
-          btn.classList.add('visible');
-          produtoInfo?.classList.add('com-editar');
-        } else {
-          btn.classList.remove('visible');
-          produtoInfo?.classList.remove('com-editar');
-        }
-
-        btn.addEventListener('click', handleEditClick);
-      });
-    }
-
-    function handleEditClick(e: Event) {
-      e.stopPropagation();
-      e.preventDefault();
-
-      const btn = e.currentTarget as HTMLElement;
-      const produtoDataStr = btn.dataset.produtoEdit;
-
-      if (!produtoDataStr) {
-        mostrarToast('Erro: dados do produto não encontrados', 'error');
+  // ==================== Renderização ====================
+  const render = {
+    produtos() {
+      console.log('🎨 Rendering products...');
+      if (!elementos.produtosContainer || !elementos.emptyState) {
+        console.error('❌ Containers not found!');
         return;
       }
 
-      try {
-        const produtoData = JSON.parse(produtoDataStr);
-        // Redirect to edit page
-        window.location.href = `/admin/produtos/novo?edit=${produtoData.id}`;
-      } catch (error) {
-        mostrarToast('Erro ao carregar dados do produto', 'error');
-      }
-    }
-
-    function mostrarToast(
-      mensagem: string,
-      tipo: 'success' | 'error' | 'warning' | 'info' = 'info',
-    ) {
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${tipo}`;
-      toast.textContent = mensagem;
-      document.body.appendChild(toast);
-
-      setTimeout(() => toast.classList.add('show'), 10);
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    // ==================== Funções Globais ====================
-    // Nota: abrirModalLogin é definido no LoginDialog.astro
-
-    // ==================== Inicialização ====================
-    function init() {
-      console.log('🚀 Initializing catalog...');
+      // ✅ Obter estado atualizado
       const currentState = getState();
-      console.log('📦 Initial state:', {
+      console.log('📊 Current state:', {
         produtos: currentState.produtos.length,
-        categorias: currentState.categorias.length,
+        categoria: currentState.categoriaAtiva,
+        modo: currentState.modoVisualizacao,
       });
 
-      const savedView = localStorage.getItem('modoVisualizacao') as
-        | 'coluna'
-        | 'grade'
-        | 'lista';
-      const initialMode =
-        savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
-
-      updateState({
-        modoVisualizacao: initialMode,
+      elementos.produtosContainer.classList.remove('coluna', 'grade', 'lista');
+      elementos.produtosContainer.classList.add(currentState.modoVisualizacao);
+      document.querySelectorAll('.categoria-grid').forEach((grid) => {
+        grid.classList.remove('coluna', 'grade', 'lista');
+        grid.classList.add(currentState.modoVisualizacao);
       });
 
-      // Set active button based on initial mode
-      document.querySelectorAll('[data-view]').forEach((btn) => {
-        const btnElement = btn as HTMLElement;
-        btnElement.classList.toggle(
-          'active',
-          btnElement.dataset.view === initialMode,
+      let produtosFiltrados = filtrarProdutos(currentState);
+      produtosFiltrados = ordenarProdutos(
+        produtosFiltrados,
+        currentState.filtros.ordenacao,
+      );
+
+      console.log('✅ Filtered/sorted:', produtosFiltrados.length, 'products');
+
+      if (produtosFiltrados.length === 0) {
+        elementos.produtosContainer.innerHTML = '';
+        elementos.emptyState.style.display = 'block';
+        return;
+      }
+
+      elementos.emptyState.style.display = 'none';
+
+      if (currentState.categoriaAtiva === 'todos') {
+        const grupos = agruparPorCategoria(produtosFiltrados);
+        const categoriasComProdutos = Array.from(grupos.keys()).map(
+          (nomeCategoria) => {
+            const categoria = currentState.categorias.find(
+              (c) => c.nome === nomeCategoria,
+            );
+            return {
+              nome: nomeCategoria,
+              categoria: categoria || {
+                id: '',
+                nome: nomeCategoria,
+                created_at: '',
+              },
+            };
+          },
         );
-      });
 
-      setupEventListeners();
+        const categoriasOrdenadas = ordenarCategorias(
+          categoriasComProdutos.map((c) => c.categoria),
+        );
 
-      console.log('📡 Loading data...');
-      api.carregarDados();
+        elementos.produtosContainer.innerHTML = categoriasOrdenadas
+          .map((cat) => {
+            const prods = grupos.get(cat.nome);
+            return prods
+              ? templatesLocal.categoriaSecao(
+                  cat.nome,
+                  prods,
+                  currentState.modoVisualizacao,
+                )
+              : '';
+          })
+          .filter((html) => html !== '')
+          .join('');
+      } else {
+        elementos.produtosContainer.innerHTML = produtosFiltrados
+          .map((p) =>
+            templatesLocal.produtoCard(p, currentState.modoVisualizacao),
+          )
+          .join('');
+      }
 
-      authService.onAuthStateChange((session) => {
-        setupEditButtons();
+      setupEditButtons();
 
-        // ✅ OTIMIZAÇÃO: Lazy load scripts de admin apenas quando logado
-        if (session) {
-          loadAdminScripts();
+      // ✅ Lazy loading de imagens
+      imageLoader.observe(elementos.produtosContainer);
+    },
+
+    loading(mostrar: boolean) {
+      if (elementos.loading) {
+        elementos.loading.style.display = mostrar ? 'flex' : 'none';
+      }
+      if (elementos.produtosSkeleton) {
+        elementos.produtosSkeleton.style.display = mostrar ? 'block' : 'none';
+      }
+    },
+  };
+
+  // ==================== API ====================
+  const api = {
+    async carregarDados(forceReload = false) {
+      try {
+        render.loading(true);
+
+        const currentState = getState();
+        console.log('📊 Current state before load:', {
+          produtos: currentState.produtos.length,
+          forceReload,
+        });
+
+        if (currentState.produtos.length > 0 && !forceReload) {
+          console.log('✅ Using cached products, rendering...');
+          render.produtos();
+          render.loading(false);
+          return;
         }
+
+        console.log('🌐 Fetching from API...');
+        const response = await fetch('/api/produtos?limit=30');
+        const data = await response.json();
+
+        if (data.error) throw new Error(data.error);
+
+        console.log('📦 Received from API:', data.produtos?.length, 'products');
+
+        updateState({
+          produtos: data.produtos || [],
+          nextCursor: data.nextCursor || null,
+        });
+
+        render.produtos();
+      } catch (error) {
+        console.error('❌ Erro ao carregar dados:', error);
+        if (elementos.emptyState) elementos.emptyState.style.display = 'block';
+      } finally {
+        render.loading(false);
+      }
+    },
+
+    async carregarMaisProdutos() {
+      const currentState = getState();
+      if (currentState.paginacao.carregando || !currentState.nextCursor) return;
+
+      try {
+        updateState({
+          paginacao: { ...currentState.paginacao, carregando: true },
+        });
+        if (elementos.loadingMore) elementos.loadingMore.style.display = 'flex';
+
+        const params = new URLSearchParams({
+          cursor: currentState.nextCursor,
+          limit: '30',
+        });
+
+        if (currentState.categoriaAtiva !== 'todos') {
+          params.set('categoria', currentState.categoriaAtiva);
+        }
+
+        const response = await fetch(`/api/produtos?${params}`);
+        const data = await response.json();
+
+        if (data.error) throw new Error(data.error);
+
+        const novosProdutos = [
+          ...currentState.produtos,
+          ...(data.produtos || []),
+        ];
+        updateState({
+          produtos: novosProdutos,
+          nextCursor: data.nextCursor,
+        });
+
+        render.produtos();
+      } catch (error) {
+        console.error('Erro ao carregar mais produtos:', error);
+      } finally {
+        const currentState = getState();
+        updateState({
+          paginacao: { ...currentState.paginacao, carregando: false },
+        });
+        if (elementos.loadingMore) elementos.loadingMore.style.display = 'none';
+      }
+    },
+  };
+
+  // ==================== Event Listeners ====================
+  function setupEventListeners() {
+    // ✅ Usar handlers modulares
+    elementos.searchInput?.addEventListener('input', handlers.searchInput);
+    elementos.toggleFiltros?.addEventListener('click', () =>
+      handlers.toggleFiltros(elementos),
+    );
+    elementos.filtroCondicao?.addEventListener(
+      'change',
+      handlers.condicaoChange,
+    );
+    elementos.filtroBateria?.addEventListener('change', handlers.bateriaChange);
+    elementos.filtroOrdenacao?.addEventListener(
+      'change',
+      handlers.ordenacaoChange,
+    );
+    elementos.btnLimparFiltros?.addEventListener('click', () =>
+      handlers.limparFiltros(elementos),
+    );
+
+    // Categorias
+    elementos.categoriaBtns.forEach((btn) => {
+      btn.addEventListener('click', handlers.categoriaClick);
+    });
+    elementos.categoriaSelect?.addEventListener(
+      'change',
+      handlers.categoriaSelectChange,
+    );
+
+    // View mode
+    elementos.viewModeBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handlers.viewModeChange(e);
+      });
+    });
+
+    // Login
+    elementos.formLogin?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const emailInput = document.getElementById(
+        'login-email',
+      ) as HTMLInputElement;
+      const passwordInput = document.getElementById(
+        'login-password',
+      ) as HTMLInputElement;
+
+      try {
+        const data = await authService.signIn(
+          emailInput.value,
+          passwordInput.value,
+        );
+        elementos.modalLogin?.classList.remove('active');
+        elementos.formLogin?.reset();
+        if (elementos.loginError) {
+          elementos.loginError.textContent = '';
+          elementos.loginError.classList.remove('show');
+        }
+      } catch (error: any) {
+        if (elementos.loginError) {
+          elementos.loginError.textContent =
+            error.message || 'Credenciais inválidas';
+          elementos.loginError.classList.add('show');
+        }
+      }
+    });
+
+    elementos.modalLogin
+      ?.querySelector('.modal-close')
+      ?.addEventListener('click', () => {
+        elementos.modalLogin?.classList.remove('active');
+      });
+    elementos.modalLogin
+      ?.querySelector('.modal-overlay')
+      ?.addEventListener('click', () => {
+        elementos.modalLogin?.classList.remove('active');
       });
 
-      // ✅ Registrar tempo de inicialização
-      metrics.recordMetric('PageInit', performance.now());
+    // ✅ Sistema de eventos pub/sub
+    onEvent(catalogEvents.FILTROS_CHANGED, () => {
+      render.produtos();
+    });
+
+    onEvent(catalogEvents.CATEGORIA_CHANGED, () => {
+      render.produtos();
+    });
+
+    onEvent(catalogEvents.VIEW_MODE_CHANGED, () => {
+      const currentState = getState();
+      localStorage.setItem('modoVisualizacao', currentState.modoVisualizacao);
+      render.produtos();
+    });
+
+    window.addEventListener('produtos-updated', () => {
+      api.carregarDados(true); // Force reload
+    });
+
+    // ✅ Intersection Observer para scroll infinito
+    if (elementos.scrollSentinel) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const currentState = getState();
+              if (
+                !currentState.paginacao.carregando &&
+                currentState.paginacao.hasMore
+              ) {
+                api.carregarMaisProdutos();
+              }
+            }
+          });
+        },
+        { root: null, rootMargin: '100px', threshold: 0.1 },
+      );
+      observer.observe(elementos.scrollSentinel);
+    }
+  }
+
+  // ==================== Controle de Botões de Editar ====================
+  async function setupEditButtons() {
+    const session = await authService.getSession();
+    const allEditButtons = document.querySelectorAll('.btn-editar-produto');
+
+    allEditButtons.forEach((btn) => {
+      const card = btn.closest('.produto-card');
+      const produtoInfo = card?.querySelector('.produto-info');
+
+      if (!card) {
+        btn.remove();
+        return;
+      }
+
+      if (session) {
+        btn.classList.add('visible');
+        produtoInfo?.classList.add('com-editar');
+      } else {
+        btn.classList.remove('visible');
+        produtoInfo?.classList.remove('com-editar');
+      }
+
+      btn.addEventListener('click', handleEditClick);
+    });
+  }
+
+  function handleEditClick(e: Event) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const btn = e.currentTarget as HTMLElement;
+    const produtoDataStr = btn.dataset.produtoEdit;
+
+    if (!produtoDataStr) {
+      mostrarToast('Erro: dados do produto não encontrados', 'error');
+      return;
     }
 
-    // ✅ OTIMIZAÇÃO: Carregar scripts admin sob demanda
-    async function loadAdminScripts() {
-      // Marcar que os scripts admin já foram carregados
-      if ((window as any).__adminScriptsLoaded) return;
-      (window as any).__adminScriptsLoaded = true;
-
-      // Os componentes de modal já estão no DOM (ProductFormDialog, CategoryFormDialog)
-      // Seus scripts já estão carregados, então não há necessidade de dynamic import adicional
-      // Esta função está pronta para futuras otimizações se necessário
-      console.log('✅ Scripts admin prontos');
+    try {
+      const produtoData = JSON.parse(produtoDataStr);
+      // Redirect to edit page
+      window.location.href = `/admin/produtos/novo?edit=${produtoData.id}`;
+    } catch (error) {
+      mostrarToast('Erro ao carregar dados do produto', 'error');
     }
+  }
 
-    init();
-  </script>
+  function mostrarToast(
+    mensagem: string,
+    tipo: 'success' | 'error' | 'warning' | 'info' = 'info',
+  ) {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+    toast.textContent = mensagem;
+    document.body.appendChild(toast);
 
-  <!-- Toast Notifications -->
-  <Toast />
-</Layout>
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // ==================== Funções Globais ====================
+  // Nota: abrirModalLogin é definido no LoginDialog.astro
+
+  // ==================== Inicialização ====================
+  function init() {
+    console.log('🚀 Initializing catalog...');
+    const currentState = getState();
+    console.log('📦 Initial state:', {
+      produtos: currentState.produtos.length,
+      categorias: currentState.categorias.length,
+    });
+
+    const savedView = localStorage.getItem('modoVisualizacao') as
+      | 'coluna'
+      | 'grade'
+      | 'lista';
+    const initialMode =
+      savedView || (window.innerWidth < 768 ? 'coluna' : 'grade');
+
+    updateState({
+      modoVisualizacao: initialMode,
+    });
+
+    // Set active button based on initial mode
+    document.querySelectorAll('[data-view]').forEach((btn) => {
+      const btnElement = btn as HTMLElement;
+      btnElement.classList.toggle(
+        'active',
+        btnElement.dataset.view === initialMode,
+      );
+    });
+
+    setupEventListeners();
+
+    console.log('📡 Loading data...');
+    api.carregarDados();
+
+    authService.onAuthStateChange((session) => {
+      setupEditButtons();
+
+      // ✅ OTIMIZAÇÃO: Lazy load scripts de admin apenas quando logado
+      if (session) {
+        loadAdminScripts();
+      }
+    });
+
+    // ✅ Registrar tempo de inicialização
+    metrics.recordMetric('PageInit', performance.now());
+  }
+
+  // ✅ OTIMIZAÇÃO: Carregar scripts admin sob demanda
+  async function loadAdminScripts() {
+    // Marcar que os scripts admin já foram carregados
+    if ((window as any).__adminScriptsLoaded) return;
+    (window as any).__adminScriptsLoaded = true;
+
+    // Os componentes de modal já estão no DOM (ProductFormDialog, CategoryFormDialog)
+    // Seus scripts já estão carregados, então não há necessidade de dynamic import adicional
+    // Esta função está pronta para futuras otimizações se necessário
+    console.log('✅ Scripts admin prontos');
+  }
+
+  init();
+</script>
+
+<!-- Toast Notifications -->
+<Toast />

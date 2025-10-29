@@ -1,3 +1,4 @@
+// src/pages/api/admin/produtos/index.ts
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 
@@ -7,16 +8,62 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     console.log('📥 POST /api/admin/produtos - Iniciando...');
     
-    const produto = await request.json();
-    console.log('📦 Dados recebidos:', produto);
-
-    // Validações
-    if (!produto.nome || !produto.preco || !produto.categoria_id) {
-      console.error('❌ Validação falhou:', { produto });
+    const contentType = request.headers.get('content-type');
+    console.log('📦 Content-Type:', contentType);
+    
+    if (!contentType?.includes('application/json')) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Campos obrigatórios faltando: nome, preco, categoria_id' 
+          error: 'Content-Type deve ser application/json' 
+        }),
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const body = await request.text();
+    console.log('📄 Body recebido (raw):', body.substring(0, 200));
+    
+    let produto;
+    try {
+      produto = JSON.parse(body);
+      console.log('📦 Dados parseados:', produto);
+    } catch (parseError: any) {
+      console.error('❌ Erro ao parsear JSON:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `JSON inválido: ${parseError.message}` 
+        }),
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Validações
+    const errors: string[] = [];
+    if (!produto.nome || produto.nome.trim() === '') {
+      errors.push('Nome é obrigatório');
+    }
+    if (!produto.preco || isNaN(parseFloat(produto.preco))) {
+      errors.push('Preço é obrigatório e deve ser um número');
+    }
+    if (!produto.categoria_id) {
+      errors.push('Categoria é obrigatória');
+    }
+
+    if (errors.length > 0) {
+      console.error('❌ Validação falhou:', errors);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: errors.join(', '),
+          details: errors
         }),
         { 
           status: 400, 
@@ -52,7 +99,8 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: error.message || 'Erro ao criar produto' 
+          error: error.message || 'Erro ao criar produto',
+          details: error
         }),
         { 
           status: 400, 
@@ -63,22 +111,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log('✅ Produto criado:', data);
 
-    // CRITICAL: Revalidar cache ISR
-    try {
-      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/catalogo`);
-    } catch (e) {
-      console.warn('⚠️ Erro ao revalidar cache:', e);
-    }
-
+    // CRITICAL: Com SSR, não há cache para revalidar
+    // Resposta de sucesso
     return new Response(
       JSON.stringify({ 
         success: true, 
         data,
-        message: 'Produto criado com sucesso!' 
+        message: 'Produto criado com sucesso!',
+        note: 'Recarregue a página para ver as mudanças'
       }),
       { 
         status: 201, 
-        headers: { 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        } 
       }
     );
   } catch (error: any) {
@@ -86,7 +133,8 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Erro interno do servidor' 
+        error: error.message || 'Erro interno do servidor',
+        stack: import.meta.env.DEV ? error.stack : undefined
       }),
       { 
         status: 500, 
