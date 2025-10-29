@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+console.log('PUBLIC_SUPABASE_URL:', import.meta.env.PUBLIC_SUPABASE_URL);
+console.log('PUBLIC_SUPABASE_ANON_KEY:', import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Supabase credentials missing!');
@@ -318,6 +320,7 @@ export const authService = {
     if (error) {
       console.error('Erro ao fazer logout:', error);
     }
+    console.log('Usuário deslogado com sucesso.');
     // Limpar storage manual caso necessário
     localStorage.removeItem('sb-auth-token');
   },

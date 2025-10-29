@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import vercel from '@astrojs/vercel';
+import node from '@astrojs/node';
 
 export default defineConfig({
   site: 'https://sriphonevca.com.br',
@@ -9,6 +10,7 @@ export default defineConfig({
     // ISR desabilitado (incompatível com SSR puro)
     isr: false,
   }),
+  // adapter: node({ mode: 'standalone' }),
   
   // Otimização de imagens com Astro
   image: {

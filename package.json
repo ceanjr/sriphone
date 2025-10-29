@@ -12,6 +12,7 @@
     "fix:images": "tsx scripts/fix-image-format.ts"
   },
   "dependencies": {
+    "@astrojs/node": "^9.5.0",
     "@astrojs/vercel": "^8.2.10",
     "@supabase/supabase-js": "^2.75.0",
     "@tailwindcss/vite": "^4.1.16",
