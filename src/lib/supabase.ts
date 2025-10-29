@@ -51,7 +51,7 @@ export const productService = {
         categoria_id,
         imagens,
         created_at,
-        categoria:categorias(id, nome)
+        categoria:categorias(id, nome, created_at)
       `
       )
       .eq('id', id)
@@ -61,8 +61,12 @@ export const productService = {
       console.error('Erro ao buscar produto por ID:', error);
       return null;
     }
-    
-    return data as Product & { categoria: Category };
+    // Corrigir categoria para ser objeto, não array
+    let categoria: Category | undefined = undefined;
+    if (data && Array.isArray(data.categoria) && data.categoria.length > 0) {
+      categoria = data.categoria[0];
+    }
+    return { ...data, categoria } as Product & { categoria: Category };
   },
 
   async getAll() {
@@ -80,13 +84,17 @@ export const productService = {
         categoria_id,
         imagens,
         created_at,
-        categoria:categorias(id, nome)
+        categoria:categorias(id, nome, created_at)
       `
       )
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data as (Product & { categoria: Category })[];
+    // Corrigir categoria para ser objeto, não array
+    return (data ?? []).map((item: any) => ({
+      ...item,
+      categoria: Array.isArray(item.categoria) && item.categoria.length > 0 ? item.categoria[0] : undefined
+    })) as (Product & { categoria: Category })[];
   },
 
   // Paginação cursor-based (mais eficiente)
@@ -105,7 +113,7 @@ export const productService = {
         categoria_id,
         imagens,
         created_at,
-        categoria:categorias(id, nome)
+        categoria:categorias(id, nome, created_at)
       `
       )
       .order('created_at', { ascending: false })
@@ -119,9 +127,13 @@ export const productService = {
     const { data, error } = await query;
     if (error) throw error;
     
+    const produtos = (data ?? []).map((item: any) => ({
+      ...item,
+      categoria: Array.isArray(item.categoria) && item.categoria.length > 0 ? item.categoria[0] : undefined
+    })) as (Product & { categoria: Category })[];
     return {
-      produtos: data as (Product & { categoria: Category })[],
-      nextCursor: data.length === limit ? data[data.length - 1].created_at : null
+      produtos,
+      nextCursor: produtos.length === limit ? produtos[produtos.length - 1].created_at : null
     };
   },
 
@@ -141,7 +153,7 @@ export const productService = {
         categoria_id,
         imagens,
         created_at,
-        categoria:categorias(id, nome)
+        categoria:categorias(id, nome, created_at)
       `
       )
       .eq('categoria_id', categoriaId)
@@ -155,9 +167,13 @@ export const productService = {
     const { data, error } = await query;
     if (error) throw error;
     
+    const produtos = (data ?? []).map((item: any) => ({
+      ...item,
+      categoria: Array.isArray(item.categoria) && item.categoria.length > 0 ? item.categoria[0] : undefined
+    })) as (Product & { categoria: Category })[];
     return {
-      produtos: data as (Product & { categoria: Category })[],
-      nextCursor: data.length === limit ? data[data.length - 1].created_at : null
+      produtos,
+      nextCursor: produtos.length === limit ? produtos[produtos.length - 1].created_at : null
     };
   },
 
@@ -180,7 +196,7 @@ export const productService = {
         categoria_id,
         imagens,
         created_at,
-        categoria:categorias(id, nome)
+        categoria:categorias(id, nome, created_at)
       `,
         { count: 'exact' }
       )
@@ -188,8 +204,12 @@ export const productService = {
       .range(from, to);
 
     if (error) throw error;
+    const produtos = (data ?? []).map((item: any) => ({
+      ...item,
+      categoria: Array.isArray(item.categoria) && item.categoria.length > 0 ? item.categoria[0] : undefined
+    })) as (Product & { categoria: Category })[];
     return { 
-      data: data as (Product & { categoria: Category })[], 
+      data: produtos, 
       count: count || 0,
       hasMore: count ? (to < count - 1) : false
     };
@@ -294,21 +314,42 @@ export const authService = {
 
     if (error) throw error;
     
-    // Store access token in localStorage for client-side requests
+    // ✅ Salvar no localStorage para client-side
     if (data.session?.access_token) {
       localStorage.setItem('sb-access-token', data.session.access_token);
+      localStorage.setItem('sb-auth-time', Date.now().toString());
     }
     
     return data;
   },
 
   async signOut() {
-    const { error } = await supabase.auth.signOut();
+    await supabase.auth.signOut();
     localStorage.removeItem('sb-access-token');
-    if (error) throw error;
+    localStorage.removeItem('sb-auth-time');
   },
 
   async getSession() {
+    // ✅ NOVO: Verificar localStorage primeiro
+    const token = localStorage.getItem('sb-access-token');
+    const authTime = localStorage.getItem('sb-auth-time');
+    
+    // Se token existe e não expirou (7 dias)
+    if (token && authTime) {
+      const elapsed = Date.now() - parseInt(authTime);
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      
+      if (elapsed < sevenDays) {
+        // Token ainda válido, retornar sessão mockada
+        return { access_token: token };
+      } else {
+        // Token expirado, limpar
+        localStorage.removeItem('sb-access-token');
+        localStorage.removeItem('sb-auth-time');
+      }
+    }
+    
+    // Fallback: tentar obter do Supabase
     const { data } = await supabase.auth.getSession();
     return data.session;
   },
