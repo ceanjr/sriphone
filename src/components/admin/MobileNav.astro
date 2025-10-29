@@ -98,36 +98,59 @@ const currentPath = Astro.url.pathname;
 <script>
   import { authService } from '../../lib/supabase';
 
-  const menuBtn = document.getElementById('mobile-menu-btn');
-  const mobileMenu = document.getElementById('mobile-menu');
-  const backdrop = document.getElementById('mobile-backdrop');
-  const menuIcon = document.getElementById('menu-icon');
-  const closeIcon = document.getElementById('close-icon');
-  const logoutBtn = document.getElementById('mobile-logout-btn');
+  // Aguardar DOM carregar completamente
+  document.addEventListener('DOMContentLoaded', () => {
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const backdrop = document.getElementById('mobile-backdrop');
+    const menuIcon = document.getElementById('menu-icon');
+    const closeIcon = document.getElementById('close-icon');
+    const logoutBtn = document.getElementById('mobile-logout-btn');
 
-  function toggleMenu() {
-    const isOpen = !mobileMenu?.classList.contains('hidden');
-    
-    if (isOpen) {
-      mobileMenu?.classList.add('hidden');
-      backdrop?.classList.add('hidden');
-      menuIcon?.classList.remove('hidden');
-      closeIcon?.classList.add('hidden');
-    } else {
-      mobileMenu?.classList.remove('hidden');
-      backdrop?.classList.remove('hidden');
-      menuIcon?.classList.add('hidden');
-      closeIcon?.classList.remove('hidden');
-    }
-  }
+    console.log('MobileNav: Elementos carregados', { menuBtn, mobileMenu, backdrop });
 
-  menuBtn?.addEventListener('click', toggleMenu);
-  backdrop?.addEventListener('click', toggleMenu);
-  
-  logoutBtn?.addEventListener('click', async () => {
-    if (confirm('Tem certeza que deseja sair?')) {
-      await authService.signOut();
-      window.location.href = '/admin/login';
+    function toggleMenu() {
+      if (!mobileMenu || !backdrop) {
+        console.error('MobileNav: Elementos não encontrados');
+        return;
+      }
+
+      const isOpen = !mobileMenu.classList.contains('hidden');
+
+      console.log('MobileNav: Toggle menu', { isOpen });
+
+      if (isOpen) {
+        mobileMenu.classList.add('hidden');
+        backdrop.classList.add('hidden');
+        menuIcon?.classList.remove('hidden');
+        closeIcon?.classList.add('hidden');
+        document.body.style.overflow = '';
+      } else {
+        mobileMenu.classList.remove('hidden');
+        backdrop.classList.remove('hidden');
+        menuIcon?.classList.add('hidden');
+        closeIcon?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
     }
+
+    menuBtn?.addEventListener('click', (e) => {
+      console.log('MobileNav: Botão clicado');
+      e.preventDefault();
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    backdrop?.addEventListener('click', () => {
+      console.log('MobileNav: Backdrop clicado');
+      toggleMenu();
+    });
+
+    logoutBtn?.addEventListener('click', async () => {
+      if (confirm('Tem certeza que deseja sair?')) {
+        await authService.signOut();
+        window.location.href = '/admin/login';
+      }
+    });
   });
 </script>

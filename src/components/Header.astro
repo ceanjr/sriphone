@@ -378,9 +378,15 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
                     adminActionsDesktop.style.display = 'none'
                     btnAuthDesktop.classList.remove('hide-mobile')
                     btnMenuMobile.style.display = 'none'
-                    
-                    btnAuthDesktop.onclick = () => {
-                        window.location.href = '/admin/login';
+
+                    btnAuthDesktop.onclick = async () => {
+                        // Verificar se já está autenticado antes de redirecionar
+                        const session = await authService.getSession()
+                        if (session) {
+                            window.location.href = '/admin/dashboard'
+                        } else {
+                            window.location.href = '/admin/login'
+                        }
                     }
                 }
             }

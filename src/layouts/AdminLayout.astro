@@ -16,25 +16,28 @@ const { title, description = 'Painel administrativo Sr. IPHONE VCA' } =
 
 // Proteção de rota admin
 console.log('[AdminLayout] Iniciando verificação de autenticação...');
-const token =
-  Astro.cookies.get('sb-access-token')?.value ||
-  Astro.request.headers.get('Authorization');
-console.log('[AdminLayout] Token encontrado:', token);
+const currentPath = Astro.url.pathname;
+const isLoginPage = currentPath === '/admin/login' || currentPath === '/admin/login/';
+
+console.log('[AdminLayout] Caminho atual:', currentPath);
+console.log('[AdminLayout] É página de login?', isLoginPage);
+
 try {
   const isAuthenticated = await verifyAuth(
     Astro.cookies,
     Astro.request.headers.get('Authorization'),
   );
   console.log('[AdminLayout] Resultado da autenticação:', isAuthenticated);
-  if (!isAuthenticated && Astro.request.url !== '/admin/login') {
-    console.log(
-      '[AdminLayout] Não autenticado, redirecionando para /admin/login',
-    );
+
+  if (!isAuthenticated && !isLoginPage) {
+    console.log('[AdminLayout] Não autenticado, redirecionando para /admin/login');
     return Astro.redirect('/admin/login');
   }
 } catch (err) {
   console.log('[AdminLayout] Erro na verificação de autenticação:', err);
-  return Astro.redirect('/admin/login');
+  if (!isLoginPage) {
+    return Astro.redirect('/admin/login');
+  }
 }
 ---
 

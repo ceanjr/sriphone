@@ -369,6 +369,107 @@
   }
 }
 
+/* ==================== MOBILE OPTIMIZATIONS ==================== */
+@media (max-width: 1023px) {
+  /* Garantir que mobile nav seja visível */
+  .mobile-nav {
+    display: block;
+  }
+
+  /* Adicionar padding top no main para não ficar sob a nav */
+  .admin-main {
+    padding-top: 72px;
+    min-height: calc(100vh - 72px);
+  }
+
+  /* Melhorar espaçamento do conteúdo em mobile */
+  .admin-main > * {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Ajustar tabelas para mobile */
+  .admin-list-items {
+    gap: 12px;
+  }
+
+  .admin-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .admin-list-item-image {
+    width: 100%;
+    height: 200px;
+  }
+
+  .admin-list-item-content {
+    width: 100%;
+  }
+
+  .admin-list-item-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #2a2a2a;
+  }
+
+  /* Ajustar forms para mobile */
+  .form-row {
+    flex-direction: column;
+  }
+
+  .form-group {
+    width: 100%;
+  }
+
+  /* Melhorar botões em mobile */
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+
+  .form-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Ajustar header da página */
+  .admin-list-header,
+  .form-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .admin-list-title-group {
+    width: 100%;
+  }
+
+  .admin-list-actions {
+    width: 100%;
+  }
+
+  .admin-list-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Melhorar cards em mobile */
+  .form-card,
+  .admin-list-container {
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* Ajustar grid de imagens upload */
+  .form-image-upload {
+    min-height: 200px;
+  }
+}
+
 /* ==================== UTILITY CLASSES ==================== */
 .hidden {
   display: none;
