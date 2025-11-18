@@ -233,9 +233,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     // Gerar nome único com extensão .webp
+    // Usar timestamp + nano-timestamp + random para garantir unicidade
     const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(7);
-    const fileName = `${timestamp}-${randomString}.webp`;
+    const nanoTime = process.hrtime.bigint().toString();
+    const randomString = Math.random().toString(36).substring(2, 11); // 9 caracteres
+    const fileName = `${timestamp}-${nanoTime.slice(-6)}-${randomString}.webp`;
     const filePath = `produtos/${fileName}`;
 
     // Upload para Supabase Storage com token autenticado
@@ -244,7 +246,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .from('imagens')
       .upload(filePath, optimizedBuffer, {
         contentType: 'image/webp',
-        cacheControl: '31536000', // 1 ano (imagens são imutáveis)
+        cacheControl: '3600', // 1 hora (reduzido para evitar problemas de cache)
         upsert: false
       });
 
@@ -276,17 +278,26 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Obter URL pública
+    // Obter URL pública com cache-busting
     const { data: { publicUrl } } = supabase.storage
       .from('imagens')
       .getPublicUrl(filePath);
+
+    // Adicionar cache-busting query parameter para evitar problemas de cache
+    const cacheBustingUrl = `${publicUrl}?t=${timestamp}`;
+
+    console.log('📸 Imagem enviada:', {
+      fileName,
+      path: filePath,
+      url: cacheBustingUrl
+    });
 
     // Log de sucesso: upload realizado com sucesso
     await logImageUpload({
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type,
-      imageUrl: publicUrl,
+      imageUrl: cacheBustingUrl,
       userEmail,
       status: 'success',
       ipAddress,
@@ -294,7 +305,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
 
     return new Response(JSON.stringify({
-      url: publicUrl,
+      url: cacheBustingUrl,
       path: filePath,
       fileName: fileName,
       optimized: true,
