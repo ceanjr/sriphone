@@ -61,9 +61,23 @@ async function verifyToken(accessToken: string) {
 export const onRequest = defineMiddleware(async ({ request, locals, redirect, cookies }, next) => {
   const url = new URL(request.url);
   const isLoginPage = url.pathname === '/admin/login' || url.pathname === '/admin/login/';
+  const isLogoutAPI = url.pathname === '/api/admin/auth/logout';
   const isAdminRoute = url.pathname.startsWith('/admin') && !isLoginPage;
 
-  console.log(`[Middleware] Rota: ${url.pathname}, isAdminRoute: ${isAdminRoute}, isLoginPage: ${isLoginPage}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`[Middleware] 🌐 Request recebido`);
+  console.log(`[Middleware] 📍 URL: ${url.pathname}`);
+  console.log(`[Middleware] 🔗 Method: ${request.method}`);
+  console.log(`[Middleware] 📋 isAdminRoute: ${isAdminRoute}`);
+  console.log(`[Middleware] 🔐 isLoginPage: ${isLoginPage}`);
+  console.log(`[Middleware] 🚪 isLogoutAPI: ${isLogoutAPI}`);
+
+  // Não fazer verificação de auth na API de logout (deixar a API lidar com isso)
+  if (isLogoutAPI) {
+    console.log('[Middleware] ✅ API de logout, passando adiante sem verificação');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    return next();
+  }
 
   // Obter token uma única vez usando a API de cookies do Astro
   const accessToken = getAccessToken(request, cookies);
@@ -73,24 +87,32 @@ export const onRequest = defineMiddleware(async ({ request, locals, redirect, co
   if (accessToken) {
     const result = await verifyToken(accessToken);
     user = result.user;
+    console.log(`[Middleware] 👤 Usuário encontrado: ${user ? user.email : 'NENHUM'}`);
+  } else {
+    console.log('[Middleware] ⚠️ Nenhum token de acesso encontrado');
   }
 
   // Proteger rotas administrativas
   if (isAdminRoute) {
     if (!user) {
-      console.log('[Middleware] Rota admin sem autenticação, redirecionando para /admin/login');
+      console.log('[Middleware] 🚫 Rota admin sem autenticação, redirecionando para /admin/login');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       return redirect('/admin/login');
     }
     // Adicionar usuário aos locals para uso nas páginas
     locals.user = user;
-    console.log('[Middleware] Acesso permitido à rota admin');
+    console.log('[Middleware] ✅ Acesso permitido à rota admin');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   }
 
   // Redirecionar se já autenticado e tentar acessar login
   if (isLoginPage && user) {
-    console.log('[Middleware] Usuário autenticado tentando acessar login, redirecionando para /admin/dashboard');
+    console.log('[Middleware] 🔄 Usuário autenticado tentando acessar login, redirecionando para /admin/dashboard');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     return redirect('/admin/dashboard');
   }
 
+  console.log('[Middleware] ➡️ Passando para a próxima camada');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   return next();
 });

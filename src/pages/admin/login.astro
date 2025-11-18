@@ -95,13 +95,22 @@ if (isAuthenticated) {
 <script>
   import { authService } from '../../lib/supabase';
 
-  // Verificar se já há uma sessão existente ao carregar a página
+  // Log para confirmar que o script foi carregado
+  console.log('✅ [LOGIN PAGE] Script carregado e executando');
+  console.log('📍 [LOGIN PAGE] URL atual:', window.location.href);
+  console.log('🕐 [LOGIN PAGE] Timestamp:', new Date().toISOString());
 
   const form = document.getElementById('login-form') as HTMLFormElement;
   const errorMessage = document.getElementById(
     'error-message',
   ) as HTMLDivElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+
+  console.log('🔍 [LOGIN PAGE] Elementos encontrados:', {
+    form: form ? 'OK' : 'ERRO',
+    errorMessage: errorMessage ? 'OK' : 'ERRO',
+    submitBtn: submitBtn ? 'OK' : 'ERRO'
+  });
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -123,16 +132,20 @@ if (isAuthenticated) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Entrando...';
 
+    let loginSuccessful = false;
+
     try {
-      console.log('🔐 Iniciando login...');
+      console.log('🔐 [LOGIN] Iniciando processo de login...');
+      console.log('📧 [LOGIN] Email:', email);
 
       // 1. Fazer login usando o authService (salva no localStorage)
-      console.log('📝 Chamando authService.signIn...');
-      await authService.signIn(email, password);
-      console.log('✅ authService.signIn concluído');
+      console.log('📝 [LOGIN] Passo 1/3: Autenticando com Supabase...');
+      const authResult = await authService.signIn(email, password);
+      console.log('✅ [LOGIN] Passo 1/3: Autenticação Supabase concluída');
+      console.log('🔑 [LOGIN] Session recebida:', authResult.session ? 'SIM' : 'NÃO');
 
       // 2. Chamar API para salvar cookies no servidor
-      console.log('🍪 Salvando cookies no servidor...');
+      console.log('🍪 [LOGIN] Passo 2/3: Salvando sessão no servidor...');
       const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: {
@@ -142,24 +155,51 @@ if (isAuthenticated) {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('📥 Resposta da API:', response.status);
+      console.log('📥 [LOGIN] Resposta da API:', response.status, response.statusText);
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('❌ Erro na API:', error);
+        console.error('❌ [LOGIN] Erro na API:', error);
         throw new Error(error.error || 'Erro ao fazer login');
       }
 
       const result = await response.json();
-      console.log('✅ Login API concluído:', result);
+      console.log('✅ [LOGIN] Passo 2/3: Sessão salva no servidor');
+      console.log('📦 [LOGIN] Resultado:', result);
 
-      // 3. Sucesso! Redirecionar para dashboard
-      console.log('🚀 Redirecionando para /admin/dashboard...');
+      // 3. Sucesso! Marcar como bem-sucedido
+      loginSuccessful = true;
+      console.log('🎉 [LOGIN] Passo 3/3: Login concluído com sucesso!');
 
-      // Usar replace ao invés de href para evitar voltar ao login com botão voltar
+      // 4. Forçar redirecionamento com múltiplos fallbacks
+      console.log('🚀 [LOGIN] Iniciando redirecionamento para /admin/dashboard...');
+      submitBtn.textContent = 'Redirecionando...';
+
+      // Método 1: window.location.replace (preferido)
       window.location.replace('/admin/dashboard');
+
+      // Fallback 1: Se não redirecionar em 1 segundo, tentar window.location.href
+      setTimeout(() => {
+        console.log('⚠️ [LOGIN] Fallback 1: Usando window.location.href...');
+        window.location.href = '/admin/dashboard';
+      }, 1000);
+
+      // Fallback 2: Se ainda não redirecionar em 2 segundos, forçar reload
+      setTimeout(() => {
+        console.log('⚠️ [LOGIN] Fallback 2: Forçando redirect com assign...');
+        window.location.assign('/admin/dashboard');
+      }, 2000);
+
     } catch (error: any) {
-      console.error('Erro no login:', error);
+      console.error('❌ [LOGIN] Erro capturado:', error);
+      console.error('❌ [LOGIN] Stack trace:', error.stack);
+
+      // Se o login foi bem-sucedido mas o redirecionamento falhou
+      if (loginSuccessful) {
+        console.log('⚠️ [LOGIN] Login OK, mas redirecionamento falhou. Tentando novamente...');
+        window.location.href = '/admin/dashboard';
+        return;
+      }
 
       // Mensagens de erro mais amigáveis
       let errorMsg = 'Erro ao fazer login. Verifique suas credenciais.';
@@ -170,6 +210,9 @@ if (isAuthenticated) {
         errorMsg = 'Email não confirmado. Verifique sua caixa de entrada.';
       } else if (error.message?.includes('Network')) {
         errorMsg = 'Erro de conexão. Verifique sua internet.';
+      } else {
+        // Incluir mensagem de erro técnica para debug
+        errorMsg += ` (${error.message})`;
       }
 
       showError(errorMsg);

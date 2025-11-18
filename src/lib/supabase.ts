@@ -316,13 +316,44 @@ export const authService = {
   },
 
   async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Erro ao fazer logout:', error);
+    console.log('[authService] Iniciando logout...');
+
+    try {
+      // 1. Limpar sessão do Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[authService] Erro ao fazer logout no Supabase:', error);
+      } else {
+        console.log('[authService] ✅ Logout do Supabase concluído');
+      }
+    } catch (error) {
+      console.error('[authService] Exceção ao fazer logout:', error);
     }
-    console.log('Usuário deslogado com sucesso.');
-    // Limpar todos os tokens do localStorage
-    import('./authUtils').then(({ clearAuthToken }) => clearAuthToken());
+
+    // 2. Limpar TODOS os tokens do localStorage manualmente e de forma síncrona
+    if (typeof window !== 'undefined') {
+      try {
+        console.log('[authService] Limpando localStorage...');
+        localStorage.removeItem('sb-auth-token');
+        localStorage.removeItem('sb-access-token');
+        localStorage.removeItem('sb-refresh-token');
+        localStorage.removeItem('sb-auth-time');
+
+        // Limpar todas as chaves que começam com 'sb-' por segurança
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sb-')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+
+        console.log('[authService] ✅ localStorage limpo');
+      } catch (error) {
+        console.error('[authService] Erro ao limpar localStorage:', error);
+      }
+    }
   },
 
   async getSession() {
