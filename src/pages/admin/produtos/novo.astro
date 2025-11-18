@@ -346,17 +346,15 @@ const { data: categorias } = await supabaseAdmin
     }
 
     // Mostrar grid de imagens quando há uploads
-    const renderTime = Date.now(); // Timestamp único para cada renderização
     const imagesHtml = uploadedImages
       .map(
         (img, index) => `
         <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; background: #f9fafb;">
           <img
-            src="${img.url}&r=${renderTime}"
+            src="${img.url}"
             alt="Preview ${index + 1}"
             style="width: 100%; height: 100%; object-fit: cover;"
             loading="eager"
-            key="${index}-${renderTime}"
           />
           <button
             type="button"
