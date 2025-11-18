@@ -1,6 +1,6 @@
 ---
 // src/pages/catalogo.astro
-// CRITICAL: SSR puro - sempre busca dados frescos
+// SSR com ISR - cache inteligente com revalidação a cada 5 minutos
 export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
@@ -24,19 +24,19 @@ import '../styles/admin.css';
 
 import { productService, categoryService } from '../lib/supabase';
 
-// CRITICAL: Desabilitar cache - sempre buscar dados frescos
+// Cache otimizado: stale-while-revalidate
+// - Serve cache imediatamente (fast)
+// - Revalida em background (fresh data)
 Astro.response.headers.set(
   'Cache-Control',
-  'no-cache, no-store, must-revalidate',
+  'public, s-maxage=300, stale-while-revalidate=600',
 );
-Astro.response.headers.set('Pragma', 'no-cache');
-Astro.response.headers.set('Expires', '0');
 
-// Buscar dados frescos sempre
+// Buscar dados (cached por ISR)
 const produtosIniciais = await productService.getPaginated(undefined, 30);
 const categorias = await categoryService.getAll();
 
-console.log('📊 SSR Catalogo:', {
+console.log('📊 ISR Catalogo:', {
   produtos: produtosIniciais.produtos?.length || 0,
   categorias: categorias?.length || 0,
   timestamp: new Date().toISOString(),
@@ -205,8 +205,22 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       type="application/json"
       id="initial-data"
       set:html={JSON.stringify({
-        produtos: produtosIniciais.produtos,
+        // Enviar apenas campos essenciais para reduzir tamanho do HTML
+        produtos: produtosIniciais.produtos.map(p => ({
+          id: p.id,
+          nome: p.nome,
+          descricao: p.descricao,
+          preco: p.preco,
+          condicao: p.condicao,
+          bateria: p.bateria,
+          categoria_id: p.categoria_id,
+          codigo: p.codigo,
+          // Enviar apenas thumbnail para primeira renderização
+          imagens: p.imagens && p.imagens.length > 0 ? [p.imagens[0]] : [],
+          categoria: p.categoria,
+        })),
         nextCursor: produtosIniciais.nextCursor,
+        // Categorias são leves, pode enviar completo
         categorias: categorias,
         timestamp: Date.now(),
       })}
@@ -294,7 +308,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   // Handlers modulares
   const handlers = createHandlers(elementos);
 
-  // ==================== Ordenação de Categorias ====================
+  // ==================== Ordenação de Categorias (client-side) ====================
   function ordenarCategorias(categorias: any[]) {
     const ordem: { [key: string]: number } = {
       todos: 0,

@@ -5,10 +5,18 @@ import node from '@astrojs/node';
 
 export default defineConfig({
   site: 'https://sriphonevca.com.br',
-  output: 'server', // Astro 5.x: usar 'server' com prerender seletivo
+  output: 'server', // SSR com prerender seletivo
   adapter: vercel({
-    // ISR desabilitado (incompatível com SSR puro)
-    isr: false,
+    // ISR habilitado para melhor performance
+    isr: {
+      // Cache de 5 minutos (300 segundos) para páginas dinâmicas
+      expiration: 300,
+      // Exclui rotas admin do ISR (sempre SSR puro)
+      exclude: ['/api/admin/*', '/admin/*'],
+    },
+    // Configurações de edge functions para baixa latência
+    edgeMiddleware: false,
+    functionPerRoute: false, // Um bundle único é mais eficiente
   }),
   // adapter: node({ mode: 'standalone' }),
   
