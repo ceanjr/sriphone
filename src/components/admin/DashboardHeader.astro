@@ -34,25 +34,51 @@ import '../../styles/admin-header.css';
   <script>
     import { authService } from '../../lib/supabase';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const logoutBtn = document.getElementById('logout-btn');
-      logoutBtn?.addEventListener('click', async () => {
-        if (confirm('Tem certeza que deseja sair?')) {
-          try {
-            await authService.signOut();
+    const logoutBtn = document.getElementById('logout-btn');
 
-            await fetch('/api/admin/auth/logout', {
+    if (!logoutBtn) {
+      console.error('[Logout] Botão de logout não encontrado!');
+    } else {
+      console.log('[Logout] Botão de logout encontrado, adicionando listener');
+
+      logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log('[Logout] Botão clicado');
+
+        if (confirm('Tem certeza que deseja sair?')) {
+          console.log('[Logout] Usuário confirmou logout');
+
+          try {
+            // 1. Limpar sessão do Supabase no cliente
+            console.log('[Logout] Limpando sessão do Supabase...');
+            await authService.signOut();
+            console.log('[Logout] ✅ Sessão do Supabase limpa');
+
+            // 2. Limpar cookies no servidor
+            console.log('[Logout] Chamando API de logout...');
+            const response = await fetch('/api/admin/auth/logout', {
               method: 'POST',
               credentials: 'include',
             });
 
-            window.location.href = '/admin/login';
+            if (response.ok) {
+              console.log('[Logout] ✅ Cookies limpos no servidor');
+            } else {
+              console.warn('[Logout] ⚠️ Falha ao limpar cookies, mas continuando...');
+            }
+
+            // 3. Redirecionar para login
+            console.log('[Logout] 🚀 Redirecionando para /admin/login...');
+            window.location.replace('/admin/login');
           } catch (error) {
-            console.error('Erro ao sair:', error);
-            window.location.href = '/admin/login';
+            console.error('[Logout] ❌ Erro ao fazer logout:', error);
+            // Mesmo com erro, redirecionar
+            window.location.replace('/admin/login');
           }
+        } else {
+          console.log('[Logout] Usuário cancelou logout');
         }
       });
-    });
+    }
   </script>
 </header>

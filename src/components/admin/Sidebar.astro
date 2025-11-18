@@ -120,7 +120,7 @@ const currentPath = Astro.url.pathname;
 
   <!-- Botão de Logout -->
   <div class="sidebar-footer">
-    <button id="logout-btn" class="sidebar-logout-btn">
+    <button id="sidebar-logout-btn" class="sidebar-logout-btn">
       <span aria-hidden="true">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -139,25 +139,50 @@ const currentPath = Astro.url.pathname;
 <script>
   import { authService } from '../../lib/supabase';
 
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    if (confirm('Tem certeza que deseja sair?')) {
-      try {
-        // Fazer logout no Supabase (limpa localStorage)
-        await authService.signOut();
+  const sidebarLogoutBtn = document.getElementById('sidebar-logout-btn');
 
-        // Chamar endpoint para limpar cookies do servidor
-        await fetch('/api/admin/auth/logout', {
-          method: 'POST',
-          credentials: 'include',
-        });
+  if (!sidebarLogoutBtn) {
+    console.error('[Sidebar Logout] Botão de logout não encontrado!');
+  } else {
+    console.log('[Sidebar Logout] Botão de logout encontrado, adicionando listener');
 
-        // Redirecionar para login
-        window.location.href = '/admin/login';
-      } catch (error) {
-        console.error('Erro ao fazer logout:', error);
-        // Mesmo com erro, redirecionar para login
-        window.location.href = '/admin/login';
+    sidebarLogoutBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      console.log('[Sidebar Logout] Botão clicado');
+
+      if (confirm('Tem certeza que deseja sair?')) {
+        console.log('[Sidebar Logout] Usuário confirmou logout');
+
+        try {
+          // 1. Limpar sessão do Supabase no cliente
+          console.log('[Sidebar Logout] Limpando sessão do Supabase...');
+          await authService.signOut();
+          console.log('[Sidebar Logout] ✅ Sessão do Supabase limpa');
+
+          // 2. Limpar cookies no servidor
+          console.log('[Sidebar Logout] Chamando API de logout...');
+          const response = await fetch('/api/admin/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+          });
+
+          if (response.ok) {
+            console.log('[Sidebar Logout] ✅ Cookies limpos no servidor');
+          } else {
+            console.warn('[Sidebar Logout] ⚠️ Falha ao limpar cookies, mas continuando...');
+          }
+
+          // 3. Redirecionar para login
+          console.log('[Sidebar Logout] 🚀 Redirecionando para /admin/login...');
+          window.location.replace('/admin/login');
+        } catch (error) {
+          console.error('[Sidebar Logout] ❌ Erro ao fazer logout:', error);
+          // Mesmo com erro, redirecionar
+          window.location.replace('/admin/login');
+        }
+      } else {
+        console.log('[Sidebar Logout] Usuário cancelou logout');
       }
-    }
-  });
+    });
+  }
 </script>
