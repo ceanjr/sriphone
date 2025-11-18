@@ -41,7 +41,66 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    const formData = await request.formData();
+    // Validar Content-Type antes de tentar parsear formData
+    const contentType = request.headers.get('Content-Type') || '';
+    console.log('📋 Content-Type recebido:', contentType);
+
+    if (!contentType.includes('multipart/form-data')) {
+      await logImageUpload({
+        fileName: 'unknown',
+        fileSize: 0,
+        mimeType: 'unknown',
+        imageUrl: '',
+        userEmail,
+        status: 'error',
+        errorMessage: 'Content-Type inválido para upload de arquivo',
+        errorDetails: {
+          receivedContentType: contentType,
+          expectedContentType: 'multipart/form-data',
+          headers: Object.fromEntries(request.headers.entries()),
+        },
+        ipAddress,
+        userAgent,
+      });
+
+      return new Response(JSON.stringify({
+        error: 'Content-Type deve ser multipart/form-data para upload de arquivos'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (formDataError: any) {
+      console.error('Erro ao parsear formData:', formDataError);
+      await logImageUpload({
+        fileName: 'unknown',
+        fileSize: 0,
+        mimeType: 'unknown',
+        imageUrl: '',
+        userEmail,
+        status: 'error',
+        errorMessage: 'Erro ao processar dados do formulário',
+        errorDetails: {
+          error: formDataError.message,
+          contentType: contentType,
+          headers: Object.fromEntries(request.headers.entries()),
+        },
+        ipAddress,
+        userAgent,
+      });
+
+      return new Response(JSON.stringify({
+        error: 'Erro ao processar upload. Verifique se o arquivo foi enviado corretamente.'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const file = formData.get('file') as File;
 
     if (!file) {

@@ -212,16 +212,30 @@ const { data: categorias } = await supabaseAdmin
         return null;
       }
 
+      console.log('📤 Uploading file:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      });
+
       const formData = new FormData();
       formData.append('file', file);
 
+      // Não definir Content-Type manualmente - o browser define automaticamente
+      // com o boundary correto para multipart/form-data
       const response = await fetch('/api/admin/upload', {
         method: 'POST',
         body: formData,
+        // Importante: não incluir headers aqui para deixar o browser
+        // definir o Content-Type automaticamente
       });
 
+      console.log('📥 Upload response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Erro ao fazer upload');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Erro ao fazer upload';
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -236,7 +250,7 @@ const { data: categorias } = await supabaseAdmin
         path: result.path,
       };
     } catch (error: any) {
-      console.error('Erro ao fazer upload:', error);
+      console.error('❌ Erro ao fazer upload:', error);
       window.showToast(error.message || 'Erro ao fazer upload', 'error');
       return null;
     }
