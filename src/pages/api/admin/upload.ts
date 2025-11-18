@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../lib/auth';
 import { logImageUpload, logImageRemove } from '../../../lib/logger';
 import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
 
 export const prerender = false;
 
@@ -232,12 +233,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Gerar nome único com extensão .webp
-    // Usar timestamp + nano-timestamp + random para garantir unicidade
+    // Gerar nome único com extensão .webp usando UUID
     const timestamp = Date.now();
-    const nanoTime = process.hrtime.bigint().toString();
-    const randomString = Math.random().toString(36).substring(2, 11); // 9 caracteres
-    const fileName = `${timestamp}-${nanoTime.slice(-6)}-${randomString}.webp`;
+    const uuid = uuidv4(); // UUID v4 garante unicidade total
+    const fileName = `${timestamp}-${uuid}.webp`;
     const filePath = `produtos/${fileName}`;
 
     // Upload para Supabase Storage com token autenticado
