@@ -44,7 +44,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
 
       console.log('[Login API] ✅ Cookies configurados com sucesso');
-      console.log('[Login API] - sb-access-token:', data.session.access_token.substring(0, 20) + '...');
       console.log('[Login API] - httpOnly: true, secure:', isProduction, ', sameSite: lax');
     } else {
       console.log('[Login API] ⚠️ Nenhuma sessão retornada pelo Supabase');
