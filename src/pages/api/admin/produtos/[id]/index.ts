@@ -1,13 +1,39 @@
 // src/pages/api/admin/produtos/[id]/index.ts
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
+import { logProductAction } from '../../../../../lib/logger';
 
 export const prerender = false;
+
+// Helper para obter informações do request
+function getRequestInfo(request: Request) {
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+                    request.headers.get('x-real-ip') ||
+                    'unknown';
+  return { userAgent, ipAddress };
+}
+
+// Helper para obter email do usuário autenticado
+async function getUserEmail(cookies: any) {
+  try {
+    const sessionCookie = cookies.get('sb-access-token')?.value;
+    if (!sessionCookie) return undefined;
+
+    const payload = JSON.parse(atob(sessionCookie.split('.')[1]));
+    return payload.email;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * PUT - Atualizar produto
  */
-export const PUT: APIRoute = async ({ params, request }) => {
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
+  const { userAgent, ipAddress } = getRequestInfo(request);
+  const userEmail = await getUserEmail(cookies);
+
   try {
     const { id } = params;
     console.log('📝 PUT /api/admin/produtos/' + id);
@@ -44,6 +70,19 @@ export const PUT: APIRoute = async ({ params, request }) => {
 
     if (error) {
       console.error('❌ Erro Supabase:', error);
+
+      // Log de erro: falha ao atualizar produto
+      await logProductAction({
+        action: 'update_product',
+        productId: id || 'unknown',
+        productName: produtoData.nome || 'unknown',
+        userEmail,
+        status: 'error',
+        errorMessage: error.message,
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -52,25 +91,50 @@ export const PUT: APIRoute = async ({ params, request }) => {
 
     console.log('✅ Produto atualizado:', data);
 
+    // Log de sucesso: produto atualizado
+    await logProductAction({
+      action: 'update_product',
+      productId: data.id,
+      productName: data.nome,
+      userEmail,
+      status: 'success',
+      details: produtoData,
+      ipAddress,
+      userAgent,
+    });
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         data,
         message: 'Produto atualizado com sucesso!',
         timestamp: new Date().toISOString()
       }),
-      { 
-        status: 200, 
-        headers: { 
+      {
+        status: 200,
+        headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
-        } 
+        }
       }
     );
   } catch (error: any) {
     console.error('❌ Erro crítico em PUT:', error);
+
+    // Log de erro: exceção não tratada
+    await logProductAction({
+      action: 'update_product',
+      productId: id || 'unknown',
+      productName: 'unknown',
+      userEmail,
+      status: 'error',
+      errorMessage: error.message,
+      ipAddress,
+      userAgent,
+    });
+
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -81,17 +145,27 @@ export const PUT: APIRoute = async ({ params, request }) => {
 /**
  * DELETE - Deletar produto
  */
-export const DELETE: APIRoute = async ({ params, request }) => {
+export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+  const { userAgent, ipAddress } = getRequestInfo(request);
+  const userEmail = await getUserEmail(cookies);
+
   try {
     const { id } = params;
     console.log('🗑️ DELETE /api/admin/produtos/' + id);
-    
+
     if (!id) {
       return new Response(
         JSON.stringify({ success: false, error: 'ID é obrigatório' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    // Primeiro, buscar o produto para obter o nome antes de deletar
+    const { data: produto } = await supabaseAdmin
+      .from('produtos')
+      .select('nome')
+      .eq('id', id)
+      .single();
 
     const { error } = await supabaseAdmin
       .from('produtos')
@@ -100,6 +174,19 @@ export const DELETE: APIRoute = async ({ params, request }) => {
 
     if (error) {
       console.error('❌ Erro Supabase:', error);
+
+      // Log de erro: falha ao deletar produto
+      await logProductAction({
+        action: 'delete_product',
+        productId: id,
+        productName: produto?.nome || 'unknown',
+        userEmail,
+        status: 'error',
+        errorMessage: error.message,
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -107,6 +194,17 @@ export const DELETE: APIRoute = async ({ params, request }) => {
     }
 
     console.log('✅ Produto deletado');
+
+    // Log de sucesso: produto deletado
+    await logProductAction({
+      action: 'delete_product',
+      productId: id,
+      productName: produto?.nome || 'unknown',
+      userEmail,
+      status: 'success',
+      ipAddress,
+      userAgent,
+    });
 
     // Revalidar cache
     try {
@@ -121,6 +219,19 @@ export const DELETE: APIRoute = async ({ params, request }) => {
     );
   } catch (error: any) {
     console.error('❌ Erro crítico em DELETE:', error);
+
+    // Log de erro: exceção não tratada
+    await logProductAction({
+      action: 'delete_product',
+      productId: id || 'unknown',
+      productName: 'unknown',
+      userEmail,
+      status: 'error',
+      errorMessage: error.message,
+      ipAddress,
+      userAgent,
+    });
+
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

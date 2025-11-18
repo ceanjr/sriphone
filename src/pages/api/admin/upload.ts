@@ -1,10 +1,36 @@
 import type { APIRoute } from 'astro';
 import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../lib/auth';
+import { logImageUpload, logImageRemove } from '../../../lib/logger';
 import sharp from 'sharp';
 
 export const prerender = false;
 
+// Helper para obter informações do request
+function getRequestInfo(request: Request) {
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+                    request.headers.get('x-real-ip') ||
+                    'unknown';
+  return { userAgent, ipAddress };
+}
+
+// Helper para obter email do usuário autenticado
+async function getUserEmail(cookies: any) {
+  try {
+    const sessionCookie = cookies.get('sb-access-token')?.value;
+    if (!sessionCookie) return undefined;
+
+    const payload = JSON.parse(atob(sessionCookie.split('.')[1]));
+    return payload.email;
+  } catch {
+    return undefined;
+  }
+}
+
 export const POST: APIRoute = async ({ request, cookies }) => {
+  const { userAgent, ipAddress } = getRequestInfo(request);
+  const userEmail = await getUserEmail(cookies);
+
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
@@ -19,6 +45,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const file = formData.get('file') as File;
 
     if (!file) {
+      // Log de erro: arquivo não enviado
+      await logImageUpload({
+        fileName: 'unknown',
+        fileSize: 0,
+        mimeType: 'unknown',
+        imageUrl: '',
+        userEmail,
+        status: 'error',
+        errorMessage: 'Nenhum arquivo enviado',
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(JSON.stringify({ error: 'Nenhum arquivo enviado' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -28,6 +67,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // Validar tipo de arquivo
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
+      // Log de erro: tipo de arquivo não permitido
+      await logImageUpload({
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        imageUrl: '',
+        userEmail,
+        status: 'error',
+        errorMessage: 'Tipo de arquivo não permitido',
+        errorDetails: { allowedTypes, receivedType: file.type },
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(JSON.stringify({
         error: 'Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.'
       }), {
@@ -39,6 +92,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // Validar tamanho antes da otimização (máximo 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
+      // Log de erro: arquivo muito grande
+      await logImageUpload({
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        imageUrl: '',
+        userEmail,
+        status: 'error',
+        errorMessage: 'Arquivo muito grande',
+        errorDetails: { maxSize, receivedSize: file.size },
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(JSON.stringify({
         error: 'Arquivo muito grande. Tamanho máximo: 10MB'
       }), {
@@ -80,6 +147,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       console.log(`📊 Otimização: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB (${((1 - optimizedBuffer.length / originalSize) * 100).toFixed(1)}% redução)`);
     } catch (sharpError: any) {
       console.error('Erro ao otimizar imagem:', sharpError);
+
+      // Log de erro: falha ao processar imagem com Sharp
+      await logImageUpload({
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        imageUrl: '',
+        userEmail,
+        status: 'error',
+        errorMessage: 'Erro ao processar imagem com Sharp',
+        errorDetails: {
+          error: sharpError.message,
+          stack: sharpError.stack,
+        },
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(JSON.stringify({
         error: 'Erro ao processar imagem'
       }), {
@@ -106,6 +191,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
+
+      // Log de erro: falha no upload para Supabase Storage
+      await logImageUpload({
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        imageUrl: '',
+        userEmail,
+        status: 'error',
+        errorMessage: 'Erro ao fazer upload para Supabase Storage',
+        errorDetails: {
+          error: uploadError.message,
+          filePath,
+        },
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(JSON.stringify({
         error: 'Erro ao fazer upload da imagem'
       }), {
@@ -118,6 +221,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const { data: { publicUrl } } = supabase.storage
       .from('imagens')
       .getPublicUrl(filePath);
+
+    // Log de sucesso: upload realizado com sucesso
+    await logImageUpload({
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type,
+      imageUrl: publicUrl,
+      userEmail,
+      status: 'success',
+      ipAddress,
+      userAgent,
+    });
 
     return new Response(JSON.stringify({
       url: publicUrl,
@@ -133,6 +248,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   } catch (error: any) {
     console.error('Upload error:', error);
+
+    // Log de erro: exceção não tratada
+    await logImageUpload({
+      fileName: 'unknown',
+      fileSize: 0,
+      mimeType: 'unknown',
+      imageUrl: '',
+      userEmail,
+      status: 'error',
+      errorMessage: 'Exceção não tratada no upload',
+      errorDetails: {
+        error: error.message,
+        stack: error.stack,
+      },
+      ipAddress,
+      userAgent,
+    });
+
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
@@ -142,6 +275,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
 // DELETE - Deletar imagem(ns)
 export const DELETE: APIRoute = async ({ request, cookies }) => {
+  const { userAgent, ipAddress } = getRequestInfo(request);
+  const userEmail = await getUserEmail(cookies);
+
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
@@ -169,7 +305,36 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       .from('imagens')
       .remove(paths);
 
-    if (error) throw error;
+    if (error) {
+      // Log de erro: falha ao remover imagem
+      for (const path of paths) {
+        const fileName = path.split('/').pop() || path;
+        await logImageRemove({
+          fileName,
+          imageUrl: path,
+          userEmail,
+          status: 'error',
+          errorMessage: 'Erro ao remover imagem do Storage',
+          ipAddress,
+          userAgent,
+        });
+      }
+
+      throw error;
+    }
+
+    // Log de sucesso: imagens removidas
+    for (const path of paths) {
+      const fileName = path.split('/').pop() || path;
+      await logImageRemove({
+        fileName,
+        imageUrl: path,
+        userEmail,
+        status: 'success',
+        ipAddress,
+        userAgent,
+      });
+    }
 
     return new Response(JSON.stringify({
       success: true,

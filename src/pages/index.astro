@@ -20,6 +20,16 @@ import Mapa from '../components/Mapa.astro';
     title="Sr. IPHONE | Seu iPhone, com Classe e Confiança"
     description="Revisamos, avaliamos e garantimos. Cada detalhe do processo assegura a entrega do melhor da tecnologia, com segurança e qualidade garantida."
 >
+    <!-- Preload hero image apenas nesta página -->
+    <link
+        slot="head"
+        rel="preload"
+        href="/images/Barbudo.webp"
+        as="image"
+        type="image/webp"
+        fetchpriority="high"
+    />
+
     <Header />
 
     <main>

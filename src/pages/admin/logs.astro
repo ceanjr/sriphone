@@ -1,0 +1,284 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import '../../styles/admin-list.css';
+
+export const prerender = false;
+
+// Buscar os logs recentes
+const response = await fetch(`${Astro.url.origin}/api/admin/logs?limit=60`, {
+  headers: {
+    'Cookie': Astro.request.headers.get('cookie') || '',
+  },
+});
+
+let logs: any[] = [];
+if (response.ok) {
+  const data = await response.json();
+  logs = data.data || [];
+}
+
+// Tradução de ações
+const actionLabels: Record<string, string> = {
+  upload_image: 'Upload de Imagem',
+  remove_image: 'Remoção de Imagem',
+  add_product: 'Adicionar Produto',
+  update_product: 'Atualizar Produto',
+  delete_product: 'Deletar Produto',
+  add_category: 'Adicionar Categoria',
+  update_category: 'Atualizar Categoria',
+  delete_category: 'Deletar Categoria',
+};
+---
+
+<AdminLayout title="Logs" description="Logs de ações administrativas">
+  <div class="admin-list-container">
+    <div class="admin-list-header">
+      <div class="admin-list-title-group">
+        <h1 class="admin-list-title">Logs Administrativos</h1>
+        <p class="admin-list-subtitle">
+          Últimos 60 logs (mantidos por 48 horas)
+        </p>
+      </div>
+      <button id="refresh-btn" class="admin-add-btn" type="button">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          ></path>
+        </svg>
+        Atualizar
+      </button>
+    </div>
+
+    {
+      logs.length === 0 ? (
+        <div class="admin-empty-state">
+          <div class="admin-empty-state-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h3 class="admin-empty-state-title">Nenhum log encontrado</h3>
+          <p class="admin-empty-state-text">
+            Logs aparecerão aqui quando ações administrativas forem realizadas
+          </p>
+        </div>
+      ) : (
+        <div class="logs-container">
+          {logs.map((log) => (
+            <div class={`log-item log-${log.status}`}>
+              <div class="log-header">
+                <div class="log-info">
+                  <span class={`log-badge log-badge-${log.status}`}>
+                    {log.status === 'success' ? '✓' : '✗'}
+                    {log.status === 'success' ? 'Sucesso' : 'Erro'}
+                  </span>
+                  <span class="log-action">
+                    {actionLabels[log.action] || log.action}
+                  </span>
+                  <span class="log-time">
+                    {new Date(log.created_at).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}
+                  </span>
+                </div>
+                {log.user_email && (
+                  <span class="log-user">{log.user_email}</span>
+                )}
+              </div>
+
+              <div class="log-details">
+                {log.entity_type && (
+                  <div class="log-detail-item">
+                    <strong>Tipo:</strong> {log.entity_type}
+                  </div>
+                )}
+                {log.entity_id && (
+                  <div class="log-detail-item">
+                    <strong>ID:</strong> {log.entity_id}
+                  </div>
+                )}
+                {log.error_message && (
+                  <div class="log-detail-item error-message">
+                    <strong>Erro:</strong> {log.error_message}
+                  </div>
+                )}
+                {log.details && Object.keys(log.details).length > 0 && (
+                  <div class="log-detail-item">
+                    <strong>Detalhes:</strong>
+                    <pre class="log-details-json">
+                      {JSON.stringify(log.details, null, 2)}
+                    </pre>
+                  </div>
+                )}
+                {log.ip_address && log.ip_address !== 'unknown' && (
+                  <div class="log-detail-item">
+                    <strong>IP:</strong> {log.ip_address}
+                  </div>
+                )}
+                {log.user_agent && log.user_agent !== 'unknown' && (
+                  <div class="log-detail-item">
+                    <strong>User Agent:</strong>{' '}
+                    <span class="user-agent-text">{log.user_agent}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<script>
+  document.getElementById('refresh-btn')?.addEventListener('click', () => {
+    window.location.reload();
+  });
+</script>
+
+<style>
+  .logs-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .log-item {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+
+  .log-item:hover {
+    border-color: #3a3a3a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .log-item.log-error {
+    border-left: 4px solid #ef4444;
+  }
+
+  .log-item.log-success {
+    border-left: 4px solid #10b981;
+  }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .log-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .log-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .log-badge-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+  }
+
+  .log-badge-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  .log-action {
+    font-weight: 600;
+    color: #fff;
+    font-size: 0.95rem;
+  }
+
+  .log-time {
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  .log-user {
+    color: #aaa;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+
+  .log-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #2a2a2a;
+  }
+
+  .log-detail-item {
+    font-size: 0.875rem;
+    color: #ccc;
+  }
+
+  .log-detail-item strong {
+    color: #fff;
+    margin-right: 8px;
+  }
+
+  .error-message {
+    color: #ef4444;
+  }
+
+  .log-details-json {
+    background: #0a0a0a;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    margin-top: 8px;
+    color: #22d3ee;
+  }
+
+  .user-agent-text {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: #888;
+    word-break: break-all;
+  }
+
+  @media (max-width: 768px) {
+    .log-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .log-info {
+      width: 100%;
+    }
+  }
+</style>

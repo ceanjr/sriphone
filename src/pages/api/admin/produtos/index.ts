@@ -1,8 +1,31 @@
 // src/pages/api/admin/produtos/index.ts
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { logProductAction } from '../../../../lib/logger';
 
 export const prerender = false;
+
+// Helper para obter informações do request
+function getRequestInfo(request: Request) {
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+                    request.headers.get('x-real-ip') ||
+                    'unknown';
+  return { userAgent, ipAddress };
+}
+
+// Helper para obter email do usuário autenticado
+async function getUserEmail(cookies: any) {
+  try {
+    const sessionCookie = cookies.get('sb-access-token')?.value;
+    if (!sessionCookie) return undefined;
+
+    const payload = JSON.parse(atob(sessionCookie.split('.')[1]));
+    return payload.email;
+  } catch {
+    return undefined;
+  }
+}
 
 export const GET: APIRoute = async () => {
   try {
@@ -48,10 +71,13 @@ export const GET: APIRoute = async () => {
   }
 };
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, cookies }) => {
+  const { userAgent, ipAddress } = getRequestInfo(request);
+  const userEmail = await getUserEmail(cookies);
+
   try {
     console.log('📥 POST /api/admin/produtos - Iniciando...');
-    
+
     const contentType = request.headers.get('content-type');
     console.log('📦 Content-Type:', contentType);
     
@@ -139,49 +165,96 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (error) {
       console.error('❌ Erro Supabase:', error);
+
+      // Log de erro: falha ao criar produto
+      await logProductAction({
+        action: 'add_product',
+        productId: 'failed',
+        productName: produtoData.nome,
+        userEmail,
+        status: 'error',
+        errorMessage: error.message || 'Erro ao criar produto',
+        details: { error: error.message },
+        ipAddress,
+        userAgent,
+      });
+
       return new Response(
-        JSON.stringify({ 
-          success: false, 
+        JSON.stringify({
+          success: false,
           error: error.message || 'Erro ao criar produto',
           details: error
         }),
-        { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
         }
       );
     }
 
     console.log('✅ Produto criado:', data);
 
+    // Log de sucesso: produto criado
+    await logProductAction({
+      action: 'add_product',
+      productId: data.id,
+      productName: data.nome,
+      userEmail,
+      status: 'success',
+      details: {
+        codigo: data.codigo,
+        preco: data.preco,
+        categoria_id: data.categoria_id,
+      },
+      ipAddress,
+      userAgent,
+    });
+
     // CRITICAL: Com SSR, não há cache para revalidar
     // Resposta de sucesso
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         data,
         message: 'Produto criado com sucesso!',
         note: 'Recarregue a página para ver as mudanças'
       }),
-      { 
-        status: 201, 
-        headers: { 
+      {
+        status: 201,
+        headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate'
-        } 
+        }
       }
     );
   } catch (error: any) {
     console.error('❌ Erro crítico em POST /api/admin/produtos:', error);
+
+    // Log de erro: exceção não tratada
+    await logProductAction({
+      action: 'add_product',
+      productId: 'failed',
+      productName: 'unknown',
+      userEmail,
+      status: 'error',
+      errorMessage: error.message || 'Erro interno do servidor',
+      details: {
+        error: error.message,
+        stack: error.stack,
+      },
+      ipAddress,
+      userAgent,
+    });
+
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: error.message || 'Erro interno do servidor',
         stack: import.meta.env.DEV ? error.stack : undefined
       }),
-      { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
       }
     );
   }

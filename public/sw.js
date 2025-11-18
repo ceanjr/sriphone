@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v27-dev-fix';
+const CACHE_VERSION = 'v28-module-fix';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -97,6 +97,15 @@ self.addEventListener('fetch', (event) => {
 
   // DESENVOLVIMENTO: Não cachear localhost
   if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.port === '4321') {
+    return;
+  }
+
+  // Ignorar scripts de terceiros (analytics, insights, etc)
+  if (url.pathname.includes('/_vercel/') ||
+      url.pathname.includes('/analytics') ||
+      url.pathname.includes('/gtag/') ||
+      url.hostname.includes('google-analytics') ||
+      url.hostname.includes('googletagmanager')) {
     return;
   }
 

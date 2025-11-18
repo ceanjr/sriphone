@@ -238,6 +238,8 @@ const { data: produtos } = await supabaseAdmin
 </AdminLayout>
 
 <script>
+  import { deletarProduto } from '../../lib/api';
+
   // Filtro por categoria
   const categoriaFilter = document.getElementById(
     'categoria-filter',
@@ -334,7 +336,6 @@ const { data: produtos } = await supabaseAdmin
 
       if (confirmed && id) {
         try {
-          const { deletarProduto } = await import('../../lib/api');
           const result = await deletarProduto(id);
 
           if (result.success) {

@@ -149,15 +149,6 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
       type="font/otf"
       crossorigin
     />
-    <!-- ✅ OTIMIZAÇÃO: Preload hero image com priority -->
-    <link
-      rel="preload"
-      href="/images/Barbudo.webp"
-      as="image"
-      type="image/webp"
-      fetchpriority="high"
-    />
-    <link rel="preload" href="/favicon.webp" as="image" />
 
     <!-- Critical CSS Inline para eliminar render-blocking -->
     {criticalCSS && <style is:inline set:html={criticalCSS} />}
