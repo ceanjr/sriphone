@@ -1,6 +1,17 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/pages/admin/login.css';
+import { verifyAuth } from '../../lib/auth';
+
+// Se já está autenticado, redirecionar para dashboard
+const isAuthenticated = await verifyAuth(
+  Astro.cookies,
+  Astro.request.headers.get('Authorization'),
+);
+
+if (isAuthenticated) {
+  return Astro.redirect('/admin/dashboard');
+}
 ---
 
 <Layout
@@ -113,27 +124,40 @@ import '../../styles/pages/admin/login.css';
     submitBtn.textContent = 'Entrando...';
 
     try {
+      console.log('🔐 Iniciando login...');
+
       // 1. Fazer login usando o authService (salva no localStorage)
+      console.log('📝 Chamando authService.signIn...');
       await authService.signIn(email, password);
+      console.log('✅ authService.signIn concluído');
 
       // 2. Chamar API para salvar cookies no servidor
+      console.log('🍪 Salvando cookies no servidor...');
       const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        credentials: 'include', // Importante para enviar/receber cookies
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('📥 Resposta da API:', response.status);
+
       if (!response.ok) {
         const error = await response.json();
+        console.error('❌ Erro na API:', error);
         throw new Error(error.error || 'Erro ao fazer login');
       }
 
+      const result = await response.json();
+      console.log('✅ Login API concluído:', result);
+
       // 3. Sucesso! Redirecionar para dashboard
-      console.log('✅ Login realizado com sucesso!');
-      window.location.href = '/admin/dashboard';
+      console.log('🚀 Redirecionando para /admin/dashboard...');
+
+      // Usar replace ao invés de href para evitar voltar ao login com botão voltar
+      window.location.replace('/admin/dashboard');
     } catch (error: any) {
       console.error('Erro no login:', error);
 

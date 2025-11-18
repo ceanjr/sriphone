@@ -19,11 +19,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Set session cookie
     if (data.session) {
+      // secure: true apenas em produção (HTTPS)
+      const isProduction = import.meta.env.PROD;
+
       cookies.set('sb-access-token', data.session.access_token, {
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 7 days
         httpOnly: true,
-        secure: true,
+        secure: isProduction, // Apenas HTTPS em produção
         sameSite: 'lax',
       });
 
@@ -31,9 +34,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         path: '/',
         maxAge: 60 * 60 * 24 * 7, // 7 days
         httpOnly: true,
-        secure: true,
+        secure: isProduction, // Apenas HTTPS em produção
         sameSite: 'lax',
       });
+
+      console.log('✅ Cookies de sessão configurados (secure:', isProduction, ')');
     }
 
     return new Response(JSON.stringify({ 
