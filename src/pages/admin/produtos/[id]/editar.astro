@@ -307,12 +307,12 @@ const { data: categorias } = await supabaseAdmin
   }
 
   // Função para deletar imagem do storage
-  async function deleteImage(path: string): Promise<boolean> {
+  async function deleteImage(path: string, skipLog: boolean = false): Promise<boolean> {
     try {
       const response = await fetch('/api/admin/upload', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path }),
+        body: JSON.stringify({ path, skipLog }),
       });
 
       if (!response.ok) {
@@ -336,10 +336,11 @@ const { data: categorias } = await supabaseAdmin
 
     console.log('🧹 Limpando imagens temporárias...');
 
-    const deletePromises = newImages.map((img) => deleteImage(img.path!));
+    // Deletar com skipLog = true para não gerar logs desnecessários
+    const deletePromises = newImages.map((img) => deleteImage(img.path!, true));
     await Promise.all(deletePromises);
 
-    console.log(`✅ ${newImages.length} imagem(ns) removida(s) do storage`);
+    console.log(`✅ ${newImages.length} imagem(ns) removida(s) do storage (sem logs)`);
   }
 
   // Limpar imagens ao sair da página sem salvar
@@ -348,9 +349,10 @@ const { data: categorias } = await supabaseAdmin
       const newImages = images.filter((img) => !img.isExisting && img.path);
       if (newImages.length > 0) {
         const paths = newImages.map((img) => img.path!);
+        // Passar skipLog: true para não gerar logs desnecessários
         navigator.sendBeacon(
           '/api/admin/upload',
-          new Blob([JSON.stringify({ paths })], { type: 'application/json' })
+          new Blob([JSON.stringify({ paths, skipLog: true })], { type: 'application/json' })
         );
       }
     }
@@ -458,9 +460,9 @@ const { data: categorias } = await supabaseAdmin
   (window as any).removeImage = async (index: number) => {
     const imageToRemove = images[index];
 
-    // Se for nova imagem, deletar do storage
+    // Se for nova imagem, deletar do storage (skipLog = true pois ainda não salvou)
     if (!imageToRemove.isExisting && imageToRemove.path) {
-      await deleteImage(imageToRemove.path);
+      await deleteImage(imageToRemove.path, true);
     }
 
     images.splice(index, 1);

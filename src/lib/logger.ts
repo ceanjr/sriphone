@@ -130,6 +130,29 @@ export async function cleanOldLogs() {
 }
 
 /**
+ * Deleta TODOS os logs
+ */
+export async function clearAllLogs() {
+  try {
+    const { error } = await supabaseAdmin
+      .from('admin_logs')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Deleta tudo
+
+    if (error) {
+      console.error('Erro ao limpar todos os logs:', error);
+      return { success: false, error };
+    }
+
+    console.log('Todos os logs foram removidos com sucesso');
+    return { success: true, error: null };
+  } catch (error) {
+    console.error('Erro ao limpar todos os logs:', error);
+    return { success: false, error };
+  }
+}
+
+/**
  * Helper para logar upload de imagem
  */
 export async function logImageUpload(params: {

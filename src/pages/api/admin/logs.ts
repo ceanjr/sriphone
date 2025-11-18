@@ -1,7 +1,7 @@
 // src/pages/api/admin/logs.ts
 import type { APIRoute } from 'astro';
 import { verifyAuth } from '../../../lib/auth';
-import { getRecentLogs, cleanOldLogs } from '../../../lib/logger';
+import { getRecentLogs, cleanOldLogs, clearAllLogs } from '../../../lib/logger';
 
 export const prerender = false;
 
@@ -69,9 +69,10 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
 };
 
 /**
- * DELETE - Limpar logs antigos manualmente
+ * DELETE - Limpar logs (antigos ou todos)
+ * Query param: all=true para limpar todos os logs
  */
-export const DELETE: APIRoute = async ({ request, cookies }) => {
+export const DELETE: APIRoute = async ({ request, cookies, url }) => {
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
@@ -82,13 +83,16 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    const { success, error } = await cleanOldLogs();
+    // Verifica se deve limpar todos os logs
+    const clearAll = url.searchParams.get('all') === 'true';
+
+    const { success, error } = clearAll ? await clearAllLogs() : await cleanOldLogs();
 
     if (!success) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Erro ao limpar logs antigos'
+          error: clearAll ? 'Erro ao limpar todos os logs' : 'Erro ao limpar logs antigos'
         }),
         {
           status: 500,
@@ -100,7 +104,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Logs antigos removidos com sucesso'
+        message: clearAll ? 'Todos os logs foram removidos com sucesso' : 'Logs antigos removidos com sucesso'
       }),
       {
         status: 200,

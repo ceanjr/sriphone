@@ -5,22 +5,27 @@ export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
+    console.log('[Login API] Iniciando processo de login...');
     const body = await request.json();
     const { email, password } = body;
 
     if (!email || !password) {
+      console.log('[Login API] Email ou senha não fornecidos');
       return new Response(JSON.stringify({ error: 'Email e senha são obrigatórios' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    console.log('[Login API] Autenticando com Supabase para:', email);
     const data = await login(email, password);
 
     // Set session cookie
     if (data.session) {
       // secure: true apenas em produção (HTTPS)
       const isProduction = import.meta.env.PROD;
+      console.log('[Login API] Sessão recebida do Supabase, configurando cookies...');
+      console.log('[Login API] Modo:', isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO');
 
       cookies.set('sb-access-token', data.session.access_token, {
         path: '/',
@@ -38,18 +43,24 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         sameSite: 'lax',
       });
 
-      console.log('✅ Cookies de sessão configurados (secure:', isProduction, ')');
+      console.log('[Login API] ✅ Cookies configurados com sucesso');
+      console.log('[Login API] - sb-access-token:', data.session.access_token.substring(0, 20) + '...');
+      console.log('[Login API] - httpOnly: true, secure:', isProduction, ', sameSite: lax');
+    } else {
+      console.log('[Login API] ⚠️ Nenhuma sessão retornada pelo Supabase');
     }
 
-    return new Response(JSON.stringify({ 
+    console.log('[Login API] ✅ Login concluído com sucesso para:', email);
+    return new Response(JSON.stringify({
       success: true,
       user: data.user,
-      session: data.session 
+      session: data.session
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
+    console.error('[Login API] ❌ Erro no login:', error.message);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },

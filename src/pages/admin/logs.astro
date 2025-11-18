@@ -39,17 +39,30 @@ const actionLabels: Record<string, string> = {
           Últimos 60 logs (mantidos por 48 horas)
         </p>
       </div>
-      <button id="refresh-btn" class="admin-add-btn" type="button">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          ></path>
-        </svg>
-        Atualizar
-      </button>
+      <div class="admin-header-actions">
+        <button id="clear-logs-btn" class="admin-delete-btn" type="button">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            ></path>
+          </svg>
+          Limpar Todos
+        </button>
+        <button id="refresh-btn" class="admin-add-btn" type="button">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            ></path>
+          </svg>
+          Atualizar
+        </button>
+      </div>
     </div>
 
     {
@@ -144,12 +157,115 @@ const actionLabels: Record<string, string> = {
 </AdminLayout>
 
 <script>
+  // Atualizar página
   document.getElementById('refresh-btn')?.addEventListener('click', () => {
     window.location.reload();
+  });
+
+  // Limpar todos os logs
+  document.getElementById('clear-logs-btn')?.addEventListener('click', async () => {
+    if (!confirm('Tem certeza que deseja limpar TODOS os logs? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    const btn = document.getElementById('clear-logs-btn') as HTMLButtonElement;
+    const originalText = btn.innerHTML;
+
+    try {
+      btn.disabled = true;
+      btn.innerHTML = `
+        <svg class="animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        Limpando...
+      `;
+
+      const response = await fetch('/api/admin/logs?all=true', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Erro ao limpar logs');
+      }
+
+      alert('Todos os logs foram removidos com sucesso!');
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Erro ao limpar logs:', error);
+      alert('Erro ao limpar logs: ' + error.message);
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
   });
 </script>
 
 <style>
+  .admin-header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .admin-delete-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .admin-delete-btn:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .admin-delete-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .admin-delete-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .admin-header-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .admin-delete-btn,
+    .admin-add-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
   .logs-container {
     display: flex;
     flex-direction: column;

@@ -333,7 +333,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 };
 
 // DELETE - Deletar imagem(ns)
-export const DELETE: APIRoute = async ({ request, cookies }) => {
+export const DELETE: APIRoute = async ({ request, cookies, url }) => {
   const { userAgent, ipAddress } = getRequestInfo(request);
   const userEmail = await getUserEmail(cookies);
 
@@ -352,6 +352,9 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     // Suporta tanto path único quanto array de paths
     const paths = body.paths || (body.path ? [body.path] : []);
 
+    // Verificar se deve pular logs (para limpeza de imagens temporárias)
+    const skipLog = body.skipLog === true;
+
     if (!paths || paths.length === 0) {
       return new Response(JSON.stringify({ error: 'Path(s) da imagem não informado(s)' }), {
         status: 400,
@@ -365,34 +368,40 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       .remove(paths);
 
     if (error) {
-      // Log de erro: falha ao remover imagem
+      // Log de erro: falha ao remover imagem (apenas se não skipLog)
+      if (!skipLog) {
+        for (const path of paths) {
+          const fileName = path.split('/').pop() || path;
+          await logImageRemove({
+            fileName,
+            imageUrl: path,
+            userEmail,
+            status: 'error',
+            errorMessage: 'Erro ao remover imagem do Storage',
+            ipAddress,
+            userAgent,
+          });
+        }
+      }
+
+      throw error;
+    }
+
+    // Log de sucesso: imagens removidas (apenas se não skipLog)
+    if (!skipLog) {
       for (const path of paths) {
         const fileName = path.split('/').pop() || path;
         await logImageRemove({
           fileName,
           imageUrl: path,
           userEmail,
-          status: 'error',
-          errorMessage: 'Erro ao remover imagem do Storage',
+          status: 'success',
           ipAddress,
           userAgent,
         });
       }
-
-      throw error;
-    }
-
-    // Log de sucesso: imagens removidas
-    for (const path of paths) {
-      const fileName = path.split('/').pop() || path;
-      await logImageRemove({
-        fileName,
-        imageUrl: path,
-        userEmail,
-        status: 'success',
-        ipAddress,
-        userAgent,
-      });
+    } else {
+      console.log(`🧹 ${paths.length} imagem(ns) temporária(s) removida(s) (sem log)`);
     }
 
     return new Response(JSON.stringify({
