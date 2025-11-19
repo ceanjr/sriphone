@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v30-redirect-fix';
+const CACHE_VERSION = 'v31-no-reload-notifications';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -41,10 +41,10 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Ativação - Limpa caches antigos E notifica clientes
+// Ativação - Limpa caches antigos (SEM notificações que podem causar reload)
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating:', CACHE_VERSION);
-  
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
@@ -62,15 +62,7 @@ self.addEventListener('activate', (event) => {
         return self.clients.claim();
       })
       .then(() => {
-        // Notificar todos os clientes para recarregar
-        return self.clients.matchAll().then((clients) => {
-          clients.forEach((client) => {
-            client.postMessage({
-              type: 'SW_UPDATED',
-              version: CACHE_VERSION
-            });
-          });
-        });
+        console.log('[SW] Activation complete - NO auto-reload notifications');
       })
   );
 });

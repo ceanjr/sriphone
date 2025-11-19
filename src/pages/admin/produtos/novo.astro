@@ -202,6 +202,26 @@ const { data: categorias } = await supabaseAdmin
   // Array de arquivos selecionados (File objects)
   let selectedFiles: File[] = [];
 
+  // Estado do formulário para prevenir reload acidental
+  let formDirty = false;
+  let isSubmitting = false;
+
+  // ============================================================================
+  // GESTÃO DE MEMÓRIA - Blob URLs
+  // ============================================================================
+
+  // Armazenar URLs criadas para limpar depois
+  const blobUrls: string[] = [];
+
+  // Função para limpar URLs antigas
+  function cleanupBlobUrls() {
+    blobUrls.forEach(url => {
+      URL.revokeObjectURL(url);
+    });
+    blobUrls.length = 0;
+    console.log('🧹 [MEMORY] Blob URLs limpas');
+  }
+
   // ============================================================================
   // FUNÇÕES DE PREVIEW LOCAL (usando Blob URLs)
   // ============================================================================
@@ -210,6 +230,9 @@ const { data: categorias } = await supabaseAdmin
     if (!uploadArea) return;
 
     console.log(`🖼️ [PREVIEW] Renderizando ${selectedFiles.length} imagens`);
+
+    // Limpar blob URLs antigas antes de criar novas
+    cleanupBlobUrls();
 
     if (selectedFiles.length === 0) {
       uploadArea.innerHTML = `
@@ -230,6 +253,7 @@ const { data: categorias } = await supabaseAdmin
     const imagesHTML = selectedFiles
       .map((file, index) => {
         const url = URL.createObjectURL(file);
+        blobUrls.push(url); // Rastrear para limpeza posterior
         console.log(`  ${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
 
         return `
@@ -394,6 +418,9 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
+    // Marcar que estamos no processo de submit (desativa aviso de saída)
+    isSubmitting = true;
+
     submitBtn.disabled = true;
     submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
@@ -459,11 +486,52 @@ const { data: categorias } = await supabaseAdmin
     } catch (error: any) {
       console.error('❌ [SUBMIT] Erro:', error);
       window.showToast(error.message || 'Erro ao salvar produto', 'error');
+      // Resetar isSubmitting em caso de erro (permite avisar se usuário tentar sair)
+      isSubmitting = false;
     } finally {
       submitBtn.disabled = false;
       submitText.textContent = 'Adicionar Produto';
     }
   });
+
+  // ============================================================================
+  // PROTEÇÃO CONTRA RELOAD ACIDENTAL
+  // ============================================================================
+
+  // Marcar formulário como "sujo" quando usuário faz mudanças
+  form?.addEventListener('input', () => {
+    formDirty = true;
+  });
+
+  // Avisar antes de sair se houver mudanças não salvas
+  window.addEventListener('beforeunload', (e) => {
+    // Só avisar se:
+    // 1. Formulário foi modificado OU tem imagens
+    // 2. NÃO está no processo de submit
+    if ((formDirty || selectedFiles.length > 0) && !isSubmitting) {
+      e.preventDefault();
+      // Chrome requires returnValue to be set
+      e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
+      return e.returnValue;
+    }
+  });
+
+  // Prevenir navegação acidental via service worker ou outros eventos
+  let controllerChangeCount = 0;
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      controllerChangeCount++;
+      console.log(`[SW] Controller mudou (${controllerChangeCount}x)`);
+
+      // Se mudou mais de uma vez E o usuário está preenchendo o form, avisar
+      if (controllerChangeCount > 1 && (formDirty || selectedFiles.length > 0) && !isSubmitting) {
+        console.warn('[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)');
+      }
+    });
+  }
+
+  // Limpar blob URLs quando sair da página
+  window.addEventListener('pagehide', cleanupBlobUrls);
 
   // Renderizar estado inicial
   renderPreviews();
