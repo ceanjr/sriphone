@@ -1,17 +1,32 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/pages/admin/login.css';
-import { verifyAuth } from '../../lib/auth';
 
-// Se já está autenticado, redirecionar para dashboard
-const isAuthenticated = await verifyAuth(
-  Astro.cookies,
-  Astro.request.headers.get('Authorization'),
-);
+export const prerender = false;
 
-if (isAuthenticated) {
+// Verificar se já está autenticado (apenas verificando se os cookies existem)
+const hasAccessToken = !!Astro.cookies.get('sb-access-token')?.value;
+const hasRefreshToken = !!Astro.cookies.get('sb-refresh-token')?.value;
+
+console.log('[Login Page SSR] Verificando autenticação...');
+console.log('[Login Page SSR] Access Token:', hasAccessToken ? 'SIM' : 'NÃO');
+console.log('[Login Page SSR] Refresh Token:', hasRefreshToken ? 'SIM' : 'NÃO');
+
+// Se tiver AMBOS os tokens, redirecionar para dashboard
+if (hasAccessToken && hasRefreshToken) {
+  console.log('[Login Page SSR] Usuário já autenticado, redirecionando para dashboard');
   return Astro.redirect('/admin/dashboard');
 }
+
+// Se tiver apenas um dos tokens ou nenhum, limpar tudo e permitir login
+if (hasAccessToken || hasRefreshToken || Astro.cookies.get('sb-expires-at')?.value) {
+  console.log('[Login Page SSR] Cookies incompletos/inválidos encontrados, limpando...');
+  Astro.cookies.delete('sb-access-token', { path: '/' });
+  Astro.cookies.delete('sb-refresh-token', { path: '/' });
+  Astro.cookies.delete('sb-expires-at', { path: '/' });
+}
+
+console.log('[Login Page SSR] Renderizando página de login');
 ---
 
 <Layout
@@ -90,152 +105,183 @@ if (isAuthenticated) {
       </p>
     </div>
   </div>
-</Layout>
 
-<script>
-  import { authService } from '../../lib/supabase';
+  <!-- Script de limpeza e diagnóstico - DEVE executar SEMPRE -->
+  <script is:inline>
+    (function() {
+      console.log('═══════════════════════════════════════════════════');
+      console.log('🔍 [LOGIN INIT] Script iniciado');
+      console.log('🔍 [LOGIN INIT] Timestamp:', new Date().toISOString());
+      console.log('🔍 [LOGIN INIT] URL:', window.location.href);
 
-  // Log para confirmar que o script foi carregado
-  console.log('✅ [LOGIN PAGE] Script carregado e executando');
-  console.log('📍 [LOGIN PAGE] URL atual:', window.location.href);
-  console.log('🕐 [LOGIN PAGE] Timestamp:', new Date().toISOString());
+      // IMPORTANTE: Limpar TODOS os tokens antigos do localStorage
+      // Esses tokens podem causar conflitos com a autenticação baseada em cookies
+      console.log('🧹 [LOGIN INIT] Limpando tokens antigos do localStorage...');
 
-  const form = document.getElementById('login-form') as HTMLFormElement;
-  const errorMessage = document.getElementById(
-    'error-message',
-  ) as HTMLDivElement;
-  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-
-  console.log('🔍 [LOGIN PAGE] Elementos encontrados:', {
-    form: form ? 'OK' : 'ERRO',
-    errorMessage: errorMessage ? 'OK' : 'ERRO',
-    submitBtn: submitBtn ? 'OK' : 'ERRO'
-  });
-
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData(form);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    // Validação básica
-    if (!email || !password) {
-      showError('Por favor, preencha todos os campos.');
-      return;
-    }
-
-    // Hide error message
-    hideError();
-
-    // Disable button
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Entrando...';
-
-    let loginSuccessful = false;
-
-    try {
-      console.log('🔐 [LOGIN] Iniciando processo de login...');
-      console.log('📧 [LOGIN] Email:', email);
-
-      // 1. Fazer login usando o authService (salva no localStorage)
-      console.log('📝 [LOGIN] Passo 1/3: Autenticando com Supabase...');
-      const authResult = await authService.signIn(email, password);
-      console.log('✅ [LOGIN] Passo 1/3: Autenticação Supabase concluída');
-      console.log('🔑 [LOGIN] Session recebida:', authResult.session ? 'SIM' : 'NÃO');
-
-      // 2. Chamar API para salvar cookies no servidor
-      console.log('🍪 [LOGIN] Passo 2/3: Salvando sessão no servidor...');
-      const response = await fetch('/api/admin/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Importante para enviar/receber cookies
-        body: JSON.stringify({ email, password }),
-      });
-
-      console.log('📥 [LOGIN] Resposta da API:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('❌ [LOGIN] Erro na API:', error);
-        throw new Error(error.error || 'Erro ao fazer login');
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sb-')) {
+          keysToRemove.push(key);
+        }
       }
 
-      const result = await response.json();
-      console.log('✅ [LOGIN] Passo 2/3: Sessão salva no servidor');
-      console.log('📦 [LOGIN] Resultado:', result);
+      if (keysToRemove.length > 0) {
+        console.log('🧹 [LOGIN INIT] Removendo', keysToRemove.length, 'token(s) antigo(s):', keysToRemove);
+        keysToRemove.forEach(function(key) {
+          localStorage.removeItem(key);
+        });
+        console.log('✅ [LOGIN INIT] Tokens antigos removidos');
+      } else {
+        console.log('✅ [LOGIN INIT] Nenhum token antigo encontrado');
+      }
 
-      // 3. Sucesso! Marcar como bem-sucedido
-      loginSuccessful = true;
-      console.log('🎉 [LOGIN] Passo 3/3: Login concluído com sucesso!');
+      // Log de cookies atuais
+      console.log('🍪 [LOGIN INIT] Cookies atuais:', document.cookie || 'NENHUM');
 
-      // 4. Forçar redirecionamento com múltiplos fallbacks
-      console.log('🚀 [LOGIN] Iniciando redirecionamento para /admin/dashboard...');
-      submitBtn.textContent = 'Redirecionando...';
+      console.log('═══════════════════════════════════════════════════');
+    })();
+  </script>
 
-      // Método 1: window.location.replace (preferido)
-      window.location.replace('/admin/dashboard');
+  <script>
+    console.log('═══════════════════════════════════════════════════');
+    console.log('✅ [LOGIN SCRIPT] Script do formulário carregado!');
+    console.log('📍 [LOGIN SCRIPT] URL:', window.location.href);
+    console.log('🕐 [LOGIN SCRIPT] Timestamp:', new Date().toISOString());
+    console.log('═══════════════════════════════════════════════════');
 
-      // Fallback 1: Se não redirecionar em 1 segundo, tentar window.location.href
-      setTimeout(() => {
-        console.log('⚠️ [LOGIN] Fallback 1: Usando window.location.href...');
-        window.location.href = '/admin/dashboard';
-      }, 1000);
+    const form = document.getElementById('login-form') as HTMLFormElement;
+    const errorMessage = document.getElementById('error-message') as HTMLDivElement;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
 
-      // Fallback 2: Se ainda não redirecionar em 2 segundos, forçar reload
-      setTimeout(() => {
-        console.log('⚠️ [LOGIN] Fallback 2: Forçando redirect com assign...');
-        window.location.assign('/admin/dashboard');
-      }, 2000);
+    console.log('🔍 [LOGIN SCRIPT] Elementos do formulário:', {
+      form: form ? '✅ Encontrado' : '❌ NÃO encontrado',
+      errorMessage: errorMessage ? '✅ Encontrado' : '❌ NÃO encontrado',
+      submitBtn: submitBtn ? '✅ Encontrado' : '❌ NÃO encontrado'
+    });
 
-    } catch (error: any) {
-      console.error('❌ [LOGIN] Erro capturado:', error);
-      console.error('❌ [LOGIN] Stack trace:', error.stack);
+    if (!form || !errorMessage || !submitBtn) {
+      console.error('❌ [LOGIN SCRIPT] ERRO CRÍTICO: Elementos do formulário não encontrados!');
+      console.error('❌ [LOGIN SCRIPT] Verifique se os IDs estão corretos no HTML');
+    }
 
-      // Se o login foi bem-sucedido mas o redirecionamento falhou
-      if (loginSuccessful) {
-        console.log('⚠️ [LOGIN] Login OK, mas redirecionamento falhou. Tentando novamente...');
-        window.location.href = '/admin/dashboard';
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      console.log('═══════════════════════════════════════════════════');
+      console.log('🚀 [LOGIN] Formulário submetido!');
+
+      const formData = new FormData(form);
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+
+      console.log('📧 [LOGIN] Email:', email);
+      console.log('🔐 [LOGIN] Senha:', password ? '***' : 'VAZIO');
+
+      // Validação básica
+      if (!email || !password) {
+        console.warn('⚠️ [LOGIN] Validação falhou: campos vazios');
+        showError('Por favor, preencha todos os campos.');
         return;
       }
 
-      // Mensagens de erro mais amigáveis
-      let errorMsg = 'Erro ao fazer login. Verifique suas credenciais.';
+      // Hide error message
+      hideError();
 
-      if (error.message?.includes('Invalid login credentials')) {
-        errorMsg = 'Email ou senha incorretos.';
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMsg = 'Email não confirmado. Verifique sua caixa de entrada.';
-      } else if (error.message?.includes('Network')) {
-        errorMsg = 'Erro de conexão. Verifique sua internet.';
-      } else {
-        // Incluir mensagem de erro técnica para debug
-        errorMsg += ` (${error.message})`;
+      // Disable button
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Entrando...';
+      console.log('⏳ [LOGIN] Botão desabilitado, iniciando login...');
+
+      try {
+        console.log('🍪 [LOGIN] Chamando API /api/admin/auth/login...');
+
+        const response = await fetch('/api/admin/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // CRÍTICO: Enviar e receber cookies
+          body: JSON.stringify({ email, password }),
+        });
+
+        console.log('📥 [LOGIN] Resposta recebida:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('❌ [LOGIN] Erro na resposta:', error);
+          throw new Error(error.error || 'Erro ao fazer login');
+        }
+
+        const result = await response.json();
+        console.log('✅ [LOGIN] Login bem-sucedido!');
+        console.log('📦 [LOGIN] Dados retornados:', {
+          success: result.success,
+          hasUser: !!result.user,
+          hasSession: !!result.session
+        });
+
+        // Sucesso! Preparar redirecionamento
+        submitBtn.textContent = 'Sucesso! Redirecionando...';
+        console.log('🎉 [LOGIN] Aguardando 500ms para garantir cookies salvos...');
+
+        // Aguardar cookies serem salvos
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        console.log('🚀 [LOGIN] Redirecionando para /admin/dashboard...');
+
+        // Forçar redirect completo
+        window.location.href = '/admin/dashboard';
+
+      } catch (error: any) {
+        console.error('═══════════════════════════════════════════════════');
+        console.error('❌ [LOGIN] ERRO capturado:', error);
+        console.error('❌ [LOGIN] Mensagem:', error.message);
+        console.error('❌ [LOGIN] Stack:', error.stack);
+        console.error('═══════════════════════════════════════════════════');
+
+        // Mensagens de erro amigáveis
+        let errorMsg = 'Erro ao fazer login. Verifique suas credenciais.';
+
+        if (error.message?.includes('Email ou senha incorretos')) {
+          errorMsg = 'Email ou senha incorretos.';
+        } else if (error.message?.includes('Email não confirmado')) {
+          errorMsg = 'Email não confirmado. Verifique sua caixa de entrada.';
+        } else if (error.message?.includes('Network') || error.message?.includes('Failed to fetch')) {
+          errorMsg = 'Erro de conexão. Verifique sua internet.';
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+
+        showError(errorMsg);
+
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Entrar';
+        console.log('🔄 [LOGIN] Botão reabilitado');
       }
+    });
 
-      showError(errorMsg);
-
-      // Re-enable button
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Entrar';
+    function showError(message: string) {
+      console.log('⚠️ [LOGIN] Mostrando erro:', message);
+      errorMessage.textContent = message;
+      errorMessage.classList.add('show');
     }
-  });
 
-  function showError(message: string) {
-    errorMessage.textContent = message;
-    errorMessage.classList.add('show');
-  }
+    function hideError() {
+      errorMessage.textContent = '';
+      errorMessage.classList.remove('show');
+    }
 
-  function hideError() {
-    errorMessage.textContent = '';
-    errorMessage.classList.remove('show');
-  }
+    // Limpar erro ao digitar
+    const inputs = form?.querySelectorAll('input');
+    inputs?.forEach((input) => {
+      input.addEventListener('input', hideError);
+    });
 
-  // Limpar erro ao digitar
-  const inputs = form?.querySelectorAll('input');
-  inputs?.forEach((input) => {
-    input.addEventListener('input', hideError);
-  });
-</script>
+    console.log('✅ [LOGIN SCRIPT] Configuração completa! Aguardando submit...');
+  </script>
+</Layout>

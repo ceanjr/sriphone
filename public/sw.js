@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v28-module-fix';
+const CACHE_VERSION = 'v30-redirect-fix';
 const STATIC_CACHE = `sriphone-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `sriphone-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `sriphone-images-${CACHE_VERSION}`;
@@ -221,15 +221,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Páginas: Network-First
+  // Páginas: Network-First (sem cachear redirecionamentos)
   event.respondWith(
     fetch(request)
       .then((response) => {
-        return caches.open(DYNAMIC_CACHE).then((cache) => {
-          cache.put(request, response.clone());
-          limitCacheSize(DYNAMIC_CACHE, 30);
+        // NUNCA cachear redirecionamentos (3xx) - previne loops
+        if (response.status >= 300 && response.status < 400) {
+          console.log('[SW] Redirecionamento detectado, não cacheando:', url.pathname);
           return response;
-        });
+        }
+
+        // Só cachear respostas OK
+        if (response.ok) {
+          return caches.open(DYNAMIC_CACHE).then((cache) => {
+            cache.put(request, response.clone());
+            limitCacheSize(DYNAMIC_CACHE, 30);
+            return response;
+          });
+        }
+
+        return response;
       })
       .catch(() => {
         return caches.match(request).then((cached) => {

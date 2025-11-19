@@ -35,10 +35,18 @@ export const GET: APIRoute = async () => {
 
     if (error) throw error;
 
-return new Response(
-  JSON.stringify({ success: true, data }),
-  { status: 200, headers: { 'Content-Type': 'application/json' } }
-);
+    return new Response(
+      JSON.stringify({ success: true, data }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }
+    );
   } catch (error: any) {
     console.error('Error fetching categorias:', error);
     return new Response(
@@ -116,7 +124,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     return new Response(
       JSON.stringify({ success: true, data }),
-      { status: 201, headers: { 'Content-Type': 'application/json' } }
+      {
+        status: 201,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }
     );
   } catch (error: any) {
     console.error('Error creating categoria:', error);

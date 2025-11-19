@@ -3,7 +3,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
 import '../../../styles/admin-form.css';
 
-export const prerender = false; // Força SSR sem cache para admin
+export const prerender = false;
 
 const { data: categorias } = await supabaseAdmin
   .from('categorias')
@@ -34,8 +34,6 @@ const { data: categorias } = await supabaseAdmin
 
       <div class="form-card">
         <form id="product-form">
-          <input type="hidden" id="foto_principal" name="foto_principal" />
-
           <!-- Image Upload -->
           <div class="form-group">
             <label class="form-label">Imagens do Produto (até 5)</label>
@@ -47,7 +45,24 @@ const { data: categorias } = await supabaseAdmin
               style="display: none;"
             />
             <div class="form-image-upload" id="upload-area">
-              <!-- Conteúdo dinâmico: placeholder ou grid de imagens -->
+              <div class="upload-placeholder">
+                <svg
+                  width="48"
+                  height="48"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <p>Clique para adicionar imagens</p>
+                <small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>
+              </div>
             </div>
           </div>
 
@@ -168,381 +183,281 @@ const { data: categorias } = await supabaseAdmin
   </div>
 </AdminLayout>
 
-// src/pages/admin/produtos/novo.astro - Script Section
 <script>
+  // ============================================================================
+  // REFATORAÇÃO COMPLETA - Sistema de Upload de Imagens
+  // ============================================================================
+
+  console.log('✅ [NOVO PRODUTO] Script iniciado');
+
   const form = document.getElementById('product-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
   const submitText = document.getElementById('submit-text') as HTMLSpanElement;
   const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
   const uploadArea = document.getElementById('upload-area');
 
-  // Estado de imagens carregadas
-  interface UploadedImage {
-    url: string;
-    path: string; // Caminho no storage para poder deletar
-  }
-  let uploadedImages: UploadedImage[] = [];
   const MAX_IMAGES = 5;
-  let formSaved = false; // Flag para saber se salvou com sucesso
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-  // Click na área de upload abre o file input
-  uploadArea?.addEventListener('click', (e) => {
-    // Se clicou em um botão específico, não abrir o file input
-    if ((e.target as HTMLElement).closest('button')) return;
+  // Array de arquivos selecionados (File objects)
+  let selectedFiles: File[] = [];
 
-    if (uploadedImages.length < MAX_IMAGES) {
-      fileInput?.click();
-    } else {
-      window.showToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning');
-    }
-  });
+  // ============================================================================
+  // FUNÇÕES DE PREVIEW LOCAL (usando Blob URLs)
+  // ============================================================================
 
-  // Função para fazer upload de uma imagem
-  async function uploadImage(file: File): Promise<UploadedImage | null> {
-    try {
-      // Validar tamanho (10MB - será otimizado no servidor)
-      if (file.size > 10 * 1024 * 1024) {
-        window.showToast('Imagem muito grande (máx 10MB)', 'error');
-        return null;
-      }
-
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        window.showToast('Arquivo deve ser uma imagem', 'error');
-        return null;
-      }
-
-      console.log('📤 Uploading file:', {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-      });
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Não definir Content-Type manualmente - o browser define automaticamente
-      // com o boundary correto para multipart/form-data
-      const response = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-        // Importante: não incluir headers aqui para deixar o browser
-        // definir o Content-Type automaticamente
-      });
-
-      console.log('📥 Upload response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || 'Erro ao fazer upload';
-        throw new Error(errorMessage);
-      }
-
-      const result = await response.json();
-
-      // Mostrar economia de espaço
-      if (result.savings) {
-        console.log(`✅ Imagem otimizada: ${result.savings} de redução`);
-      }
-
-      return {
-        url: result.url,
-        path: result.path,
-      };
-    } catch (error: any) {
-      console.error('❌ Erro ao fazer upload:', error);
-      window.showToast(error.message || 'Erro ao fazer upload', 'error');
-      return null;
-    }
-  }
-
-  // Função para deletar imagem do storage
-  async function deleteImage(path: string, skipLog: boolean = false): Promise<boolean> {
-    try {
-      const response = await fetch('/api/admin/upload', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path, skipLog }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao deletar imagem');
-      }
-
-      return true;
-    } catch (error: any) {
-      console.error('Erro ao deletar imagem:', error);
-      return false;
-    }
-  }
-
-  // Limpar todas as imagens temporárias
-  async function cleanupTemporaryImages() {
-    if (formSaved || uploadedImages.length === 0) return;
-
-    console.log('🧹 Limpando imagens temporárias...');
-
-    // Deletar com skipLog = true para não gerar logs desnecessários
-    const deletePromises = uploadedImages.map((img) => deleteImage(img.path, true));
-    await Promise.all(deletePromises);
-
-    console.log(
-      `✅ ${uploadedImages.length} imagem(ns) removida(s) do storage (sem logs)`,
-    );
-  }
-
-  // Limpar imagens ao sair da página sem salvar
-  window.addEventListener('beforeunload', () => {
-    if (!formSaved && uploadedImages.length > 0) {
-      // Usar sendBeacon para garantir que a requisição seja enviada mesmo ao fechar
-      const paths = uploadedImages.map((img) => img.path);
-      // Passar skipLog: true para não gerar logs desnecessários
-      navigator.sendBeacon(
-        '/api/admin/upload',
-        new Blob([JSON.stringify({ paths, skipLog: true })], { type: 'application/json' }),
-      );
-    }
-  });
-
-  // Limpar ao clicar no botão Voltar
-  document
-    .querySelector('.form-back-btn')
-    ?.addEventListener('click', async (e) => {
-      if (!formSaved && uploadedImages.length > 0) {
-        e.preventDefault();
-        await cleanupTemporaryImages();
-        window.location.href = '/admin/produtos';
-      }
-    });
-
-  // Renderizar preview das imagens
-  function renderImagesPreviews() {
+  function renderPreviews() {
     if (!uploadArea) return;
 
-    if (uploadedImages.length === 0) {
-      // Mostrar placeholder quando não há imagens
+    console.log(`🖼️ [PREVIEW] Renderizando ${selectedFiles.length} imagens`);
+
+    if (selectedFiles.length === 0) {
       uploadArea.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px;">
-          <svg
-            style="width: 48px; height: 48px; color: #9ca3af; margin-bottom: 16px;"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            ></path>
+        <div class="upload-placeholder">
+          <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+            </path>
           </svg>
-          <p style="font-size: 14px; font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-            Clique para adicionar imagens
-          </p>
-          <small style="font-size: 12px; color: #9ca3af;">JPG, PNG até 10MB cada (máximo 5 imagens)</small>
+          <p>Clique para adicionar imagens</p>
+          <small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>
         </div>
       `;
       return;
     }
 
-    // Mostrar grid de imagens quando há uploads
-    const imagesHtml = uploadedImages
-      .map(
-        (img, index) => `
-        <div style="position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; background: #f9fafb;">
-          <img
-            src="${img.url}"
-            alt="Preview ${index + 1}"
-            style="width: 100%; height: 100%; object-fit: cover;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="window.removeImage(${index})"
-            style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; font-weight: bold; transition: all 0.2s;"
-            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.1)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-            title="Remover imagem"
-          >
-            ×
-          </button>
-          ${index === 0 ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.8); color: white; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: 500;">Principal</span>' : ''}
-        </div>
-      `,
-      )
+    // Grid de imagens - Miniaturas lado a lado
+    const imagesHTML = selectedFiles
+      .map((file, index) => {
+        const url = URL.createObjectURL(file);
+        console.log(`  ${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+
+        return `
+          <div style="position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid ${index === 0 ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; flex-shrink: 0;">
+            <img
+              src="${url}"
+              alt="${file.name}"
+              style="width: 100%; height: 100%; object-fit: cover;"
+              loading="eager"
+            />
+            <button
+              type="button"
+              onclick="event.stopPropagation(); event.preventDefault(); window.removeImageAt(${index})"
+              style="position: absolute; top: 4px; right: 4px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; font-weight: bold; line-height: 1; transition: all 0.2s;"
+              onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.1)'"
+              onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
+              title="Remover imagem"
+            >
+              ×
+            </button>
+            ${index === 0 ? '<span style="position: absolute; bottom: 4px; left: 4px; background: rgba(59, 130, 246, 0.9); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Principal</span>' : ''}
+          </div>
+        `;
+      })
       .join('');
 
-    // Adicionar botão "+" se ainda não atingiu o máximo
-    const addButtonHtml =
-      uploadedImages.length < MAX_IMAGES
+    const addButtonHTML =
+      selectedFiles.length < MAX_IMAGES
         ? `
-        <div
-          style="
-            aspect-ratio: 1;
-            border-radius: 8px;
-            border: 2px dashed #d1d5db;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background: #f9fafb;
-            transition: all 0.2s;
-          "
-          onmouseover="this.style.borderColor='#9ca3af'; this.style.background='#f3f4f6'"
-          onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb'"
-        >
-          <svg style="width: 32px; height: 32px; color: #9ca3af; margin-bottom: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          <span style="font-size: 12px; color: #6b7280; font-weight: 500;">Adicionar</span>
-        </div>
-      `
+          <div style="width: 100px; height: 100px; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; transition: all 0.2s; flex-shrink: 0;"
+            onmouseover="this.style.borderColor='#9ca3af'; this.style.background='#f3f4f6'"
+            onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb'"
+          >
+            <svg style="width: 28px; height: 28px; color: #9ca3af; margin-bottom: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span style="font-size: 11px; color: #6b7280; font-weight: 500;">Adicionar</span>
+          </div>
+        `
         : '';
 
     uploadArea.innerHTML = `
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; padding: 16px;">
-        ${imagesHtml}
-        ${addButtonHtml}
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px; align-items: center;">
+        ${imagesHTML}
+        ${addButtonHTML}
       </div>
     `;
   }
 
-  // Função global para remover imagem
-  (window as any).removeImage = async (index: number) => {
-    const imageToRemove = uploadedImages[index];
+  // ============================================================================
+  // HANDLERS DE ARQUIVO
+  // ============================================================================
 
-    // Deletar do storage (skipLog = true pois ainda não salvou o produto)
-    await deleteImage(imageToRemove.path, true);
-
-    // Remover do array
-    uploadedImages.splice(index, 1);
-    renderImagesPreviews();
+  (window as any).removeImageAt = (index: number) => {
+    console.log(`🗑️ [PREVIEW] Removendo imagem ${index + 1}: ${selectedFiles[index].name}`);
+    selectedFiles.splice(index, 1);
+    renderPreviews();
     window.showToast('Imagem removida', 'success');
   };
 
-  // Quando selecionar arquivos
-  fileInput?.addEventListener('change', async (e) => {
+  uploadArea?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+
+    // Não abrir input se clicou no botão de remover
+    if (target.closest('.image-remove-btn')) return;
+
+    if (selectedFiles.length < MAX_IMAGES) {
+      fileInput?.click();
+    } else {
+      window.showToast(`Máximo de ${MAX_IMAGES} imagens`, 'warning');
+    }
+  });
+
+  fileInput?.addEventListener('change', (e) => {
     const files = (e.target as HTMLInputElement).files;
     if (!files || files.length === 0) return;
 
-    const remainingSlots = MAX_IMAGES - uploadedImages.length;
-    if (files.length > remainingSlots) {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📁 [FILE INPUT] ${files.length} arquivo(s) selecionado(s)`);
+
+    const remainingSlots = MAX_IMAGES - selectedFiles.length;
+    const filesToAdd = Array.from(files).slice(0, remainingSlots);
+
+    let validFiles = 0;
+    let invalidFiles = 0;
+
+    for (const file of filesToAdd) {
+      console.log(`  📄 ${file.name}: ${(file.size / 1024).toFixed(1)} KB`);
+
+      // Validar tamanho
+      if (file.size > MAX_FILE_SIZE) {
+        console.warn(`  ⚠️ Arquivo muito grande: ${file.name}`);
+        window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
+        invalidFiles++;
+        continue;
+      }
+
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        console.warn(`  ⚠️ Tipo inválido: ${file.name}`);
+        window.showToast(`${file.name} não é uma imagem`, 'error');
+        invalidFiles++;
+        continue;
+      }
+
+      selectedFiles.push(file);
+      validFiles++;
+    }
+
+    console.log(`✅ ${validFiles} arquivo(s) válido(s), ❌ ${invalidFiles} inválido(s)`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (validFiles > 0) {
+      renderPreviews();
       window.showToast(
-        `Você pode adicionar apenas ${remainingSlots} imagem${remainingSlots !== 1 ? 'ns' : ''} (máximo ${MAX_IMAGES})`,
-        'warning',
+        `${validFiles} imagem${validFiles !== 1 ? 'ns' : ''} adicionada${validFiles !== 1 ? 's' : ''}`,
+        'success'
       );
     }
 
-    const filesToUpload = Array.from(files).slice(0, remainingSlots);
-
-    // Mostrar loading
-    window.showToast('Fazendo upload das imagens...', 'info');
-
-    // Upload em paralelo
-    const uploadPromises = filesToUpload.map((file) => uploadImage(file));
-    const results = await Promise.all(uploadPromises);
-
-    // Adicionar imagens válidas
-    const validImages = results.filter(
-      (img): img is UploadedImage => img !== null,
-    );
-    uploadedImages.push(...validImages);
-
-    renderImagesPreviews();
-
-    if (validImages.length > 0) {
-      window.showToast(
-        `${validImages.length} imagem${validImages.length !== 1 ? 'ns' : ''} carregada${validImages.length !== 1 ? 's' : ''}!`,
-        'success',
-      );
-    }
-
-    // Limpar input para permitir re-upload do mesmo arquivo
+    // Limpar input
     fileInput.value = '';
   });
+
+  // ============================================================================
+  // UPLOAD E SUBMIT
+  // ============================================================================
+
+  async function uploadImageToStorage(file: File): Promise<string | null> {
+    try {
+      console.log(`📤 [UPLOAD] Enviando: ${file.name}`);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro no upload');
+      }
+
+      const result = await response.json();
+      console.log(`✅ [UPLOAD] Sucesso: ${result.url}`);
+
+      return result.url;
+    } catch (error: any) {
+      console.error(`❌ [UPLOAD] Erro:`, error);
+      window.showToast(`Erro ao enviar ${file.name}`, 'error');
+      return null;
+    }
+  }
 
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const formData = new FormData(form);
-
-    const produto = {
-      nome: formData.get('nome'),
-      codigo: formData.get('codigo'),
-      preco: parseFloat(formData.get('preco') as string),
-      bateria: formData.get('bateria')
-        ? parseInt(formData.get('bateria') as string)
-        : null,
-      condicao: formData.get('condicao'),
-      categoria_id: formData.get('categoria_id'),
-      descricao: formData.get('descricao') || null,
-      imagens: uploadedImages.map((img) => img.url), // Array de URLs das imagens
-    };
+    if (selectedFiles.length === 0) {
+      window.showToast('Adicione pelo menos uma imagem', 'warning');
+      return;
+    }
 
     submitBtn.disabled = true;
-    submitText.innerHTML = '<div class="form-spinner"></div> Adicionando...';
+    submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
-      console.log('📤 Enviando produto:', produto);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('💾 [SUBMIT] Iniciando salvamento do produto');
+      console.log(`📸 [SUBMIT] Fazendo upload de ${selectedFiles.length} imagens...`);
 
+      // Upload de todas as imagens em paralelo
+      const uploadPromises = selectedFiles.map(file => uploadImageToStorage(file));
+      const imageUrls = await Promise.all(uploadPromises);
+
+      // Filtrar URLs válidas
+      const validUrls = imageUrls.filter((url): url is string => url !== null);
+
+      if (validUrls.length === 0) {
+        throw new Error('Nenhuma imagem foi enviada com sucesso');
+      }
+
+      console.log(`✅ [SUBMIT] ${validUrls.length}/${selectedFiles.length} imagens enviadas`);
+
+      // Coletar dados do formulário
+      const formData = new FormData(form);
+      const produto = {
+        nome: formData.get('nome'),
+        codigo: formData.get('codigo') || null,
+        preco: parseFloat(formData.get('preco') as string),
+        bateria: formData.get('bateria')
+          ? parseInt(formData.get('bateria') as string)
+          : null,
+        condicao: formData.get('condicao'),
+        categoria_id: formData.get('categoria_id'),
+        descricao: formData.get('descricao') || null,
+        imagens: validUrls,
+      };
+
+      console.log('📦 [SUBMIT] Salvando produto:', produto);
+
+      // Salvar produto
       const response = await fetch('/api/admin/produtos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'application/json',
         },
         body: JSON.stringify(produto),
       });
 
-      console.log('📥 Response status:', response.status);
-      const responseText = await response.text();
-      console.log('📄 Response text:', responseText);
-
-      let data: any;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('❌ Erro ao parsear response:', parseError);
-        throw new Error(
-          `Resposta inválida do servidor: ${responseText.substring(0, 100)}`,
-        );
-      }
-
       if (!response.ok) {
-        throw new Error(
-          data.error || `Erro ${response.status}: ${response.statusText}`,
-        );
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao salvar produto');
       }
 
-      console.log('✅ Produto criado:', data);
+      console.log('✅ [SUBMIT] Produto salvo com sucesso!');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      // Marcar como salvo para não limpar as imagens
-      formSaved = true;
-
-      // Mostrar sucesso
       window.showToast('Produto adicionado com sucesso!', 'success');
 
-      // CRITICAL: Forçar reload da página pai (catálogo)
-      // Se estiver em iframe/modal, recarregar pai
-      if (window.opener) {
-        window.opener.location.reload();
-      }
-
-      // Aguardar um momento e redirecionar
       setTimeout(() => {
-        // Limpar cache do browser
-        if ('caches' in window) {
-          caches.keys().then((names) => {
-            names.forEach((name) => caches.delete(name));
-          });
-        }
-
-        // Redirecionar com force reload
-        window.location.href = '/admin/produtos?refresh=' + Date.now();
+        // Forçar reload completo sem cache usando cache-busting
+        const timestamp = new Date().getTime();
+        window.location.href = `/admin/produtos?_t=${timestamp}`;
       }, 1000);
     } catch (error: any) {
-      console.error('❌ Erro ao salvar produto:', error);
+      console.error('❌ [SUBMIT] Erro:', error);
       window.showToast(error.message || 'Erro ao salvar produto', 'error');
     } finally {
       submitBtn.disabled = false;
@@ -550,6 +465,122 @@ const { data: categorias } = await supabaseAdmin
     }
   });
 
-  // Renderizar estado inicial (placeholder)
-  renderImagesPreviews();
+  // Renderizar estado inicial
+  renderPreviews();
 </script>
+
+<style>
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .upload-placeholder svg {
+    color: #9ca3af;
+    margin-bottom: 16px;
+  }
+
+  .upload-placeholder p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+
+  .upload-placeholder small {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  .images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .image-preview-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.2s;
+  }
+
+  .image-remove-btn:hover {
+    background: rgba(220, 38, 38, 1);
+    transform: scale(1.1);
+  }
+
+  .image-principal-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .image-add-btn {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px dashed #d1d5db;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #f9fafb;
+    transition: all 0.2s;
+  }
+
+  .image-add-btn:hover {
+    border-color: #9ca3af;
+    background: #f3f4f6;
+  }
+
+  .image-add-btn svg {
+    color: #9ca3af;
+    margin-bottom: 4px;
+  }
+
+  .image-add-btn span {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+</style>

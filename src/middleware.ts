@@ -64,10 +64,23 @@ export const onRequest = defineMiddleware(async ({ request, locals, redirect, co
   const isLogoutAPI = url.pathname === '/api/admin/auth/logout';
   const isAdminRoute = url.pathname.startsWith('/admin') && !isLoginPage;
 
+  // Proteção contra loop de redirecionamento
+  const redirectCount = parseInt(request.headers.get('x-redirect-count') || '0');
+  if (redirectCount > 5) {
+    console.error('[Middleware] ⚠️ LOOP DE REDIRECIONAMENTO DETECTADO! Contador:', redirectCount);
+    console.error('[Middleware] 🛑 Parando para prevenir loop infinito');
+    // Retorna página de erro em vez de redirecionar
+    return new Response('Erro: Loop de redirecionamento detectado. Limpe o cache do navegador.', {
+      status: 500,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  }
+
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log(`[Middleware] 🌐 Request recebido`);
   console.log(`[Middleware] 📍 URL: ${url.pathname}`);
   console.log(`[Middleware] 🔗 Method: ${request.method}`);
+  console.log(`[Middleware] 🔄 Redirect count: ${redirectCount}`);
   console.log(`[Middleware] 📋 isAdminRoute: ${isAdminRoute}`);
   console.log(`[Middleware] 🔐 isLoginPage: ${isLoginPage}`);
   console.log(`[Middleware] 🚪 isLogoutAPI: ${isLogoutAPI}`);
@@ -97,7 +110,11 @@ export const onRequest = defineMiddleware(async ({ request, locals, redirect, co
     if (!user) {
       console.log('[Middleware] 🚫 Rota admin sem autenticação, redirecionando para /admin/login');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      return redirect('/admin/login');
+
+      // Adicionar header para rastrear redirecionamentos
+      const response = redirect('/admin/login');
+      response.headers.set('x-redirect-count', String(redirectCount + 1));
+      return response;
     }
     // Adicionar usuário aos locals para uso nas páginas
     locals.user = user;
@@ -107,9 +124,13 @@ export const onRequest = defineMiddleware(async ({ request, locals, redirect, co
 
   // Redirecionar se já autenticado e tentar acessar login
   if (isLoginPage && user) {
-    console.log('[Middleware] 🔄 Usuário autenticado tentando acessar login, redirecionando para /admin/dashboard');
+    console.log('[Middleware] 🔄 Usuário autenticado tentando acessar login, redirecionando para /admin/produtos');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    return redirect('/admin/dashboard');
+
+    // Redirecionar para /admin/produtos em vez de /admin/dashboard (que pode não existir)
+    const response = redirect('/admin/produtos');
+    response.headers.set('x-redirect-count', String(redirectCount + 1));
+    return response;
   }
 
   console.log('[Middleware] ➡️ Passando para a próxima camada');

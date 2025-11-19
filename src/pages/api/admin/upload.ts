@@ -178,33 +178,56 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // IMPORTANTE: Criar hash do buffer para identificar arquivos únicos
+    const crypto = await import('crypto');
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex').substring(0, 16);
+    console.log(`🔑 [UPLOAD] Hash do arquivo: ${hash} (${file.name})`);
+
     // Otimizar imagem com Sharp
     const originalSize = buffer.length;
     let optimizedBuffer: Buffer;
 
     try {
-      // Processar imagem
-      const image = sharp(buffer);
-      const metadata = await image.metadata();
+      console.log(`🖼️ [SHARP] Iniciando processamento do arquivo ${file.name} (hash: ${hash})`);
 
-      // Redimensionar apenas se for maior que 1200px
-      let sharpInstance = image;
-      if (metadata.width && metadata.width > 1200) {
-        sharpInstance = sharpInstance.resize(1200, 1200, {
+      // IMPORTANTE: Criar uma NOVA instância do Sharp para cada upload
+      // para evitar reutilização de estado/cache entre processamentos paralelos
+      const image = sharp(buffer, {
+        failOnError: false,
+        // Desabilitar cache para evitar problemas com uploads paralelos
+        sequentialRead: true
+      });
+
+      const metadata = await image.metadata();
+      console.log(`📐 [SHARP] Metadata (${hash}): ${metadata.width}x${metadata.height}, format: ${metadata.format}`);
+
+      // IMPORTANTE: Sempre criar uma nova pipeline de transformação
+      // sem reutilizar a instância anterior
+      const shouldResize = metadata.width && metadata.width > 1200;
+      console.log(`🔧 [SHARP] Redimensionar (${hash}): ${shouldResize ? 'SIM' : 'NÃO'}`);
+
+      // Criar pipeline de transformação completa
+      let pipeline = sharp(buffer, { sequentialRead: true });
+
+      if (shouldResize) {
+        pipeline = pipeline.resize(1200, 1200, {
           fit: 'inside',
           withoutEnlargement: true
         });
       }
 
       // Converter para WebP com qualidade 80
-      optimizedBuffer = await sharpInstance
+      optimizedBuffer = await pipeline
         .webp({
           quality: 80,
           effort: 4 // Balanço entre compressão e velocidade
         })
         .toBuffer();
 
-      console.log(`📊 Otimização: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB (${((1 - optimizedBuffer.length / originalSize) * 100).toFixed(1)}% redução)`);
+      // Hash do buffer otimizado para confirmar que é único
+      const optimizedHash = crypto.createHash('sha256').update(optimizedBuffer).digest('hex').substring(0, 16);
+      console.log(`🔑 [SHARP] Hash do resultado (${hash}): ${optimizedHash}`);
+      console.log(`📊 [SHARP] Otimização (${hash}): ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB (${((1 - optimizedBuffer.length / originalSize) * 100).toFixed(1)}% redução)`);
     } catch (sharpError: any) {
       console.error('Erro ao otimizar imagem:', sharpError);
 
@@ -282,8 +305,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .from('imagens')
       .getPublicUrl(filePath);
 
-    // Adicionar cache-busting query parameter para evitar problemas de cache
-    const cacheBustingUrl = `${publicUrl}?t=${timestamp}`;
+    // IMPORTANTE: Usar UUID único para cache-busting ao invés de timestamp
+    // Quando múltiplas imagens são enviadas em paralelo, timestamp pode ser o mesmo,
+    // causando cache incorreto no navegador
+    const cacheBustingId = uuidv4();
+    const cacheBustingUrl = `${publicUrl}?v=${cacheBustingId}`;
 
     console.log('📸 Imagem enviada:', {
       fileName,

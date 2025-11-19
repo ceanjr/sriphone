@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limpar Cache - Sr. IPHONE VCA</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      margin: 0 0 20px 0;
+      font-size: 24px;
+    }
+    button {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    button:hover {
+      background: #e0e0e0;
+    }
+    #log {
+      background: #000;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      margin-top: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .log-line {
+      margin-bottom: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid #333;
+    }
+    .success { color: #4ade80; }
+    .error { color: #ef4444; }
+    .info { color: #60a5fa; }
+    .warning { color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Limpar Cache Completo</h1>
+    <p>Use este utilitário para forçar limpeza completa de todos os caches.</p>
+
+    <button onclick="clearEverything()">🚀 LIMPAR TUDO E RECARREGAR</button>
+    <button onclick="unregisterServiceWorker()">🔧 Desregistrar Service Worker</button>
+    <button onclick="clearLocalStorage()">💾 Limpar localStorage</button>
+    <button onclick="clearCaches()">🗑️ Limpar Caches</button>
+    <button onclick="showCacheInfo()">ℹ️ Mostrar Info de Cache</button>
+
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+
+    function log(message, type = 'info') {
+      const line = document.createElement('div');
+      line.className = `log-line ${type}`;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+
+    async function clearEverything() {
+      log('🚀 Iniciando limpeza completa...', 'info');
+
+      // 1. Desregistrar Service Worker
+      await unregisterServiceWorker();
+
+      // 2. Limpar localStorage
+      await clearLocalStorage();
+
+      // 3. Limpar todos os caches
+      await clearCaches();
+
+      log('✅ Limpeza completa concluída!', 'success');
+      log('🔄 Recarregando em 2 segundos...', 'info');
+
+      setTimeout(() => {
+        window.location.href = '/admin/login';
+      }, 2000);
+    }
+
+    async function unregisterServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          log(`📋 Encontrados ${registrations.length} service workers`, 'info');
+
+          for (const registration of registrations) {
+            await registration.unregister();
+            log('✅ Service Worker desregistrado', 'success');
+          }
+        } catch (error) {
+          log(`❌ Erro ao desregistrar SW: ${error.message}`, 'error');
+        }
+      } else {
+        log('⚠️ Service Worker não suportado', 'warning');
+      }
+    }
+
+    async function clearLocalStorage() {
+      try {
+        const itemCount = localStorage.length;
+        log(`📋 Limpando ${itemCount} itens do localStorage...`, 'info');
+
+        // Listar todos os itens antes de limpar
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          items.push(localStorage.key(i));
+        }
+        items.forEach(key => log(`  - ${key}`, 'info'));
+
+        localStorage.clear();
+        log('✅ localStorage limpo', 'success');
+
+        // Limpar também sessionStorage
+        sessionStorage.clear();
+        log('✅ sessionStorage limpo', 'success');
+
+        // Limpar cookies do Supabase
+        const cookies = ['sb-access-token', 'sb-refresh-token', 'sb-auth-token'];
+        cookies.forEach(name => {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          log(`✅ Cookie limpo: ${name}`, 'success');
+        });
+      } catch (error) {
+        log(`❌ Erro ao limpar localStorage: ${error.message}`, 'error');
+      }
+    }
+
+    async function clearCaches() {
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          log(`📋 Encontrados ${cacheNames.length} caches`, 'info');
+
+          for (const cacheName of cacheNames) {
+            await caches.delete(cacheName);
+            log(`✅ Cache deletado: ${cacheName}`, 'success');
+          }
+        } catch (error) {
+          log(`❌ Erro ao limpar caches: ${error.message}`, 'error');
+        }
+      } else {
+        log('⚠️ Cache API não suportada', 'warning');
+      }
+    }
+
+    async function showCacheInfo() {
+      log('ℹ️ Informações do sistema:', 'info');
+      log(`URL atual: ${window.location.href}`, 'info');
+      log(`User Agent: ${navigator.userAgent}`, 'info');
+
+      // localStorage
+      if (typeof localStorage !== 'undefined') {
+        log(`\n📦 localStorage (${localStorage.length} itens):`, 'info');
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          const value = localStorage.getItem(key);
+          const preview = value.length > 50 ? value.substring(0, 50) + '...' : value;
+          log(`  ${key}: ${preview}`, 'info');
+        }
+      }
+
+      // Caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        log(`\n🗄️ Caches (${cacheNames.length}):`, 'info');
+        cacheNames.forEach(name => log(`  - ${name}`, 'info'));
+      }
+
+      // Service Workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        log(`\n⚙️ Service Workers (${registrations.length}):`, 'info');
+        registrations.forEach((reg, i) => {
+          log(`  ${i + 1}. Scope: ${reg.scope}`, 'info');
+          log(`     Active: ${reg.active ? 'SIM' : 'NÃO'}`, 'info');
+        });
+      }
+
+      // Cookies
+      log(`\n🍪 Cookies:`, 'info');
+      const cookies = document.cookie.split(';');
+      cookies.forEach(cookie => {
+        const [name] = cookie.split('=');
+        log(`  - ${name.trim()}`, 'info');
+      });
+    }
+
+    // Executar ao carregar
+    log('🔧 Utilitário de limpeza carregado', 'success');
+    log('Clique em um dos botões acima para executar a ação desejada', 'info');
+  </script>
+</body>
+</html>

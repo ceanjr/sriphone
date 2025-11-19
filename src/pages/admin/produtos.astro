@@ -6,6 +6,11 @@ import '../../styles/admin-form.css';
 
 export const prerender = false; // Força SSR sem cache para admin
 
+// CRITICAL: Desabilitar TODOS os caches (Vercel, CDN, browser)
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+
 // Buscar todas as categorias para o filtro
 const { data: categorias } = await supabaseAdmin
   .from('categorias')
@@ -240,6 +245,28 @@ const { data: produtos } = await supabaseAdmin
 <script>
   import { deletarProduto } from '../../lib/api';
 
+  // DEBUG: Log quando script carregar
+  console.log('🟢 [PRODUTOS] Script carregado');
+  console.log('🟢 [PRODUTOS] URL atual:', window.location.href);
+
+  // DEBUG: Interceptar cliques em todos os links "Adicionar Produto"
+  document.addEventListener('DOMContentLoaded', () => {
+    const addButtons = document.querySelectorAll('a[href="/admin/produtos/novo"]');
+    console.log('🟢 [PRODUTOS] Botões "Adicionar Produto" encontrados:', addButtons.length);
+
+    addButtons.forEach((btn, index) => {
+      console.log(`🟢 [PRODUTOS] Botão ${index + 1}:`, btn);
+      btn.addEventListener('click', (e) => {
+        console.log('🔵 [PRODUTOS] CLICK NO BOTÃO ADICIONAR PRODUTO!');
+        console.log('🔵 [PRODUTOS] Event:', e);
+        console.log('🔵 [PRODUTOS] Target:', e.target);
+        console.log('🔵 [PRODUTOS] CurrentTarget:', e.currentTarget);
+        console.log('🔵 [PRODUTOS] Default prevented?', e.defaultPrevented);
+        console.log('🔵 [PRODUTOS] Href:', (e.currentTarget as HTMLAnchorElement).href);
+      });
+    });
+  });
+
   // Filtro por categoria
   const categoriaFilter = document.getElementById(
     'categoria-filter',
@@ -341,7 +368,9 @@ const { data: produtos } = await supabaseAdmin
           if (result.success) {
             window.showToast('Produto deletado com sucesso!', 'success');
             setTimeout(() => {
-              window.location.reload();
+              // Forçar reload completo sem cache usando cache-busting
+              const timestamp = new Date().getTime();
+              window.location.href = `/admin/produtos?_t=${timestamp}`;
             }, 1000);
           } else {
             throw new Error(result.error || 'Erro ao deletar produto');

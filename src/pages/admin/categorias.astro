@@ -4,6 +4,11 @@ import '../../styles/admin-list.css';
 import '../../styles/admin-form.css';
 
 export const prerender = false;
+
+// CRITICAL: Desabilitar TODOS os caches (Vercel, CDN, browser)
+Astro.response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
 ---
 
 <AdminLayout title="Categorias">

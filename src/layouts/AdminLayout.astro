@@ -61,4 +61,32 @@ try {
 
   <!-- Toast Notifications -->
   <Toast />
+
+  <!-- Script de diagnóstico inline -->
+  <script is:inline>
+    (function() {
+      console.log('═══════════════════════════════════════════════════');
+      console.log('🔍 [ADMIN LAYOUT] Script iniciado');
+      console.log('🔍 [ADMIN LAYOUT] URL:', window.location.href);
+      console.log('🔍 [ADMIN LAYOUT] Timestamp:', new Date().toISOString());
+      console.log('═══════════════════════════════════════════════════');
+
+      // Interceptar todos os clicks em links para debug
+      document.addEventListener('click', function(e) {
+        const target = e.target;
+        const link = target.closest('a');
+
+        if (link && link.href) {
+          console.log('🔗 [NAVIGATION] Link clicado:', link.href);
+          console.log('🔗 [NAVIGATION] Text:', link.textContent?.trim());
+          console.log('🔗 [NAVIGATION] Target:', link.target);
+        }
+      }, true);
+
+      // Log quando a página está pronta para navegar
+      window.addEventListener('load', () => {
+        console.log('✅ [ADMIN LAYOUT] Página completamente carregada');
+      });
+    })();
+  </script>
 </Layout>
