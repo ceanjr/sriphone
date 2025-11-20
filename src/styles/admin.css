@@ -184,10 +184,12 @@
     padding: 16px;
   }
 
+  /* Comentado: admin-list.css já define o layout correto
   .admin-list-item-image {
     width: 100%;
     height: 200px;
   }
+  */
 
   .admin-list-item-content {
     width: 100%;
