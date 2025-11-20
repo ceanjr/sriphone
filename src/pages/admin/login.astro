@@ -44,7 +44,7 @@ console.log('[Login Page SSR] Renderizando página de login');
           alt="Sr. IPHONE VCA"
           class="login-logo"
         />
-        <h1 class="login-title">Admin - Sr. IPHONE VCA</h1>
+        <h1 class="login-title">Sr. iPhone VCA</h1>
         <p class="login-subtitle">Área administrativa do catálogo</p>
       </div>
 
@@ -93,7 +93,7 @@ console.log('[Login Page SSR] Renderizando página de login');
 
   <!-- Script de limpeza e diagnóstico - DEVE executar SEMPRE -->
   <script is:inline>
-    (function() {
+    (function () {
       console.log('═══════════════════════════════════════════════════');
       console.log('🔍 [LOGIN INIT] Script iniciado');
       console.log('🔍 [LOGIN INIT] Timestamp:', new Date().toISOString());
@@ -112,8 +112,13 @@ console.log('[Login Page SSR] Renderizando página de login');
       }
 
       if (keysToRemove.length > 0) {
-        console.log('🧹 [LOGIN INIT] Removendo', keysToRemove.length, 'token(s) antigo(s):', keysToRemove);
-        keysToRemove.forEach(function(key) {
+        console.log(
+          '🧹 [LOGIN INIT] Removendo',
+          keysToRemove.length,
+          'token(s) antigo(s):',
+          keysToRemove
+        );
+        keysToRemove.forEach(function (key) {
           localStorage.removeItem(key);
         });
         console.log('✅ [LOGIN INIT] Tokens antigos removidos');
@@ -134,16 +139,27 @@ console.log('[Login Page SSR] Renderizando página de login');
       }
 
       // Se tem apenas um dos cookies (incompleto), limpar tudo
-      if ((hasAccessToken && !hasRefreshToken) || (!hasAccessToken && hasRefreshToken)) {
-        console.log('🧹 [LOGIN INIT] Cookies incompletos detectados, limpando...');
-        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-        document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-        document.cookie = 'sb-expires-at=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      if (
+        (hasAccessToken && !hasRefreshToken) ||
+        (!hasAccessToken && hasRefreshToken)
+      ) {
+        console.log(
+          '🧹 [LOGIN INIT] Cookies incompletos detectados, limpando...'
+        );
+        document.cookie =
+          'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie =
+          'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie =
+          'sb-expires-at=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
         console.log('✅ [LOGIN INIT] Cookies limpos');
       }
 
       // Log de cookies atuais
-      console.log('🍪 [LOGIN INIT] Cookies atuais:', document.cookie || 'NENHUM');
+      console.log(
+        '🍪 [LOGIN INIT] Cookies atuais:',
+        document.cookie || 'NENHUM'
+      );
 
       console.log('═══════════════════════════════════════════════════');
     })();
@@ -157,18 +173,26 @@ console.log('[Login Page SSR] Renderizando página de login');
     console.log('═══════════════════════════════════════════════════');
 
     const form = document.getElementById('login-form') as HTMLFormElement;
-    const errorMessage = document.getElementById('error-message') as HTMLDivElement;
-    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const errorMessage = document.getElementById(
+      'error-message'
+    ) as HTMLDivElement;
+    const submitBtn = document.getElementById(
+      'submit-btn'
+    ) as HTMLButtonElement;
 
     console.log('🔍 [LOGIN SCRIPT] Elementos do formulário:', {
       form: form ? '✅ Encontrado' : '❌ NÃO encontrado',
       errorMessage: errorMessage ? '✅ Encontrado' : '❌ NÃO encontrado',
-      submitBtn: submitBtn ? '✅ Encontrado' : '❌ NÃO encontrado'
+      submitBtn: submitBtn ? '✅ Encontrado' : '❌ NÃO encontrado',
     });
 
     if (!form || !errorMessage || !submitBtn) {
-      console.error('❌ [LOGIN SCRIPT] ERRO CRÍTICO: Elementos do formulário não encontrados!');
-      console.error('❌ [LOGIN SCRIPT] Verifique se os IDs estão corretos no HTML');
+      console.error(
+        '❌ [LOGIN SCRIPT] ERRO CRÍTICO: Elementos do formulário não encontrados!'
+      );
+      console.error(
+        '❌ [LOGIN SCRIPT] Verifique se os IDs estão corretos no HTML'
+      );
     }
 
     form?.addEventListener('submit', async (e) => {
@@ -213,7 +237,7 @@ console.log('[Login Page SSR] Renderizando página de login');
         console.log('📥 [LOGIN] Resposta recebida:', {
           status: response.status,
           statusText: response.statusText,
-          ok: response.ok
+          ok: response.ok,
         });
 
         if (!response.ok) {
@@ -227,21 +251,22 @@ console.log('[Login Page SSR] Renderizando página de login');
         console.log('📦 [LOGIN] Dados retornados:', {
           success: result.success,
           hasUser: !!result.user,
-          hasSession: !!result.session
+          hasSession: !!result.session,
         });
 
         // Sucesso! Preparar redirecionamento
         submitBtn.textContent = 'Sucesso! Redirecionando...';
-        console.log('🎉 [LOGIN] Aguardando 500ms para garantir cookies salvos...');
+        console.log(
+          '🎉 [LOGIN] Aguardando 500ms para garantir cookies salvos...'
+        );
 
         // Aguardar cookies serem salvos
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         console.log('🚀 [LOGIN] Redirecionando para /admin/dashboard...');
 
         // Forçar redirect completo
         window.location.href = '/admin/dashboard';
-
       } catch (error: any) {
         console.error('═══════════════════════════════════════════════════');
         console.error('❌ [LOGIN] ERRO capturado:', error);
@@ -256,7 +281,10 @@ console.log('[Login Page SSR] Renderizando página de login');
           errorMsg = 'Email ou senha incorretos.';
         } else if (error.message?.includes('Email não confirmado')) {
           errorMsg = 'Email não confirmado. Verifique sua caixa de entrada.';
-        } else if (error.message?.includes('Network') || error.message?.includes('Failed to fetch')) {
+        } else if (
+          error.message?.includes('Network') ||
+          error.message?.includes('Failed to fetch')
+        ) {
           errorMsg = 'Erro de conexão. Verifique sua internet.';
         } else if (error.message) {
           errorMsg = error.message;
@@ -288,6 +316,8 @@ console.log('[Login Page SSR] Renderizando página de login');
       input.addEventListener('input', hideError);
     });
 
-    console.log('✅ [LOGIN SCRIPT] Configuração completa! Aguardando submit...');
+    console.log(
+      '✅ [LOGIN SCRIPT] Configuração completa! Aguardando submit...'
+    );
   </script>
 </Layout>

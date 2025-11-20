@@ -86,7 +86,6 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
     .btn-auth {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
         background: transparent;
         border: 1px solid #2a2a2a;
         color: #fff;
@@ -137,7 +136,7 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
     <script>
         import { authService } from '../lib/supabase'
 
-        const linkAuth = document.getElementById('link-auth')
+        const linkAuth = document.getElementById('link-auth') as HTMLAnchorElement | null
         let isAuthenticated = false;
 
         async function checkAuth() {

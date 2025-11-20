@@ -157,7 +157,7 @@
 .filtros-avancados {
   display: none;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 3rem;
   padding: 1rem;
   background: #0f0f0f;
   border: 1px solid #1a1a1a;
@@ -171,7 +171,7 @@
 .filtro-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 
 .filtro-group label {
@@ -509,12 +509,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    #1a1a1a 0%,
-    #2a2a2a 50%,
-    #1a1a1a 100%
-  );
+  background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s ease-in-out infinite;
   z-index: 2;
@@ -1354,4 +1349,3 @@
 .produto-image {
   position: relative;
 }
-
