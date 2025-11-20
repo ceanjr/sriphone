@@ -4,7 +4,6 @@ import Sidebar from '../components/admin/Sidebar.astro';
 import MobileNav from '../components/admin/MobileNav.astro';
 import Toast from '../components/admin/Toast.astro';
 import '../styles/admin.css';
-import { verifyAuth } from '../lib/auth';
 
 interface Props {
   title: string;
@@ -14,34 +13,11 @@ interface Props {
 const { title, description = 'Painel administrativo Sr. IPHONE VCA' } =
   Astro.props;
 
-// Proteção de rota admin
-console.log('[AdminLayout] Iniciando verificação de autenticação...');
-const currentPath = Astro.url.pathname;
-const isLoginPage =
-  currentPath === '/admin/login' || currentPath === '/admin/login/';
-
-console.log('[AdminLayout] Caminho atual:', currentPath);
-console.log('[AdminLayout] É página de login?', isLoginPage);
-
-try {
-  const isAuthenticated = await verifyAuth(
-    Astro.cookies,
-    Astro.request.headers.get('Authorization'),
-  );
-  console.log('[AdminLayout] Resultado da autenticação:', isAuthenticated);
-
-  if (!isAuthenticated && !isLoginPage) {
-    console.log(
-      '[AdminLayout] Não autenticado, redirecionando para /admin/login',
-    );
-    return Astro.redirect('/admin/login');
-  }
-} catch (err) {
-  console.log('[AdminLayout] Erro na verificação de autenticação:', err);
-  if (!isLoginPage) {
-    return Astro.redirect('/admin/login');
-  }
-}
+// NOTA: A autenticação é verificada pelo middleware (src/middleware.ts)
+// Não precisamos verificar novamente aqui para evitar dupla verificação
+// que pode causar problemas de redirecionamento
+console.log('[AdminLayout] Renderizando layout para:', Astro.url.pathname);
+console.log('[AdminLayout] Usuário autenticado via middleware:', !!Astro.locals.user);
 ---
 
 <Layout title={title} description={description}>
