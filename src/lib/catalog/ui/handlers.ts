@@ -84,8 +84,8 @@ export function createHandlers(elementos: any) {
 
     toggleFiltros: (elementos: any) => {
       if (!elementos.filtrosAvancados) return;
-      const isVisible = elementos.filtrosAvancados.style.display !== 'none';
-      elementos.filtrosAvancados.style.display = isVisible ? 'none' : 'block';
+      // Usar classes CSS em vez de inline styles para manter grid funcionando
+      elementos.filtrosAvancados.classList.toggle('active');
     },
   };
 }
