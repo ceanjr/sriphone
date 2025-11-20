@@ -87,8 +87,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // DESENVOLVIMENTO: Não cachear localhost
-  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.port === '4321') {
+  // DESENVOLVIMENTO: Não cachear localhost ou portas de desenvolvimento
+  // Retornar early para evitar qualquer cache em ambiente de desenvolvimento
+  if (url.hostname === 'localhost' ||
+      url.hostname === '127.0.0.1' ||
+      url.port === '4321' ||
+      url.port === '3000' ||
+      url.port === '5173') {
+    console.log('[SW DEV] Ignorando cache em ambiente de desenvolvimento:', url.href);
     return;
   }
 

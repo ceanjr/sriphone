@@ -38,13 +38,14 @@ export default defineConfig({
   vite: {
     build: {
       assetsDir: '_astro',
-      minify: 'terser',
-      terserOptions: {
+      // Minificação apenas em produção
+      minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
+      terserOptions: process.env.NODE_ENV === 'production' ? {
         compress: {
           drop_console: true,
           drop_debugger: true,
         },
-      },
+      } : undefined,
       rollupOptions: {
         output: {
           manualChunks: (id) => {
@@ -77,8 +78,18 @@ export default defineConfig({
 
     // Development server configuration
     server: {
-      // Não aplicar cache agressivo em desenvolvimento
-      // apenas em build/produção
+      // Configurações otimizadas para desenvolvimento
+      fs: {
+        strict: false,
+      },
+      hmr: {
+        overlay: true,
+      },
+    },
+
+    // Otimizações para desenvolvimento
+    optimizeDeps: {
+      include: ['@supabase/supabase-js'],
     },
   },
   // Compressão adicional

@@ -171,35 +171,54 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <!-- Vercel Analytics -->
     <Analytics />
 
-    <!-- Service Worker - SIMPLES E SEGURO -->
+    <!-- Service Worker - DESABILITADO EM DESENVOLVIMENTO -->
     <script is:inline>
-      // Service Worker simples sem auto-reload
+      // Service Worker apenas em produção
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', async () => {
-          try {
-            const reg = await navigator.serviceWorker.register('/sw.js');
-            console.log('✅ Service Worker registrado');
+        // Verificar se está em ambiente de desenvolvimento
+        const isDev = window.location.hostname === 'localhost' ||
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.port === '4321' ||
+                     window.location.port === '3000' ||
+                     window.location.port === '5173';
 
-            // Atualizar quando disponível, mas SEM reload automático
-            reg.addEventListener('updatefound', () => {
-              const newWorker = reg.installing;
-              if (newWorker) {
-                newWorker.addEventListener('statechange', () => {
-                  if (
-                    newWorker.state === 'installed' &&
-                    navigator.serviceWorker.controller
-                  ) {
-                    console.log('🆕 Nova versão disponível');
-                    // Mostrar notificação mas não recarregar
-                    newWorker.postMessage({ type: 'SKIP_WAITING' });
-                  }
-                });
-              }
-            });
-          } catch (error) {
-            console.warn('Service Worker error:', error);
-          }
-        });
+        if (isDev) {
+          console.log('🚫 Service Worker desabilitado em desenvolvimento');
+          // Remover service worker existente se houver
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+              registration.unregister();
+              console.log('🧹 Service Worker removido do ambiente de desenvolvimento');
+            }
+          });
+        } else {
+          // Apenas registrar em produção
+          window.addEventListener('load', async () => {
+            try {
+              const reg = await navigator.serviceWorker.register('/sw.js');
+              console.log('✅ Service Worker registrado');
+
+              // Atualizar quando disponível, mas SEM reload automático
+              reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', () => {
+                    if (
+                      newWorker.state === 'installed' &&
+                      navigator.serviceWorker.controller
+                    ) {
+                      console.log('🆕 Nova versão disponível');
+                      // Mostrar notificação mas não recarregar
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                  });
+                }
+              });
+            } catch (error) {
+              console.warn('Service Worker error:', error);
+            }
+          });
+        }
       }
     </script>
 
