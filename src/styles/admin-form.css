@@ -204,6 +204,12 @@
   overflow: hidden;
 }
 
+/* Sobrescrever display quando contém grid de imagens */
+.form-image-upload:has(.images-preview-grid) {
+  display: block;
+  min-height: auto;
+}
+
 .form-image-upload:hover {
   border-color: #3a3a3a;
   background: #0a0a0a;
