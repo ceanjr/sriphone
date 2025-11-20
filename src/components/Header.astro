@@ -21,13 +21,13 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
             )}
             {isCatalogPage && (
                 <>
-                    <!-- Botão Auth -->
-                    <button id="btn-auth" class="btn-auth">
+                    <!-- Link Auth -->
+                    <a id="link-auth" href="/admin/login" class="btn-auth">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>Admin</span>
-                    </button>
+                    </a>
                 </>
             )}
         </nav>
@@ -97,6 +97,7 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         cursor: pointer;
         transition: all 0.3s ease;
         white-space: nowrap;
+        text-decoration: none;
     }
 
     .btn-auth:hover {
@@ -136,7 +137,7 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
     <script>
         import { authService } from '../lib/supabase'
 
-        const btnAuth = document.getElementById('btn-auth')
+        const linkAuth = document.getElementById('link-auth')
         let isAuthenticated = false;
 
         async function checkAuth() {
@@ -151,26 +152,26 @@ const isCatalogPage = currentPath === '/catalogo' || currentPath === '/catalogo/
         }
 
         function updateUI() {
-            if (!btnAuth) return;
+            if (!linkAuth) return;
 
             if (isAuthenticated) {
-                // Usuário autenticado - mostrar botão Dashboard
-                btnAuth.innerHTML = `
+                // Usuário autenticado - mostrar link Dashboard
+                linkAuth.href = '/admin/dashboard';
+                linkAuth.innerHTML = `
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span>Dashboard</span>
                 `;
-                btnAuth.onclick = () => window.location.href = '/admin/dashboard';
             } else {
-                // Usuário não autenticado - mostrar botão Admin
-                btnAuth.innerHTML = `
+                // Usuário não autenticado - mostrar link Admin
+                linkAuth.href = '/admin/login';
+                linkAuth.innerHTML = `
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M15 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H15M10 17L15 12L10 7M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span>Admin</span>
                 `;
-                btnAuth.onclick = () => window.location.href = '/admin/login';
             }
         }
 
