@@ -1,0 +1,91 @@
+---
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+import { productService, categoryService } from '../lib/supabase';
+
+// Buscar dados
+const produtosIniciais = await productService.getPaginated(undefined, 30);
+const categorias = await categoryService.getAll();
+
+console.log('📊 Catalogo Simple:', {
+  produtos: produtosIniciais.produtos?.length || 0,
+  categorias: categorias?.length || 0,
+});
+---
+
+<Layout title="Catálogo Simple" description="Teste">
+  <Header />
+
+  <main style="padding: 2rem; background: #000; color: #fff; min-height: 100vh;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+      <h1 style="color: #0f0; margin-bottom: 2rem;">🧪 CATÁLOGO SIMPLIFICADO</h1>
+
+      <div id="debug" style="background: #1a1a1a; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; font-family: monospace;">
+        <p>Aguardando JavaScript...</p>
+      </div>
+
+      <div id="produtos-container" style="display: grid; gap: 1rem;">
+        <!-- Produtos serão inseridos aqui -->
+      </div>
+    </div>
+  </main>
+
+  <Footer />
+
+  <!-- Dados iniciais -->
+  <script
+    type="application/json"
+    id="initial-data"
+    set:html={JSON.stringify({
+      produtos: produtosIniciais.produtos,
+      categorias: categorias,
+    })}
+  />
+</Layout>
+
+<script>
+  console.log('═══════════════════════════════════════════');
+  console.log('🔍 [SIMPLE] Script iniciado');
+
+  // 1. Ler dados iniciais
+  console.log('⏳ [SIMPLE] Lendo dados iniciais...');
+  const dataEl = document.getElementById('initial-data');
+  const data = dataEl ? JSON.parse(dataEl.textContent || '{}') : {};
+  console.log('✅ [SIMPLE] Dados lidos:', {
+    produtos: data.produtos?.length || 0,
+    categorias: data.categorias?.length || 0,
+  });
+
+  // 2. Atualizar debug
+  const debug = document.getElementById('debug');
+  if (debug) {
+    debug.innerHTML = `
+      <p>✅ Script executou!</p>
+      <p>Produtos: ${data.produtos?.length || 0}</p>
+      <p>Categorias: ${data.categorias?.length || 0}</p>
+    `;
+  }
+
+  // 3. Renderizar produtos
+  console.log('⏳ [SIMPLE] Renderizando produtos...');
+  const container = document.getElementById('produtos-container');
+
+  if (container && data.produtos) {
+    container.innerHTML = data.produtos.map((p: any) => `
+      <div style="background: #1a1a1a; padding: 1rem; border-radius: 8px;">
+        <h3>${p.nome}</h3>
+        <p style="color: #888;">${p.descricao}</p>
+        <p style="color: #0f0; font-weight: bold;">R$ ${p.preco}</p>
+      </div>
+    `).join('');
+
+    console.log('✅ [SIMPLE] Produtos renderizados!');
+  }
+
+  console.log('═══════════════════════════════════════════');
+  console.log('✅ [SIMPLE] Script completo!');
+</script>

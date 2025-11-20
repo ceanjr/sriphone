@@ -1,7 +1,7 @@
 // src/pages/api/track-view.ts
 // Registra visualização de usuário não autenticado
 import type { APIRoute } from 'astro';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin } from '../../lib/supabaseAdmin';
 
 export const prerender = false;
 
@@ -24,8 +24,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     // Extrair user agent
     const userAgent = request.headers.get('user-agent') || 'Unknown';
 
-    // Inserir visualização no banco
-    const { error } = await supabase
+    // Inserir visualização no banco usando supabaseAdmin (bypass RLS)
+    const { error } = await supabaseAdmin
       .from('site_views')
       .insert([{
         session_id: sessionId,
@@ -36,7 +36,19 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       }]);
 
     if (error) {
-      console.error('Erro ao registrar visualização:', error);
+      console.error('[Track View] Erro ao registrar visualização:', error);
+
+      // Se a tabela não existir, retornar mensagem mais clara
+      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Tabela site_views não existe. Execute o SQL em supabase-migrations/create_site_views_table.sql'
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
       return new Response(JSON.stringify({
         success: false,
         error: error.message
@@ -58,7 +70,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     });
 
   } catch (error: any) {
-    console.error('Erro ao processar requisição:', error);
+    console.error('[Track View] Erro ao processar requisição:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
