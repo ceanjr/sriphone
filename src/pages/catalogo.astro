@@ -233,6 +233,43 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 </Layout>
 
 <script>
+  // ============================================================================
+  // LOGS DE DIAGNÓSTICO (apenas em dev mode)
+  // ============================================================================
+  const isDev = import.meta.env.DEV;
+  const startTime = performance.now();
+
+  if (isDev) {
+    console.log('═══════════════════════════════════════════');
+    console.log('🔍 [CATALOG DEBUG] Script iniciado');
+    console.log('🔍 [CATALOG DEBUG] Mode:', import.meta.env.MODE);
+    console.log('🔍 [CATALOG DEBUG] DEV:', import.meta.env.DEV);
+    console.log('🔍 [CATALOG DEBUG] PROD:', import.meta.env.PROD);
+    console.log('═══════════════════════════════════════════');
+
+    // Capturar erros globais em dev mode
+    window.addEventListener('error', (event) => {
+      console.error('❌ [CATALOG DEBUG] Erro global capturado:', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error
+      });
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('❌ [CATALOG DEBUG] Promise rejeitada:', event.reason);
+    });
+
+    console.log('✅ [CATALOG DEBUG] Error handlers configurados');
+  }
+
+  // ============================================================================
+  // IMPORTS (com try/catch em dev para diagnóstico)
+  // ============================================================================
+  if (isDev) console.log('⏳ [CATALOG DEBUG] Importando módulos...');
+
   import { authService } from '../lib/supabase';
   import {
     initState,
@@ -254,6 +291,16 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   import { metrics } from '../lib/catalog/performance/metrics';
   import { utils, getBateriaColor } from '../lib/catalog/utils';
 
+  if (isDev) {
+    console.log('✅ [CATALOG DEBUG] Todos os módulos importados com sucesso!');
+    console.log(`⏱️ [CATALOG DEBUG] Tempo de import: ${(performance.now() - startTime).toFixed(2)}ms`);
+  }
+
+  // ============================================================================
+  // INICIALIZAÇÃO
+  // ============================================================================
+  if (isDev) console.log('⏳ [CATALOG DEBUG] Carregando dados iniciais...');
+
   // Carregar dados iniciais
   const initialDataEl = document.getElementById('initial-data');
   const initialData = initialDataEl
@@ -264,6 +311,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     produtos: initialData.produtos?.length || 0,
     timestamp: new Date(initialData.timestamp).toISOString(),
   });
+
+  if (isDev && initialData.produtos) {
+    console.log('✅ [CATALOG DEBUG] Dados iniciais carregados:', {
+      produtos: initialData.produtos.length,
+      categorias: initialData.categorias?.length || 0,
+      nextCursor: initialData.nextCursor ? 'presente' : 'null',
+    });
+  }
 
   // Inicializar estado
   const state = initState(initialData);

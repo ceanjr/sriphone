@@ -81,16 +81,32 @@ export default defineConfig({
       // Configurações otimizadas para desenvolvimento
       fs: {
         strict: false,
+        allow: ['..'], // Permitir imports de fora do root
       },
       hmr: {
-        overlay: true,
+        overlay: false, // Desabilitar overlay que pode interferir com scripts
+        protocol: 'ws',
+        host: 'localhost',
+      },
+      watch: {
+        // Melhorar performance do watch em sistemas WSL
+        usePolling: false,
+        interval: 100,
       },
     },
 
     // Otimizações para desenvolvimento
     optimizeDeps: {
-      include: ['@supabase/supabase-js'],
+      include: [
+        '@supabase/supabase-js',
+        '@vercel/analytics',
+      ],
+      // Forçar rebuild de dependências em dev para garantir versões atualizadas
+      force: process.env.NODE_ENV === 'development',
     },
+
+    // Logs mais limpos
+    clearScreen: false,
   },
   // Compressão adicional
   compressHTML: true,

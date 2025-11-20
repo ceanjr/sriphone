@@ -171,62 +171,64 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <!-- Vercel Analytics -->
     <Analytics />
 
-    <!-- Service Worker - DESINSTALAÇÃO E LIMPEZA -->
-    <script is:inline>
-      // Este script remove completamente o Service Worker e limpa todo o cache
-      // Executado em TODOS os ambientes (dev e produção)
+    <!-- Service Worker - DESINSTALAÇÃO E LIMPEZA (APENAS EM PRODUÇÃO) -->
+    {import.meta.env.PROD && (
+      <script is:inline>
+        // Este script remove completamente o Service Worker e limpa todo o cache
+        // ⚠️ Executado APENAS em PRODUÇÃO (não interfere com dev mode)
 
-      if ('serviceWorker' in navigator) {
-        console.log('🧹 [SW REMOVAL] Iniciando remoção completa do Service Worker...');
+        if ('serviceWorker' in navigator) {
+          console.log('🧹 [SW REMOVAL] Iniciando remoção completa do Service Worker...');
 
-        window.addEventListener('load', async () => {
-          try {
-            // 1. Desregistrar TODOS os service workers
-            const registrations = await navigator.serviceWorker.getRegistrations();
+          window.addEventListener('load', async () => {
+            try {
+              // 1. Desregistrar TODOS os service workers
+              const registrations = await navigator.serviceWorker.getRegistrations();
 
-            if (registrations.length > 0) {
-              console.log(`🧹 [SW REMOVAL] Encontrados ${registrations.length} service worker(s)`);
+              if (registrations.length > 0) {
+                console.log(`🧹 [SW REMOVAL] Encontrados ${registrations.length} service worker(s)`);
 
-              for (const registration of registrations) {
-                await registration.unregister();
-                console.log('✅ [SW REMOVAL] Service Worker desregistrado');
-              }
-            } else {
-              console.log('✅ [SW REMOVAL] Nenhum service worker encontrado');
-            }
-
-            // 2. Limpar TODOS os caches
-            if ('caches' in window) {
-              const cacheNames = await caches.keys();
-
-              if (cacheNames.length > 0) {
-                console.log(`🧹 [SW REMOVAL] Encontrados ${cacheNames.length} cache(s)`);
-
-                for (const cacheName of cacheNames) {
-                  await caches.delete(cacheName);
-                  console.log('✅ [SW REMOVAL] Cache removido:', cacheName);
+                for (const registration of registrations) {
+                  await registration.unregister();
+                  console.log('✅ [SW REMOVAL] Service Worker desregistrado');
                 }
               } else {
-                console.log('✅ [SW REMOVAL] Nenhum cache encontrado');
+                console.log('✅ [SW REMOVAL] Nenhum service worker encontrado');
               }
+
+              // 2. Limpar TODOS os caches
+              if ('caches' in window) {
+                const cacheNames = await caches.keys();
+
+                if (cacheNames.length > 0) {
+                  console.log(`🧹 [SW REMOVAL] Encontrados ${cacheNames.length} cache(s)`);
+
+                  for (const cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                    console.log('✅ [SW REMOVAL] Cache removido:', cacheName);
+                  }
+                } else {
+                  console.log('✅ [SW REMOVAL] Nenhum cache encontrado');
+                }
+              }
+
+              console.log('🎉 [SW REMOVAL] Limpeza completa! Site sem cache.');
+              console.log('ℹ️ [SW REMOVAL] Atualizações aparecem imediatamente agora.');
+
+            } catch (error) {
+              console.error('❌ [SW REMOVAL] Erro durante limpeza:', error);
             }
+          });
 
-            console.log('🎉 [SW REMOVAL] Limpeza completa! Site sem cache.');
-            console.log('ℹ️ [SW REMOVAL] Atualizações aparecem imediatamente agora.');
-
-          } catch (error) {
-            console.error('❌ [SW REMOVAL] Erro durante limpeza:', error);
-          }
-        });
-
-        // 3. Escutar mensagens do Service Worker de limpeza (se existir)
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'CACHE_CLEANED') {
-            console.log('✅ [SW REMOVAL] Mensagem recebida:', event.data.message);
-          }
-        });
-      }
-    </script>
+          // 3. Escutar mensagens do Service Worker de limpeza (se existir)
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'CACHE_CLEANED') {
+              console.log('✅ [SW REMOVAL] Mensagem recebida:', event.data.message);
+            }
+          });
+        }
+      </script>
+    )}
 
     <button
       id="layout-back-to-top"

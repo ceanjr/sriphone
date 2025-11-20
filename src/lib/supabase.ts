@@ -3,24 +3,36 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-console.log('PUBLIC_SUPABASE_URL:', import.meta.env.PUBLIC_SUPABASE_URL);
-console.log('PUBLIC_SUPABASE_ANON_KEY:', import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
+
+// Logs de diagnóstico apenas em dev mode
+if (import.meta.env.DEV) {
+  console.log('🔍 [Supabase Init] Mode:', import.meta.env.MODE);
+  console.log('🔍 [Supabase Init] PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅ OK' : '❌ MISSING');
+  console.log('🔍 [Supabase Init] PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅ OK' : '❌ MISSING');
+}
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Supabase credentials missing!');
   console.error('PUBLIC_SUPABASE_URL:', supabaseUrl ? 'OK' : 'MISSING');
   console.error('PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'OK' : 'MISSING');
-  throw new Error('Supabase credentials are required. Check your .env file.');
+
+  // ⚠️ NÃO throw error - permite que o código continue executando
+  // Isso evita que TODOS os imports quebrem se env vars não estiverem disponíveis
+  console.warn('⚠️ [Supabase] Criando client com valores vazios - funções não funcionarão');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storageKey: 'sb-auth-token',
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'sb-auth-token',
+    }
   }
-});
+);
 
 // Tipos do banco de dados
 export interface Product {
