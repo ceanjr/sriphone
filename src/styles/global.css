@@ -44,7 +44,9 @@ html {
 body {
   font-family: var(--fonte-padrao);
   color: var(--cor-texto) !important;
-  background-color: var(--cor-fundo-escuro) !important; /* Fundo principal mais escuro */
+  background-color: var(
+    --cor-fundo-escuro
+  ) !important; /* Fundo principal mais escuro */
   line-height: 1.6;
   min-height: 100vh;
 }
@@ -120,7 +122,9 @@ iframe {
 }
 
 /* Forçar modo escuro em todos os contextos, inclusive Safari/iOS */
-html, body, :root {
+html,
+body,
+:root {
   color-scheme: dark !important;
   background: #030303 !important;
   background-color: #030303 !important;
@@ -293,7 +297,11 @@ body {
   -webkit-touch-callout: none;
 }
 
-button, a, input, textarea, select {
+button,
+a,
+input,
+textarea,
+select {
   -webkit-tap-highlight-color: rgba(74, 144, 226, 0.2);
 }
 
@@ -317,7 +325,9 @@ body {
 }
 
 /* Evitar zoom indesejado em inputs no iOS */
-input, textarea, select {
+input,
+textarea,
+select {
   font-size: 16px !important;
 }
 
@@ -328,8 +338,9 @@ input, textarea, select {
     -webkit-user-select: none;
     user-select: none;
   }
-  
-  input, textarea {
+
+  input,
+  textarea {
     -webkit-user-select: auto;
     user-select: auto;
   }
@@ -341,7 +352,7 @@ input, textarea, select {
   body {
     padding-top: max(env(safe-area-inset-top), 0px);
   }
-  
+
   /* Esconder elementos desnecessários em modo app */
   .external-link-indicator {
     display: none;
@@ -356,8 +367,8 @@ input, textarea, select {
 }
 
 /* Performance: GPU acceleration otimizada */
-button:active, 
-a:active, 
+button:active,
+a:active,
 .card:active {
   /* will-change removido para evitar problemas de scroll no mobile */
   backface-visibility: hidden;
@@ -375,11 +386,11 @@ body {
   * {
     transition-duration: 0.2s !important;
   }
-  
+
   .smooth-scroll {
     scroll-behavior: auto;
   }
-  
+
   /* Desabilitar will-change em mobile para prevenir tela preta */
   * {
     will-change: auto !important;
@@ -392,7 +403,7 @@ body {
     width: 0px;
     background: transparent;
   }
-  
+
   body {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -407,8 +418,10 @@ body {
 }
 
 /* Melhorar touch targets (mínimo 44x44px) */
-button, a, input[type="button"], input[type="submit"] {
-  min-height: 44px;
+button,
+a,
+input[type='button'],
+input[type='submit'] {
   min-width: 44px;
 }
 
@@ -418,20 +431,28 @@ button, a, input[type="button"], input[type="submit"] {
     font-size: 16px;
     line-height: 1.5;
   }
-  
-  h1 { font-size: 2rem; }
-  h2 { font-size: 1.5rem; }
-  h3 { font-size: 1.25rem; }
+
+  h1 {
+    font-size: 2rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+  h3 {
+    font-size: 1.25rem;
+  }
 }
 
 /* Prevenir bounce scroll no iOS */
-html, body {
+html,
+body {
   position: relative;
   overflow-x: hidden;
 }
 
 /* Tema FORÇADO - dark */
-html[data-theme="dark"], html.dark {
+html[data-theme='dark'],
+html.dark {
   --bg: #000000;
   --text: #ffffff;
   --muted: #9b9b9b;

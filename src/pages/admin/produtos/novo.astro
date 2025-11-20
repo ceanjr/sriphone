@@ -215,7 +215,7 @@ const { data: categorias } = await supabaseAdmin
 
   // Função para limpar URLs antigas
   function cleanupBlobUrls() {
-    blobUrls.forEach(url => {
+    blobUrls.forEach((url) => {
       URL.revokeObjectURL(url);
     });
     blobUrls.length = 0;
@@ -254,7 +254,9 @@ const { data: categorias } = await supabaseAdmin
       .map((file, index) => {
         const url = URL.createObjectURL(file);
         blobUrls.push(url); // Rastrear para limpeza posterior
-        console.log(`  ${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+        console.log(
+          `  ${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`
+        );
 
         return `
           <div style="position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid ${index === 0 ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; flex-shrink: 0;">
@@ -283,14 +285,14 @@ const { data: categorias } = await supabaseAdmin
     const addButtonHTML =
       selectedFiles.length < MAX_IMAGES
         ? `
-          <div style="width: 100px; height: 100px; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; transition: all 0.2s; flex-shrink: 0;"
-            onmouseover="this.style.borderColor='#9ca3af'; this.style.background='#f3f4f6'"
-            onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb'"
+          <div style="width: 100px; height: 100px; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #0A0A0A; transition: all 0.2s; flex-shrink: 0;"
+            onmouseover="this.style.borderColor='#f9fafb'; this.style.background='#121212'"
+            onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#0A0A0A'"
           >
-            <svg style="width: 28px; height: 28px; color: #9ca3af; margin-bottom: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg style="width: 28px; height: 28px; color: #f9fafb; margin-bottom: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            <span style="font-size: 11px; color: #6b7280; font-weight: 500;">Adicionar</span>
+            <span style="font-size: 11px; color: #f9fafb; font-weight: 500;">Adicionar</span>
           </div>
         `
         : '';
@@ -308,7 +310,9 @@ const { data: categorias } = await supabaseAdmin
   // ============================================================================
 
   (window as any).removeImageAt = (index: number) => {
-    console.log(`🗑️ [PREVIEW] Removendo imagem ${index + 1}: ${selectedFiles[index].name}`);
+    console.log(
+      `🗑️ [PREVIEW] Removendo imagem ${index + 1}: ${selectedFiles[index].name}`
+    );
     selectedFiles.splice(index, 1);
     renderPreviews();
     window.showToast('Imagem removida', 'success');
@@ -363,7 +367,9 @@ const { data: categorias } = await supabaseAdmin
       validFiles++;
     }
 
-    console.log(`✅ ${validFiles} arquivo(s) válido(s), ❌ ${invalidFiles} inválido(s)`);
+    console.log(
+      `✅ ${validFiles} arquivo(s) válido(s), ❌ ${invalidFiles} inválido(s)`
+    );
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     if (validFiles > 0) {
@@ -427,10 +433,14 @@ const { data: categorias } = await supabaseAdmin
     try {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('💾 [SUBMIT] Iniciando salvamento do produto');
-      console.log(`📸 [SUBMIT] Fazendo upload de ${selectedFiles.length} imagens...`);
+      console.log(
+        `📸 [SUBMIT] Fazendo upload de ${selectedFiles.length} imagens...`
+      );
 
       // Upload de todas as imagens em paralelo
-      const uploadPromises = selectedFiles.map(file => uploadImageToStorage(file));
+      const uploadPromises = selectedFiles.map((file) =>
+        uploadImageToStorage(file)
+      );
       const imageUrls = await Promise.all(uploadPromises);
 
       // Filtrar URLs válidas
@@ -440,7 +450,9 @@ const { data: categorias } = await supabaseAdmin
         throw new Error('Nenhuma imagem foi enviada com sucesso');
       }
 
-      console.log(`✅ [SUBMIT] ${validUrls.length}/${selectedFiles.length} imagens enviadas`);
+      console.log(
+        `✅ [SUBMIT] ${validUrls.length}/${selectedFiles.length} imagens enviadas`
+      );
 
       // Coletar dados do formulário
       const formData = new FormData(form);
@@ -524,8 +536,14 @@ const { data: categorias } = await supabaseAdmin
       console.log(`[SW] Controller mudou (${controllerChangeCount}x)`);
 
       // Se mudou mais de uma vez E o usuário está preenchendo o form, avisar
-      if (controllerChangeCount > 1 && (formDirty || selectedFiles.length > 0) && !isSubmitting) {
-        console.warn('[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)');
+      if (
+        controllerChangeCount > 1 &&
+        (formDirty || selectedFiles.length > 0) &&
+        !isSubmitting
+      ) {
+        console.warn(
+          '[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)'
+        );
       }
     });
   }

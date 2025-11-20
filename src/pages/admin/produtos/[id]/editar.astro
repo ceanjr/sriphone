@@ -209,10 +209,14 @@ const { data: categorias } = await supabaseAdmin
   const form = document.getElementById('product-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
   const submitText = document.getElementById('submit-text') as HTMLSpanElement;
-  const produtoIdInput = document.getElementById('produto_id') as HTMLInputElement;
+  const produtoIdInput = document.getElementById(
+    'produto_id'
+  ) as HTMLInputElement;
   const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
   const uploadArea = document.getElementById('upload-area');
-  const existingImagesInput = document.getElementById('existing-images-json') as HTMLInputElement;
+  const existingImagesInput = document.getElementById(
+    'existing-images-json'
+  ) as HTMLInputElement;
 
   const MAX_IMAGES = 5;
 
@@ -235,7 +239,7 @@ const { data: categorias } = await supabaseAdmin
 
   // Função para limpar URLs antigas
   function cleanupBlobUrls() {
-    blobUrls.forEach(url => {
+    blobUrls.forEach((url) => {
       URL.revokeObjectURL(url);
     });
     blobUrls.length = 0;
@@ -300,10 +304,9 @@ const { data: categorias } = await supabaseAdmin
 
     // Grid de imagens: primeiro as existentes, depois as novas - Miniaturas lado a lado
     const existingImagesHtml = existingImageUrls
-      .map(
-        (url, index) => {
-          const isPrincipal = index === 0 && newImageFiles.length === 0;
-          return `
+      .map((url, index) => {
+        const isPrincipal = index === 0 && newImageFiles.length === 0;
+        return `
         <div style="position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; flex-shrink: 0;">
           <img
             src="${url}"
@@ -324,18 +327,16 @@ const { data: categorias } = await supabaseAdmin
           ${isPrincipal ? '<span style="position: absolute; bottom: 4px; left: 4px; background: rgba(59, 130, 246, 0.9); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Principal</span>' : ''}
         </div>
       `;
-        }
-      )
+      })
       .join('');
 
     const newImagesHtml = newImageFiles
-      .map(
-        (file, index) => {
-          const url = URL.createObjectURL(file); // Blob URL local
-          blobUrls.push(url); // Rastrear para limpeza posterior
-          const globalIndex = existingImageUrls.length + index;
-          const isPrincipal = globalIndex === 0;
-          return `
+      .map((file, index) => {
+        const url = URL.createObjectURL(file); // Blob URL local
+        blobUrls.push(url); // Rastrear para limpeza posterior
+        const globalIndex = existingImageUrls.length + index;
+        const isPrincipal = globalIndex === 0;
+        return `
         <div style="position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; flex-shrink: 0;">
           <img
             src="${url}"
@@ -357,22 +358,21 @@ const { data: categorias } = await supabaseAdmin
           <span style="position: absolute; top: 4px; left: 4px; background: rgba(34, 197, 94, 0.9); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Nova</span>
         </div>
       `;
-        }
-      )
+      })
       .join('');
 
     const addButtonHtml =
       totalImages < MAX_IMAGES
         ? `
-        <div style="width: 100px; height: 100px; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #f9fafb; transition: all 0.2s; flex-shrink: 0;"
-          onmouseover="this.style.borderColor='#9ca3af'; this.style.background='#f3f4f6'"
-          onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb'"
-        >
-          <svg style="width: 28px; height: 28px; color: #9ca3af; margin-bottom: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          <span style="font-size: 11px; color: #6b7280; font-weight: 500;">Adicionar</span>
-        </div>
+          <div style="width: 100px; height: 100px; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #0A0A0A; transition: all 0.2s; flex-shrink: 0;"
+            onmouseover="this.style.borderColor='#f9fafb'; this.style.background='#121212'"
+            onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#0A0A0A'"
+          >
+            <svg style="width: 28px; height: 28px; color: #f9fafb; margin-bottom: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span style="font-size: 11px; color: #f9fafb; font-weight: 500;">Adicionar</span>
+          </div>
       `
         : '';
 
@@ -418,7 +418,10 @@ const { data: categorias } = await supabaseAdmin
     // Validar cada arquivo
     for (const file of filesToAdd) {
       if (file.size > 10 * 1024 * 1024) {
-        window.showToast(`Arquivo ${file.name} muito grande (máx 10MB)`, 'error');
+        window.showToast(
+          `Arquivo ${file.name} muito grande (máx 10MB)`,
+          'error'
+        );
         continue;
       }
 
@@ -464,7 +467,9 @@ const { data: categorias } = await supabaseAdmin
       const result = await response.json();
 
       if (result.savings) {
-        console.log(`✅ [UPLOAD] Imagem otimizada: ${result.savings} de redução`);
+        console.log(
+          `✅ [UPLOAD] Imagem otimizada: ${result.savings} de redução`
+        );
       }
 
       return result.url;
@@ -489,9 +494,14 @@ const { data: categorias } = await supabaseAdmin
       // 1. Fazer upload das novas imagens
       let newImageUrls: string[] = [];
       if (newImageFiles.length > 0) {
-        window.showToast(`Fazendo upload de ${newImageFiles.length} nova(s) imagem(ns)...`, 'info');
+        window.showToast(
+          `Fazendo upload de ${newImageFiles.length} nova(s) imagem(ns)...`,
+          'info'
+        );
 
-        const uploadPromises = newImageFiles.map(file => uploadImageToStorage(file));
+        const uploadPromises = newImageFiles.map((file) =>
+          uploadImageToStorage(file)
+        );
         const results = await Promise.all(uploadPromises);
 
         newImageUrls = results.filter((url): url is string => url !== null);
@@ -500,7 +510,9 @@ const { data: categorias } = await supabaseAdmin
           throw new Error('Algumas imagens falharam no upload');
         }
 
-        console.log(`✅ [UPLOAD] ${newImageUrls.length} nova(s) imagem(ns) enviada(s)`);
+        console.log(
+          `✅ [UPLOAD] ${newImageUrls.length} nova(s) imagem(ns) enviada(s)`
+        );
       }
 
       // 2. Combinar imagens: existentes + novas
@@ -592,7 +604,9 @@ const { data: categorias } = await supabaseAdmin
       // Se mudou mais de uma vez E o usuário está preenchendo o form, avisar
       const hasChanges = formDirty || newImageFiles.length > 0;
       if (controllerChangeCount > 1 && hasChanges && !isSubmitting) {
-        console.warn('[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)');
+        console.warn(
+          '[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)'
+        );
       }
     });
   }

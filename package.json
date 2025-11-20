@@ -7,7 +7,7 @@
     "dev:debug": "NODE_ENV=development astro dev --host --verbose",
     "dev:build": "echo 'ℹ️  Use npm run preview:local para preview local'",
     "preview:local": "astro build --config astro.config.local.mjs && astro preview --config astro.config.local.mjs --host",
-    "tunnel": "ngrok http 3000",
+    "tunnel": "ngrok http 4321",
     "build": "astro build",
     "build:analyze": "astro build && du -sh dist/* | sort -h",
     "preview": "echo '⚠️  Vercel adapter não suporta preview. Use: npm run preview:local'",
