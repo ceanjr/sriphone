@@ -177,6 +177,7 @@
     gap: 12px;
   }
 
+  /* Comentado: admin-list.css já define o layout correto de grid
   .admin-list-item {
     flex-direction: column;
     align-items: flex-start;
@@ -191,6 +192,7 @@
   .admin-list-item-content {
     width: 100%;
   }
+  */
 
   .admin-list-item-actions {
     width: 100%;
