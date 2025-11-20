@@ -178,11 +178,28 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
         if (!import.meta.env.PROD && !import.meta.env.DEV) return;
 
         try {
+          // Verificar se está em rota administrativa
+          if (window.location.pathname.startsWith('/admin')) {
+            console.log('[View Tracking] Rota administrativa - tracking desabilitado');
+            return;
+          }
+
           // Verificar se usuário está autenticado (verificar cookies de auth)
-          const isAuthenticated = document.cookie.split(';').some(cookie =>
-            cookie.trim().startsWith('sb-access-token=') ||
-            cookie.trim().startsWith('sb-refresh-token=')
+          const cookies = document.cookie.split(';').map(c => c.trim());
+          const hasAuthCookie = cookies.some(cookie =>
+            cookie.startsWith('sb-access-token=') ||
+            cookie.startsWith('sb-refresh-token=') ||
+            cookie.startsWith('sb-auth-token=')
           );
+
+          // Verificar localStorage também (sessão Supabase)
+          let hasAuthSession = false;
+          try {
+            const keys = Object.keys(localStorage);
+            hasAuthSession = keys.some(key => key.includes('supabase.auth.token'));
+          } catch (e) {}
+
+          const isAuthenticated = hasAuthCookie || hasAuthSession;
 
           // Só rastrear se NÃO estiver autenticado
           if (isAuthenticated) {
