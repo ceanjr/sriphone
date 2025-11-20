@@ -456,13 +456,13 @@ const schemaData = {
   }
 </script>
 <script>
-  // Registrar visualização (única por sessão)
-  const produtoId = window.location.pathname.split('/').pop();
-  const viewKey = `viewed_${produtoId}`;
-
-  if (!sessionStorage.getItem(viewKey)) {
-    fetch(`/api/produtos/${produtoId}/visualizar`, { method: 'POST' })
-      .then(() => sessionStorage.setItem(viewKey, '1'))
-      .catch(console.error);
-  }
+  // TODO: Registrar visualização (rota API não implementada ainda)
+  // const produtoId = window.location.pathname.split('/').pop();
+  // const viewKey = `viewed_${produtoId}`;
+  //
+  // if (!sessionStorage.getItem(viewKey)) {
+  //   fetch(`/api/produtos/${produtoId}/visualizar`, { method: 'POST' })
+  //     .then(() => sessionStorage.setItem(viewKey, '1'))
+  //     .catch(console.error);
+  // }
 </script>
