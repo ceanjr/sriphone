@@ -4,12 +4,17 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev --host",
+    "dev:debug": "NODE_ENV=development astro dev --host --verbose",
+    "dev:build": "astro build && astro preview --host",
+    "tunnel": "ngrok http 3000",
     "build": "astro build",
     "build:analyze": "astro build && du -sh dist/* | sort -h",
     "preview": "astro preview",
     "astro": "astro",
     "migrate:all": "tsx scripts/migrate-images.ts",
-    "fix:images": "tsx scripts/fix-image-format.ts"
+    "fix:images": "tsx scripts/fix-image-format.ts",
+    "clean": "rm -rf node_modules/.vite dist .astro",
+    "diagnose": "./debug-dev.sh"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.0",
