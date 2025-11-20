@@ -79,6 +79,7 @@ export default defineConfig({
     // Development server configuration
     server: {
       // Configurações otimizadas para desenvolvimento
+      host: true, // Permite acesso de qualquer host (incluindo ngrok)
       fs: {
         strict: false,
         allow: ['..'], // Permitir imports de fora do root
