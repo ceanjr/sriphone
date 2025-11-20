@@ -245,28 +245,6 @@ const { data: produtos } = await supabaseAdmin
 <script>
   import { deletarProduto } from '../../lib/api';
 
-  // DEBUG: Log quando script carregar
-  console.log('🟢 [PRODUTOS] Script carregado');
-  console.log('🟢 [PRODUTOS] URL atual:', window.location.href);
-
-  // DEBUG: Interceptar cliques em todos os links "Adicionar Produto"
-  document.addEventListener('DOMContentLoaded', () => {
-    const addButtons = document.querySelectorAll('a[href="/admin/produtos/novo"]');
-    console.log('🟢 [PRODUTOS] Botões "Adicionar Produto" encontrados:', addButtons.length);
-
-    addButtons.forEach((btn, index) => {
-      console.log(`🟢 [PRODUTOS] Botão ${index + 1}:`, btn);
-      btn.addEventListener('click', (e) => {
-        console.log('🔵 [PRODUTOS] CLICK NO BOTÃO ADICIONAR PRODUTO!');
-        console.log('🔵 [PRODUTOS] Event:', e);
-        console.log('🔵 [PRODUTOS] Target:', e.target);
-        console.log('🔵 [PRODUTOS] CurrentTarget:', e.currentTarget);
-        console.log('🔵 [PRODUTOS] Default prevented?', e.defaultPrevented);
-        console.log('🔵 [PRODUTOS] Href:', (e.currentTarget as HTMLAnchorElement).href);
-      });
-    });
-  });
-
   // Filtro por categoria
   const categoriaFilter = document.getElementById(
     'categoria-filter',
