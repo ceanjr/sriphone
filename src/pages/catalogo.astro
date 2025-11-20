@@ -288,7 +288,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   import { createHandlers } from '../lib/catalog/ui/handlers';
   import { catalogEvents, onEvent, emitEvent } from '../lib/catalog/ui/events';
   import { imageLoader } from '../lib/catalog/performance/imageLoader';
-  import { metrics } from '../lib/catalog/performance/metrics';
+  // ⚠️ TEMPORÁRIO: metrics comentado pois causa erro "Failed to fetch" em dev mode (Astro 5 bug)
+  // import { metrics } from '../lib/catalog/performance/metrics';
   import { utils, getBateriaColor } from '../lib/catalog/utils';
 
   if (isDev) {
@@ -323,9 +324,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   // Inicializar estado
   const state = initState(initialData);
 
-  if (CATALOG_CONFIG.performance.enableWebVitals) {
-    metrics.enableWebVitals();
-  }
+  // ⚠️ TEMPORÁRIO: metrics comentado pois causa erro em dev mode (Astro 5 bug)
+  // if (CATALOG_CONFIG.performance.enableWebVitals) {
+  //   metrics.enableWebVitals();
+  // }
 
   // Elementos DOM
   const elementos = {
@@ -895,8 +897,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     console.log('📡 Loading data...');
     api.carregarDados();
 
-    // ✅ Registrar tempo de inicialização
-    metrics.recordMetric('PageInit', performance.now());
+    // ⚠️ TEMPORÁRIO: metrics comentado pois causa erro em dev mode (Astro 5 bug)
+    // metrics.recordMetric('PageInit', performance.now());
   }
 
   init();
