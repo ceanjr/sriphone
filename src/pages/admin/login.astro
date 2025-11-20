@@ -4,29 +4,14 @@ import '../../styles/pages/admin/login.css';
 
 export const prerender = false;
 
-// Verificar se já está autenticado (apenas verificando se os cookies existem)
-const hasAccessToken = !!Astro.cookies.get('sb-access-token')?.value;
-const hasRefreshToken = !!Astro.cookies.get('sb-refresh-token')?.value;
-
-console.log('[Login Page SSR] Verificando autenticação...');
-console.log('[Login Page SSR] Access Token:', hasAccessToken ? 'SIM' : 'NÃO');
-console.log('[Login Page SSR] Refresh Token:', hasRefreshToken ? 'SIM' : 'NÃO');
-
-// Se tiver AMBOS os tokens, redirecionar para dashboard
-if (hasAccessToken && hasRefreshToken) {
-  console.log('[Login Page SSR] Usuário já autenticado, redirecionando para dashboard');
-  return Astro.redirect('/admin/dashboard');
-}
-
-// Se tiver apenas um dos tokens ou nenhum, limpar tudo e permitir login
-if (hasAccessToken || hasRefreshToken || Astro.cookies.get('sb-expires-at')?.value) {
-  console.log('[Login Page SSR] Cookies incompletos/inválidos encontrados, limpando...');
-  Astro.cookies.delete('sb-access-token', { path: '/' });
-  Astro.cookies.delete('sb-refresh-token', { path: '/' });
-  Astro.cookies.delete('sb-expires-at', { path: '/' });
-}
+// Nota: O middleware já gerencia redirecionamentos de usuários autenticados
+// Aqui apenas renderizamos a página de login sem lógica de redirecionamento
+// para evitar loops de redirecionamento no Safari
 
 console.log('[Login Page SSR] Renderizando página de login');
+
+// Limpar cookies incompletos/inválidos no cliente via script
+// Isso evita problemas de sincronização entre SSR e cliente
 ---
 
 <Layout
@@ -134,6 +119,27 @@ console.log('[Login Page SSR] Renderizando página de login');
         console.log('✅ [LOGIN INIT] Tokens antigos removidos');
       } else {
         console.log('✅ [LOGIN INIT] Nenhum token antigo encontrado');
+      }
+
+      // Limpar cookies incompletos/inválidos para evitar loops
+      console.log('🧹 [LOGIN INIT] Verificando cookies...');
+      var cookies = document.cookie.split(';');
+      var hasAccessToken = false;
+      var hasRefreshToken = false;
+
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.startsWith('sb-access-token=')) hasAccessToken = true;
+        if (cookie.startsWith('sb-refresh-token=')) hasRefreshToken = true;
+      }
+
+      // Se tem apenas um dos cookies (incompleto), limpar tudo
+      if ((hasAccessToken && !hasRefreshToken) || (!hasAccessToken && hasRefreshToken)) {
+        console.log('🧹 [LOGIN INIT] Cookies incompletos detectados, limpando...');
+        document.cookie = 'sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie = 'sb-refresh-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie = 'sb-expires-at=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        console.log('✅ [LOGIN INIT] Cookies limpos');
       }
 
       // Log de cookies atuais
