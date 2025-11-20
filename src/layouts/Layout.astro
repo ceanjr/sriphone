@@ -171,6 +171,71 @@ body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystem
     <!-- Vercel Analytics -->
     <Analytics />
 
+    <!-- Tracking de Visualizações (apenas usuários NÃO autenticados) -->
+    <script>
+      (function() {
+        // Só executar em produção ou se quiser testar em dev
+        if (!import.meta.env.PROD && !import.meta.env.DEV) return;
+
+        try {
+          // Verificar se usuário está autenticado (verificar cookies de auth)
+          const isAuthenticated = document.cookie.split(';').some(cookie =>
+            cookie.trim().startsWith('sb-access-token=') ||
+            cookie.trim().startsWith('sb-refresh-token=')
+          );
+
+          // Só rastrear se NÃO estiver autenticado
+          if (isAuthenticated) {
+            console.log('[View Tracking] Usuário autenticado - tracking desabilitado');
+            return;
+          }
+
+          // Gerar ou recuperar sessionId único
+          let sessionId = localStorage.getItem('visitor_session_id');
+          if (!sessionId) {
+            sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+            localStorage.setItem('visitor_session_id', sessionId);
+          }
+
+          // Verificar se já registrou visualização nesta sessão (throttle)
+          const lastView = sessionStorage.getItem('last_view_time');
+          const now = Date.now();
+
+          // Só registrar se passaram mais de 30 segundos desde a última visualização
+          if (lastView && (now - parseInt(lastView)) < 30000) {
+            console.log('[View Tracking] Visualização recente - ignorando');
+            return;
+          }
+
+          // Registrar visualização
+          fetch('/api/track-view', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              sessionId: sessionId,
+              pageUrl: window.location.pathname,
+              referer: document.referrer || null,
+            }),
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              sessionStorage.setItem('last_view_time', now.toString());
+              console.log('[View Tracking] Visualização registrada');
+            }
+          })
+          .catch(error => {
+            console.error('[View Tracking] Erro:', error);
+          });
+
+        } catch (error) {
+          console.error('[View Tracking] Erro geral:', error);
+        }
+      })();
+    </script>
+
     <!-- Service Worker - DESINSTALAÇÃO E LIMPEZA (APENAS EM PRODUÇÃO) -->
     {import.meta.env.PROD && (
       <script is:inline>

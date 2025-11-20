@@ -6,16 +6,28 @@ export const prerender = false;
 
 export const GET: APIRoute = async () => {
   try {
-    // Total de produtos (schema básico)
+    // Total de produtos
     const { data: produtos, error: prodError } = await supabaseAdmin
       .from('produtos')
-      .select('id, visualizacoes_total');
+      .select('id');
 
     if (prodError) throw prodError;
 
     const totalProdutos = produtos?.length || 0;
-    const totalVisualizacoes = produtos?.reduce((acc, p) => 
-      acc + (p.visualizacoes_total || 0), 0) || 0;
+
+    // Total de visualizações do site (usuários não autenticados) no mês atual
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0, 0, 0, 0);
+
+    const { count: totalVisualizacoes, error: viewsError } = await supabaseAdmin
+      .from('site_views')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', inicioMes.toISOString());
+
+    if (viewsError) {
+      console.warn('Erro ao buscar visualizações (tabela pode não existir ainda):', viewsError);
+    }
 
     // Produtos por categoria (contagem manual)
     const { data: categorias, error: catError } = await supabaseAdmin
