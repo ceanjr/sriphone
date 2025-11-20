@@ -27,7 +27,7 @@
   .admin-sidebar {
     display: block;
   }
-  
+
   .admin-main {
     margin-left: 280px;
   }
@@ -163,7 +163,6 @@
 
 /* ==================== MOBILE OPTIMIZATIONS ==================== */
 @media (max-width: 1023px) {
-
   /* Adicionar padding horizontal no main */
   .admin-main {
     padding-left: 0;
@@ -225,11 +224,12 @@
   .admin-list-header,
   .form-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
   }
 
   .admin-list-title-group {
+    text-align: center;
     width: 100%;
   }
 
@@ -261,7 +261,8 @@
 }
 
 /* ==================== CORREÇÃO DE SCROLL DUPLO ==================== */
-html, body {
+html,
+body {
   height: 100%;
   overflow-x: hidden;
 }
