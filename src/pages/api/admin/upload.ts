@@ -187,9 +187,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Converter File para Buffer
+    // CRÍTICO: Converter File para Buffer com CÓPIA REAL dos dados
+    // O file.arrayBuffer() pode retornar um buffer compartilhado em serverless
+    // Precisamos garantir que temos uma cópia isolada dos dados
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+
+    // Criar uma cópia REAL do ArrayBuffer usando Uint8Array + slice
+    // Isso força uma cópia dos dados em vez de criar uma view
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const copiedArray = uint8Array.slice(); // slice() sem argumentos cria uma cópia
+    const buffer = Buffer.from(copiedArray.buffer);
+
+    console.log(`📥 [BUFFER] ArrayBuffer original byteLength: ${arrayBuffer.byteLength}`);
+    console.log(`📥 [BUFFER] Uint8Array length: ${uint8Array.length}`);
+    console.log(`📥 [BUFFER] Copied array length: ${copiedArray.length}`);
+    console.log(`📥 [BUFFER] Buffer final length: ${buffer.length}`);
 
     // Criar hash do buffer original para identificar arquivos únicos
     const crypto = await import('crypto');
@@ -219,17 +231,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       console.log(`🖼️ [SHARP] Processando: ${file.name} -> ${fileName}`);
       console.log(`🔍 [SHARP] Buffer original: ${buffer.length} bytes, hash: ${hash}`);
 
-      // CRÍTICO: Criar uma cópia COMPLETAMENTE INDEPENDENTE do buffer
-      // Usar slice() + Buffer.from() para garantir isolamento total da memória
-      const arrayBufferCopy = buffer.buffer.slice(
-        buffer.byteOffset,
-        buffer.byteOffset + buffer.byteLength
-      );
-      const bufferCopy = Buffer.from(arrayBufferCopy);
+      // CRÍTICO: Criar uma cópia COMPLETAMENTE INDEPENDENTE do buffer para o Sharp
+      // Usar Uint8Array + slice() para garantir cópia real dos dados
+      const uint8ForSharp = new Uint8Array(buffer);
+      const sharpArrayCopy = uint8ForSharp.slice();
+      const bufferCopy = Buffer.from(sharpArrayCopy);
 
       // Verificar que a cópia é realmente diferente
       const copyHash = crypto.createHash('sha256').update(bufferCopy).digest('hex').substring(0, 16);
-      console.log(`📋 [SHARP] Buffer copiado: ${bufferCopy.length} bytes, hash: ${copyHash}`);
+      console.log(`📋 [SHARP] Buffer copiado para Sharp: ${bufferCopy.length} bytes, hash: ${copyHash}`);
 
       // CRÍTICO: Forçar reset do cache do Sharp antes de cada processamento
       sharp.cache(false);
