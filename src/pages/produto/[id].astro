@@ -18,11 +18,11 @@ if (!produto) {
   return Astro.redirect('/catalogo');
 }
 
-// Cache headers agressivo para páginas de produto
-// Produtos mudam raramente, então cache mais longo
+// Cache headers moderado para páginas de produto
+// Balanceando performance e atualização rápida após edições
 Astro.response.headers.set(
   'Cache-Control',
-  'public, s-maxage=600, stale-while-revalidate=1200',
+  'public, s-maxage=30, stale-while-revalidate=60',
 );
 
 const precoFormatado = new Intl.NumberFormat('pt-BR', {

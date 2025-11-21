@@ -14,8 +14,8 @@ class SimpleCache {
     this.cache = new Map();
   }
 
-  set<T>(key: string, data: T, ttl: number = 5 * 60 * 1000): void {
-    // TTL padrão: 5 minutos
+  set<T>(key: string, data: T, ttl: number = 1 * 60 * 1000): void {
+    // TTL padrão: 1 minuto (reduzido para atualizações mais rápidas)
     this.cache.set(key, {
       data,
       timestamp: Date.now(),

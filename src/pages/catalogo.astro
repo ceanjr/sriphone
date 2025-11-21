@@ -24,12 +24,12 @@ import '../styles/admin.css';
 
 import { productService, categoryService } from '../lib/supabase';
 
-// Cache otimizado: stale-while-revalidate
-// - Cache de 30 segundos (mais responsivo para updates)
-// - Revalida em background (fresh data)
+// Cache otimizado: baixo para permitir atualizações rápidas
+// - Cache de 5 segundos para dados frescos após CRUD
+// - Revalida em background rapidamente
 Astro.response.headers.set(
   'Cache-Control',
-  'public, s-maxage=30, stale-while-revalidate=60, max-age=0',
+  'public, s-maxage=5, stale-while-revalidate=10, max-age=0',
 );
 
 // Buscar dados (cached por ISR)

@@ -51,9 +51,14 @@ export const GET: APIRoute = async () => {
 
     return new Response(
       JSON.stringify({ success: true, data: data || [] }),
-      { 
-        status: 200, 
-        headers: { 'Content-Type': 'application/json' } 
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       }
     );
   } catch (error: any) {
