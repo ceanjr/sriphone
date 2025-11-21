@@ -1,11 +1,12 @@
 // src/middleware.ts
 import { defineMiddleware } from 'astro:middleware';
 import { supabase } from './lib/supabase';
+import type { AstroCookies } from 'astro';
 
 /**
  * Extrai o access token do request (header Authorization ou cookies via Astro API)
  */
-function getAccessToken(request: Request, cookies: any): string | null {
+function getAccessToken(request: Request, cookies: AstroCookies): string | null {
   // 1. Tentar pegar do Authorization header primeiro
   const authHeader = request.headers.get('authorization');
   if (authHeader?.startsWith('Bearer ')) {
@@ -33,15 +34,83 @@ function getAccessToken(request: Request, cookies: any): string | null {
 }
 
 /**
- * Verifica se o token é válido e retorna o usuário
+ * Refresh a sessão usando o refresh token
  */
-async function verifyToken(accessToken: string) {
+async function refreshSession(cookies: AstroCookies, refreshToken: string): Promise<{ user: any; error: any }> {
+  try {
+    console.log('[Middleware] Tentando refresh da sessão...');
+
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: refreshToken
+    });
+
+    if (error) {
+      console.log('[Middleware] Erro ao refresh:', error.message);
+      // Limpar cookies inválidos
+      cookies.delete('sb-access-token', { path: '/' });
+      cookies.delete('sb-refresh-token', { path: '/' });
+      cookies.delete('sb-expires-at', { path: '/' });
+      return { user: null, error };
+    }
+
+    if (!data.session || !data.user) {
+      console.log('[Middleware] Nenhuma sessão retornada no refresh');
+      return { user: null, error: null };
+    }
+
+    console.log('[Middleware] Sessão refreshed com sucesso para:', data.user.email);
+
+    // Atualizar cookies com novos tokens
+    const isProduction = import.meta.env.PROD;
+    const cookieMaxAge = 60 * 60 * 24 * 30; // 30 dias
+
+    const cookieOptions = {
+      path: '/',
+      maxAge: cookieMaxAge,
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax' as const,
+    };
+
+    cookies.set('sb-access-token', data.session.access_token, cookieOptions);
+    cookies.set('sb-refresh-token', data.session.refresh_token, cookieOptions);
+
+    if (data.session.expires_at) {
+      cookies.set('sb-expires-at', data.session.expires_at.toString(), {
+        ...cookieOptions,
+        httpOnly: false
+      });
+    }
+
+    console.log('[Middleware] Cookies atualizados após refresh');
+    return { user: data.user, error: null };
+  } catch (error: any) {
+    console.error('[Middleware] Exceção ao refresh:', error.message);
+    return { user: null, error };
+  }
+}
+
+/**
+ * Verifica se o token é válido e retorna o usuário
+ * Se o token expirou, tenta fazer refresh automaticamente
+ */
+async function verifyToken(accessToken: string, cookies: AstroCookies) {
   try {
     console.log('[Middleware] Verificando token com Supabase...');
     const { data: { user }, error } = await supabase.auth.getUser(accessToken);
 
     if (error) {
       console.log('[Middleware] Erro ao verificar token:', error.message);
+
+      // Se o token expirou ou é inválido, tentar refresh
+      if (error.message.includes('expired') || error.message.includes('invalid') || error.message.includes('Invalid')) {
+        console.log('[Middleware] Token expirado/inválido, tentando refresh...');
+        const refreshToken = cookies.get('sb-refresh-token')?.value;
+        if (refreshToken) {
+          return await refreshSession(cookies, refreshToken);
+        }
+      }
+
       return { user: null, error };
     }
 
@@ -54,6 +123,14 @@ async function verifyToken(accessToken: string) {
     return { user, error: null };
   } catch (error: any) {
     console.error('[Middleware] Exceção ao verificar token:', error.message);
+
+    // Tentar refresh em caso de exceção também
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
+    if (refreshToken) {
+      console.log('[Middleware] Tentando refresh após exceção...');
+      return await refreshSession(cookies, refreshToken);
+    }
+
     return { user: null, error };
   }
 }
@@ -98,11 +175,20 @@ export const onRequest = defineMiddleware(async ({ request, locals, redirect, co
   // Verificar autenticação se houver token
   let user = null;
   if (accessToken) {
-    const result = await verifyToken(accessToken);
+    const result = await verifyToken(accessToken, cookies);
     user = result.user;
     console.log(`[Middleware] 👤 Usuário encontrado: ${user ? user.email : 'NENHUM'}`);
   } else {
-    console.log('[Middleware] ⚠️ Nenhum token de acesso encontrado');
+    // Sem access token, tentar refresh token diretamente
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
+    if (refreshToken) {
+      console.log('[Middleware] ⚠️ Sem access token, mas encontrado refresh token. Tentando refresh...');
+      const result = await refreshSession(cookies, refreshToken);
+      user = result.user;
+      console.log(`[Middleware] 👤 Usuário após refresh: ${user ? user.email : 'NENHUM'}`);
+    } else {
+      console.log('[Middleware] ⚠️ Nenhum token de acesso encontrado');
+    }
   }
 
   // Proteger rotas administrativas
