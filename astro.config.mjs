@@ -12,7 +12,8 @@ export default defineConfig({
       // Cache de 5 minutos (300 segundos) para páginas dinâmicas
       expiration: 300,
       // Exclui rotas admin do ISR (sempre SSR puro)
-      exclude: ['/api/admin/*', '/admin/*'],
+      // IMPORTANTE: usar ** para excluir todas as rotas aninhadas
+      exclude: ['/api/admin/**', '/admin/**'],
     },
     // Configurações de edge functions para baixa latência
     edgeMiddleware: false,
