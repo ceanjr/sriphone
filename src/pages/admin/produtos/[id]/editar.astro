@@ -214,452 +214,502 @@ const { data: categorias } = await supabaseAdmin
 </AdminLayout>
 
 <script>
-  const form = document.getElementById('product-form') as HTMLFormElement;
-  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const submitText = document.getElementById('submit-text') as HTMLSpanElement;
-  const produtoIdInput = document.getElementById(
-    'produto_id'
-  ) as HTMLInputElement;
-  const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
-  const uploadArea = document.getElementById('upload-area');
-  const existingImagesInput = document.getElementById(
-    'existing-images-json'
-  ) as HTMLInputElement;
-
-  const MAX_IMAGES = 5;
-
-  // Estado das imagens:
-  // - existingImageUrls: URLs das imagens já salvas no produto (strings)
-  // - newImageFiles: Novos arquivos selecionados mas ainda não enviados (File objects)
-  let existingImageUrls: string[] = [];
-  let newImageFiles: File[] = [];
-
-  // Estado do formulário para prevenir reload acidental
-  let formDirty = false;
-  let isSubmitting = false;
-
   // ============================================================================
-  // GESTÃO DE MEMÓRIA - Blob URLs
+  // EDITAR PRODUTO - COMPATÍVEL COM SAFARI/iOS
   // ============================================================================
 
-  // Armazenar URLs criadas para limpar depois
-  const blobUrls: string[] = [];
+  (function() {
+    'use strict';
 
-  // Função para limpar URLs antigas
-  function cleanupBlobUrls() {
-    blobUrls.forEach((url) => {
-      URL.revokeObjectURL(url);
-    });
-    blobUrls.length = 0;
-    console.log('🧹 [MEMORY] Blob URLs limpas');
-  }
+    console.log('[EDITAR PRODUTO] Script iniciado');
 
-  // Carregar imagens existentes do produto
-  try {
-    existingImageUrls = JSON.parse(existingImagesInput.value || '[]');
-    console.log('📸 Imagens existentes carregadas:', existingImageUrls.length);
-  } catch (e) {
-    console.error('❌ Erro ao parsear imagens existentes:', e);
-  }
+    // ============================================================================
+    // SAFE TOAST - Evita crash se Toast não estiver pronto (Safari)
+    // ============================================================================
 
-  // Click na área de upload abre o file input
-  uploadArea?.addEventListener('click', (e) => {
-    // Não abrir file input se clicar em botão de remover
-    if ((e.target as HTMLElement).closest('button')) return;
-
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-    if (totalImages < MAX_IMAGES) {
-      fileInput?.click();
-    } else {
-      window.showToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning');
+    function safeToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
+      try {
+        if (typeof window !== 'undefined' && typeof (window as any).showToast === 'function') {
+          (window as any).showToast(message, type);
+        } else {
+          console.log('[Toast ' + type + '] ' + message);
+        }
+      } catch (e) {
+        console.log('[Toast ' + type + '] ' + message);
+      }
     }
-  });
 
-  // Renderizar preview das imagens
-  function renderPreviews() {
-    if (!uploadArea) return;
+    // ============================================================================
+    // ELEMENTOS DOM
+    // ============================================================================
 
-    // Limpar blob URLs antigas antes de criar novas
-    cleanupBlobUrls();
+    const form = document.getElementById('product-form') as HTMLFormElement;
+    const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    const submitText = document.getElementById('submit-text') as HTMLSpanElement;
+    const produtoIdInput = document.getElementById('produto_id') as HTMLInputElement;
+    const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
+    const uploadArea = document.getElementById('upload-area');
+    const existingImagesInput = document.getElementById('existing-images-json') as HTMLInputElement;
 
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-
-    if (totalImages === 0) {
-      // Placeholder quando não há imagens
-      uploadArea.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px;">
-          <svg
-            style="width: 48px; height: 48px; color: #9ca3af; margin-bottom: 16px;"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            ></path>
-          </svg>
-          <p style="font-size: 14px; font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-            Clique para adicionar imagens
-          </p>
-          <small style="font-size: 12px; color: #9ca3af;">JPG, PNG até 10MB cada (máximo 5 imagens)</small>
-        </div>
-      `;
+    if (!form || !uploadArea) {
+      console.error('[EDITAR PRODUTO] Elementos essenciais não encontrados');
       return;
     }
 
-    // Grid de imagens: primeiro as existentes, depois as novas - Layout responsivo
-    const existingImagesHtml = existingImageUrls
-      .map((url, index) => {
-        const isPrincipal = index === 0 && newImageFiles.length === 0;
-        return `
-        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; cursor: ${isPrincipal ? 'default' : 'pointer'}; transition: all 0.2s;"
-          onclick="${isPrincipal ? '' : `event.stopPropagation(); window.setMainExistingImage(${index})`}"
-          onmouseover="${isPrincipal ? '' : `this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)'`}"
-          onmouseout="${isPrincipal ? '' : `this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'`}"
-          title="${isPrincipal ? 'Imagem principal' : 'Clique para tornar principal'}"
-        >
-          <img
-            src="${url}"
-            alt="Imagem ${index + 1}"
-            style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="event.stopPropagation(); event.preventDefault(); window.removeExistingImage(${index})"
-            style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
-            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.15)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-            title="Remover imagem"
-          >
-            ×
-          </button>
-          ${isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
-        </div>
-      `;
-      })
-      .join('');
+    const MAX_IMAGES = 5;
 
-    const newImagesHtml = newImageFiles
-      .map((file, index) => {
-        const url = URL.createObjectURL(file); // Blob URL local
-        blobUrls.push(url); // Rastrear para limpeza posterior
-        const globalIndex = existingImageUrls.length + index;
-        const isPrincipal = globalIndex === 0;
-        return `
-        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; cursor: ${isPrincipal ? 'default' : 'pointer'}; transition: all 0.2s;"
-          onclick="${isPrincipal ? '' : `event.stopPropagation(); window.setMainNewImage(${index})`}"
-          onmouseover="${isPrincipal ? '' : `this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)'`}"
-          onmouseout="${isPrincipal ? '' : `this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'`}"
-          title="${isPrincipal ? 'Imagem principal' : 'Clique para tornar principal'}"
-        >
-          <img
-            src="${url}"
-            alt="${file.name}"
-            style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="event.stopPropagation(); event.preventDefault(); window.removeNewImage(${index})"
-            style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
-            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.15)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-            title="Remover imagem"
-          >
-            ×
-          </button>
-          ${isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
-          <span style="position: absolute; top: 6px; left: 6px; background: rgba(34, 197, 94, 0.95); color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; z-index: 5;">Nova</span>
-        </div>
-      `;
-      })
-      .join('');
+    // Estado das imagens:
+    let existingImageUrls: string[] = [];
+    let newImageFiles: File[] = [];
 
-    const addButtonHtml =
-      totalImages < MAX_IMAGES
-        ? `
-          <div style="aspect-ratio: 1 / 1; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #0A0A0A; transition: all 0.2s;"
-            onmouseover="this.style.borderColor='#f9fafb'; this.style.background='#121212'"
-            onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#0A0A0A'"
-          >
-            <svg style="width: 32px; height: 32px; color: #f9fafb; margin-bottom: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span style="font-size: 12px; color: #f9fafb; font-weight: 500;">Adicionar</span>
-          </div>
-      `
-        : '';
+    // Estado do formulário
+    let formDirty = false;
+    let isSubmitting = false;
 
-    uploadArea.innerHTML = `
-      <div class="images-preview-grid">
-        ${existingImagesHtml}
-        ${newImagesHtml}
-        ${addButtonHtml}
-      </div>
-    `;
-  }
+    // ============================================================================
+    // GESTÃO DE MEMÓRIA - Blob URLs (Safari-safe)
+    // ============================================================================
 
-  // Funções globais para remover imagens
-  (window as any).removeExistingImage = (index: number) => {
-    existingImageUrls.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
-  };
+    const blobUrls: string[] = [];
 
-  (window as any).removeNewImage = (index: number) => {
-    newImageFiles.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
-  };
-
-  // Funções para tornar imagem principal
-  (window as any).setMainExistingImage = (index: number) => {
-    if (index === 0 && newImageFiles.length === 0) return; // Já é a principal
-    console.log(`⭐ [PREVIEW] Tornando imagem existente ${index + 1} como principal`);
-    // Mover a imagem clicada para a primeira posição
-    const [selectedImage] = existingImageUrls.splice(index, 1);
-    existingImageUrls.unshift(selectedImage);
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
-  };
-
-  (window as any).setMainNewImage = (index: number) => {
-    console.log(`⭐ [PREVIEW] Tornando nova imagem ${index + 1} como principal`);
-    // Mover a nova imagem para o início de existingImageUrls
-    const [selectedImage] = newImageFiles.splice(index, 1);
-    existingImageUrls.unshift(selectedImage.name); // Adicionar placeholder
-    // Re-adicionar na primeira posição de newImageFiles
-    newImageFiles.unshift(selectedImage);
-    // Remover o placeholder
-    existingImageUrls.shift();
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
-  };
-
-  // Quando selecionar novos arquivos
-  fileInput?.addEventListener('change', (e) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files || files.length === 0) return;
-
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-    const remainingSlots = MAX_IMAGES - totalImages;
-
-    if (files.length > remainingSlots) {
-      window.showToast(
-        `Você pode adicionar apenas ${remainingSlots} imagem${remainingSlots !== 1 ? 'ns' : ''} (máximo ${MAX_IMAGES})`,
-        'warning'
-      );
-    }
-
-    const filesToAdd = Array.from(files).slice(0, remainingSlots);
-
-    // Validar cada arquivo
-    for (const file of filesToAdd) {
-      if (file.size > 10 * 1024 * 1024) {
-        window.showToast(
-          `Arquivo ${file.name} muito grande (máx 10MB)`,
-          'error'
-        );
-        continue;
+    function cleanupBlobUrls() {
+      try {
+        for (let i = 0; i < blobUrls.length; i++) {
+          try { URL.revokeObjectURL(blobUrls[i]); } catch(e) {}
+        }
+        blobUrls.length = 0;
+      } catch(e) {
+        console.warn('[CLEANUP] Erro ao limpar blob URLs:', e);
       }
-
-      if (!file.type.startsWith('image/')) {
-        window.showToast(`Arquivo ${file.name} não é uma imagem`, 'error');
-        continue;
-      }
-
-      newImageFiles.push(file);
     }
 
-    renderPreviews();
-
-    if (filesToAdd.length > 0) {
-      window.showToast(
-        `${filesToAdd.length} imagem${filesToAdd.length !== 1 ? 'ns' : ''} selecionada${filesToAdd.length !== 1 ? 's' : ''}!`,
-        'success'
-      );
-    }
-
-    fileInput.value = '';
-  });
-
-  // Função para fazer upload de TODAS as imagens em UMA requisição
-  async function uploadAllImages(files: File[]): Promise<string[]> {
-    const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📤 [BATCH UPLOAD] ID: ${batchId}`);
-    console.log(`📤 [BATCH UPLOAD] ${files.length} arquivos para enviar`);
-
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const arrayBuffer = await file.arrayBuffer();
-      const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type });
-      formData.append(`file${i}`, blob, `${batchId}_${i}_${file.name}`);
-      console.log(`   Arquivo ${i + 1}: ${file.name} (${file.size} bytes)`);
-    }
-
-    const url = `/api/admin/upload?batch=${batchId}`;
-    console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Erro no upload');
-    }
-
-    const result = await response.json();
-
-    console.log(`✅ [BATCH UPLOAD] Sucesso! ${result.count} imagens processadas`);
-    result.urls.forEach((url: string, i: number) => {
-      console.log(`   URL ${i + 1}: ${url}`);
-    });
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    return result.urls;
-  }
-
-  // Submit do formulário
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    isSubmitting = true;
-    submitBtn.disabled = true;
-    submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
-
+    // Carregar imagens existentes do produto
     try {
-      // Upload das novas imagens em UMA requisição
-      let newImageUrls: string[] = [];
-      if (newImageFiles.length > 0) {
-        console.log(`📸 [SUBMIT] ${newImageFiles.length} imagens para enviar`);
-        submitText.innerHTML = '<div class="form-spinner"></div> Enviando imagens...';
+      existingImageUrls = JSON.parse(existingImagesInput.value || '[]');
+      console.log('[EDITAR] Imagens existentes carregadas: ' + existingImageUrls.length);
+    } catch (e) {
+      console.error('[EDITAR] Erro ao parsear imagens existentes:', e);
+    }
 
-        newImageUrls = await uploadAllImages(newImageFiles);
-        console.log(`✅ [SUBMIT] ${newImageUrls.length} imagens enviadas`);
+    // ============================================================================
+    // HANDLERS (Safari-safe - funções nomeadas)
+    // ============================================================================
+
+    function removeExistingImage(index: number) {
+      if (index < 0 || index >= existingImageUrls.length) return;
+      existingImageUrls.splice(index, 1);
+      renderPreviews();
+      safeToast('Imagem removida', 'success');
+    }
+
+    function removeNewImage(index: number) {
+      if (index < 0 || index >= newImageFiles.length) return;
+      newImageFiles.splice(index, 1);
+      renderPreviews();
+      safeToast('Imagem removida', 'success');
+    }
+
+    function setMainExistingImage(index: number) {
+      if (index === 0 && newImageFiles.length === 0) return;
+      const selectedImage = existingImageUrls.splice(index, 1)[0];
+      existingImageUrls.unshift(selectedImage);
+      renderPreviews();
+      safeToast('Imagem principal alterada', 'success');
+    }
+
+    function setMainNewImage(index: number) {
+      const selectedImage = newImageFiles.splice(index, 1)[0];
+      newImageFiles.unshift(selectedImage);
+      renderPreviews();
+      safeToast('Imagem principal alterada', 'success');
+    }
+
+    // Expor para uso global (Safari-safe)
+    try {
+      (window as any).removeExistingImage = removeExistingImage;
+      (window as any).removeNewImage = removeNewImage;
+      (window as any).setMainExistingImage = setMainExistingImage;
+      (window as any).setMainNewImage = setMainNewImage;
+    } catch(e) {
+      console.warn('[INIT] Não foi possível expor funções globais');
+    }
+
+    // Click na área de upload abre o file input
+    uploadArea.addEventListener('click', function(e) {
+      const target = e.target as HTMLElement;
+      if (target.closest('button') || target.closest('.preview-item')) return;
+
+      const totalImages = existingImageUrls.length + newImageFiles.length;
+      if (totalImages < MAX_IMAGES) {
+        fileInput?.click();
+      } else {
+        safeToast('Máximo de ' + MAX_IMAGES + ' imagens permitido', 'warning');
       }
+    });
 
-      // 2. Combinar imagens: existentes + novas
-      const allImageUrls = [...existingImageUrls, ...newImageUrls];
+    // ============================================================================
+    // RENDERIZAÇÃO DE PREVIEW (Safari-safe - sem inline onclick)
+    // ============================================================================
 
-      // 3. Preparar dados do produto
-      const formData = new FormData(form);
+    function renderPreviews() {
+      if (!uploadArea) return;
 
-      const produto = {
-        nome: formData.get('nome'),
-        codigo: formData.get('codigo'),
-        preco: parseFloat(formData.get('preco') as string),
-        bateria: formData.get('bateria')
-          ? parseInt(formData.get('bateria') as string)
-          : null,
-        condicao: formData.get('condicao'),
-        categoria_id: formData.get('categoria_id'),
-        descricao: formData.get('descricao') || null,
-        imagens: allImageUrls,
-      };
+      try {
+        cleanupBlobUrls();
 
-      // 4. Salvar produto
-      const produtoId = produtoIdInput.value;
-      const response = await fetch(`/api/admin/produtos/${produtoId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(produto),
-      });
+        const totalImages = existingImageUrls.length + newImageFiles.length;
 
-      const data = await response.json();
+        if (totalImages === 0) {
+          uploadArea.innerHTML = '<div class="upload-placeholder">' +
+            '<svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+            'd="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">' +
+            '</path></svg>' +
+            '<p>Clique para adicionar imagens</p>' +
+            '<small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>' +
+            '</div>';
+          return;
+        }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao atualizar produto');
+        // Grid de imagens: primeiro as existentes, depois as novas
+        let existingImagesHtml = '';
+        for (let index = 0; index < existingImageUrls.length; index++) {
+          const url = existingImageUrls[index];
+          const isPrincipal = index === 0 && newImageFiles.length === 0;
+          const borderColor = isPrincipal ? '#3b82f6' : '#e5e7eb';
+          const cursor = isPrincipal ? 'default' : 'pointer';
+
+          existingImagesHtml += '<div class="preview-item existing-item" data-type="existing" data-index="' + index + '" ' +
+            'style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; ' +
+            'border: 2px solid ' + borderColor + '; background: #1a1a1a; cursor: ' + cursor + '; transition: all 0.2s;" ' +
+            'title="' + (isPrincipal ? 'Imagem principal' : 'Clique para tornar principal') + '">' +
+            '<img src="' + url + '" alt="Imagem ' + (index + 1) + '" ' +
+            'style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;" loading="eager" />' +
+            '<button type="button" class="remove-btn" data-type="existing" data-remove="' + index + '" ' +
+            'style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; ' +
+            'border: none; border-radius: 50%; min-width: 24px; width: 24px; height: 24px; display: flex; ' +
+            'align-items: center; justify-content: center; cursor: pointer; font-size: 16px; font-weight: bold; ' +
+            'line-height: 1; padding: 0; z-index: 10;" title="Remover imagem">×</button>' +
+            (isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); ' +
+            'color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : '') +
+            '</div>';
+        }
+
+        let newImagesHtml = '';
+        for (let index = 0; index < newImageFiles.length; index++) {
+          const file = newImageFiles[index];
+          const url = URL.createObjectURL(file);
+          blobUrls.push(url);
+          const globalIndex = existingImageUrls.length + index;
+          const isPrincipal = globalIndex === 0;
+          const borderColor = isPrincipal ? '#3b82f6' : '#e5e7eb';
+          const cursor = isPrincipal ? 'default' : 'pointer';
+
+          newImagesHtml += '<div class="preview-item new-item" data-type="new" data-index="' + index + '" ' +
+            'style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; ' +
+            'border: 2px solid ' + borderColor + '; background: #1a1a1a; cursor: ' + cursor + '; transition: all 0.2s;" ' +
+            'title="' + (isPrincipal ? 'Imagem principal' : 'Clique para tornar principal') + '">' +
+            '<img src="' + url + '" alt="' + file.name + '" ' +
+            'style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;" loading="eager" />' +
+            '<button type="button" class="remove-btn" data-type="new" data-remove="' + index + '" ' +
+            'style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; ' +
+            'border: none; border-radius: 50%; min-width: 24px; width: 24px; height: 24px; display: flex; ' +
+            'align-items: center; justify-content: center; cursor: pointer; font-size: 16px; font-weight: bold; ' +
+            'line-height: 1; padding: 0; z-index: 10;" title="Remover imagem">×</button>' +
+            (isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); ' +
+            'color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : '') +
+            '<span style="position: absolute; top: 6px; left: 6px; background: rgba(34, 197, 94, 0.95); color: white; ' +
+            'font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; z-index: 5;">Nova</span>' +
+            '</div>';
+        }
+
+        let addButtonHtml = '';
+        if (totalImages < MAX_IMAGES) {
+          addButtonHtml = '<div class="add-more-btn" ' +
+            'style="aspect-ratio: 1 / 1; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; ' +
+            'flex-direction: column; align-items: center; justify-content: center; cursor: pointer; ' +
+            'background: #0A0A0A; transition: all 0.2s;">' +
+            '<svg style="width: 32px; height: 32px; color: #f9fafb; margin-bottom: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>' +
+            '<span style="font-size: 12px; color: #f9fafb; font-weight: 500;">Adicionar</span>' +
+            '</div>';
+        }
+
+        uploadArea.innerHTML = '<div class="images-preview-grid">' + existingImagesHtml + newImagesHtml + addButtonHtml + '</div>';
+
+        // Bind events (Safari-safe)
+        bindPreviewEvents();
+
+      } catch (e) {
+        console.error('[PREVIEW] Erro ao renderizar:', e);
       }
+    }
 
-      window.showToast('Produto atualizado com sucesso!', 'success');
+    // ============================================================================
+    // EVENT BINDING para previews (Safari-safe - sem inline onclick)
+    // ============================================================================
 
-      // Limpar cache do service worker
-      if ('caches' in window) {
-        caches.keys().then((names) => {
-          names.forEach((name) => caches.delete(name));
+    function bindPreviewEvents() {
+      // Botões de remover
+      const removeButtons = uploadArea?.querySelectorAll('.remove-btn');
+      if (removeButtons) {
+        removeButtons.forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const btnEl = btn as HTMLElement;
+            const type = btnEl.getAttribute('data-type');
+            const idx = parseInt(btnEl.getAttribute('data-remove') || '-1');
+            if (idx >= 0) {
+              if (type === 'existing') {
+                removeExistingImage(idx);
+              } else {
+                removeNewImage(idx);
+              }
+            }
+          });
         });
       }
 
-      // Redirecionar para lista de produtos com cache-busting
-      setTimeout(() => {
-        const timestamp = new Date().getTime();
-        window.location.href = `/admin/produtos?_t=${timestamp}`;
-      }, 1000);
-    } catch (error: any) {
-      console.error('❌ Erro ao salvar produto:', error);
-      window.showToast(error.message || 'Erro ao salvar produto', 'error');
-      // Resetar isSubmitting em caso de erro (permite avisar se usuário tentar sair)
-      isSubmitting = false;
-      submitBtn.disabled = false;
-      submitText.textContent = 'Salvar Alterações';
+      // Itens de preview (para definir como principal)
+      const previewItems = uploadArea?.querySelectorAll('.preview-item');
+      if (previewItems) {
+        previewItems.forEach(function(item) {
+          item.addEventListener('click', function(e) {
+            const target = e.target as HTMLElement;
+            if (target.classList.contains('remove-btn') || target.closest('.remove-btn')) return;
+            const itemEl = item as HTMLElement;
+            const type = itemEl.getAttribute('data-type');
+            const idx = parseInt(itemEl.getAttribute('data-index') || '-1');
+            if (type === 'existing' && idx > 0) {
+              setMainExistingImage(idx);
+            } else if (type === 'new' && idx >= 0) {
+              setMainNewImage(idx);
+            }
+          });
+        });
+      }
     }
-  });
 
-  // ============================================================================
-  // PROTEÇÃO CONTRA RELOAD ACIDENTAL
-  // ============================================================================
+    // ============================================================================
+    // SELEÇÃO DE ARQUIVOS
+    // ============================================================================
 
-  // Marcar formulário como "sujo" quando usuário faz mudanças
-  form?.addEventListener('input', () => {
-    formDirty = true;
-  });
+    fileInput?.addEventListener('change', function(e) {
+      const input = e.target as HTMLInputElement;
+      const files = input.files;
+      if (!files || files.length === 0) return;
 
-  // Avisar antes de sair se houver mudanças não salvas
-  window.addEventListener('beforeunload', (e) => {
-    // Só avisar se:
-    // 1. Formulário foi modificado OU tem novas imagens OU removeu imagens existentes
-    // 2. NÃO está no processo de submit
-    const hasChanges = formDirty || newImageFiles.length > 0;
-    if (hasChanges && !isSubmitting) {
+      const totalImages = existingImageUrls.length + newImageFiles.length;
+      const remainingSlots = MAX_IMAGES - totalImages;
+
+      if (files.length > remainingSlots) {
+        safeToast('Você pode adicionar apenas ' + remainingSlots + ' imagem(ns) (máximo ' + MAX_IMAGES + ')', 'warning');
+      }
+
+      const filesToAdd: File[] = [];
+      for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
+        const file = files[i];
+
+        if (file.size > 10 * 1024 * 1024) {
+          safeToast('Arquivo ' + file.name + ' muito grande (máx 10MB)', 'error');
+          continue;
+        }
+
+        if (!file.type.startsWith('image/')) {
+          safeToast('Arquivo ' + file.name + ' não é uma imagem', 'error');
+          continue;
+        }
+
+        filesToAdd.push(file);
+      }
+
+      for (let i = 0; i < filesToAdd.length; i++) {
+        newImageFiles.push(filesToAdd[i]);
+      }
+
+      renderPreviews();
+
+      if (filesToAdd.length > 0) {
+        safeToast(filesToAdd.length + ' imagem(ns) selecionada(s)!', 'success');
+      }
+
+      input.value = '';
+    });
+
+    // ============================================================================
+    // FUNÇÃO DE UPLOAD - TODAS AS IMAGENS EM UMA REQUISIÇÃO
+    // ============================================================================
+
+    async function uploadAllImages(files: File[]): Promise<string[]> {
+      const batchId = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+      console.log('[BATCH UPLOAD] ID: ' + batchId + ', ' + files.length + ' arquivos');
+
+      const formData = new FormData();
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const arrayBuffer = await file.arrayBuffer();
+        const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type });
+        formData.append('file' + i, blob, batchId + '_' + i + '_' + file.name);
+      }
+
+      const url = '/api/admin/upload?batch=' + batchId;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro no upload');
+      }
+
+      const result = await response.json();
+      console.log('[BATCH UPLOAD] Sucesso! ' + result.count + ' imagens');
+
+      return result.urls;
+    }
+
+    // ============================================================================
+    // SUBMIT DO FORMULÁRIO
+    // ============================================================================
+
+    form.addEventListener('submit', async function(e) {
       e.preventDefault();
-      e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
-      return e.returnValue;
-    }
-  });
 
-  // Prevenir navegação acidental via service worker ou outros eventos
-  let controllerChangeCount = 0;
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      controllerChangeCount++;
-      console.log(`[SW] Controller mudou (${controllerChangeCount}x)`);
+      isSubmitting = true;
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitText) submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
-      // Se mudou mais de uma vez E o usuário está preenchendo o form, avisar
-      const hasChanges = formDirty || newImageFiles.length > 0;
-      if (controllerChangeCount > 1 && hasChanges && !isSubmitting) {
-        console.warn(
-          '[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)'
-        );
+      try {
+        // Upload das novas imagens em UMA requisição
+        let newImageUrls: string[] = [];
+        if (newImageFiles.length > 0) {
+          console.log('[SUBMIT] ' + newImageFiles.length + ' imagens para enviar');
+          if (submitText) submitText.innerHTML = '<div class="form-spinner"></div> Enviando imagens...';
+
+          newImageUrls = await uploadAllImages(newImageFiles);
+          console.log('[SUBMIT] ' + newImageUrls.length + ' imagens enviadas');
+        }
+
+        // Combinar imagens: existentes + novas
+        const allImageUrls = existingImageUrls.concat(newImageUrls);
+
+        // Preparar dados do produto
+        const formData = new FormData(form);
+
+        const produto = {
+          nome: formData.get('nome'),
+          codigo: formData.get('codigo'),
+          preco: parseFloat(formData.get('preco') as string),
+          bateria: formData.get('bateria') ? parseInt(formData.get('bateria') as string) : null,
+          condicao: formData.get('condicao'),
+          categoria_id: formData.get('categoria_id'),
+          descricao: formData.get('descricao') || null,
+          imagens: allImageUrls,
+        };
+
+        // Salvar produto
+        const produtoId = produtoIdInput.value;
+        const response = await fetch('/api/admin/produtos/' + produtoId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(produto),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao atualizar produto');
+        }
+
+        safeToast('Produto atualizado com sucesso!', 'success');
+
+        // Limpar cache do service worker
+        try {
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              names.forEach(function(name) { caches.delete(name); });
+            });
+          }
+        } catch(e) {}
+
+        // Redirecionar
+        setTimeout(function() {
+          window.location.href = '/admin/produtos?_t=' + Date.now();
+        }, 1000);
+
+      } catch (error: any) {
+        console.error('[SUBMIT] Erro:', error);
+        safeToast(error.message || 'Erro ao salvar produto', 'error');
+        isSubmitting = false;
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = 'Salvar Alterações';
       }
     });
-  }
 
-  // Limpar blob URLs quando sair da página
-  window.addEventListener('pagehide', cleanupBlobUrls);
+    // ============================================================================
+    // PROTEÇÃO CONTRA RELOAD (Safari-safe)
+    // ============================================================================
 
-  // Renderizar estado inicial
-  renderPreviews();
+    form.addEventListener('input', function() { formDirty = true; });
+
+    window.addEventListener('beforeunload', function(e) {
+      const hasChanges = formDirty || newImageFiles.length > 0;
+      if (hasChanges && !isSubmitting) {
+        e.preventDefault();
+        var msg = 'Você tem alterações não salvas. Deseja realmente sair?';
+        e.returnValue = msg;
+        return msg;
+      }
+    });
+
+    // Limpar blob URLs ao sair (Safari usa pagehide em vez de unload)
+    window.addEventListener('pagehide', cleanupBlobUrls);
+    window.addEventListener('unload', cleanupBlobUrls);
+
+    // Renderizar estado inicial
+    renderPreviews();
+
+    console.log('[EDITAR PRODUTO] Script carregado com sucesso');
+
+  })();
 </script>
 
-<style is:global>
-  /* Forçar display block no container quando há grid */
-  #upload-area:has(.images-preview-grid),
-  .form-image-upload:has(.images-preview-grid) {
-    display: block !important;
-    min-height: auto !important;
-    padding: 0 !important;
+<style>
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
   }
 
+  .upload-placeholder svg {
+    color: #9ca3af;
+    margin-bottom: 16px;
+  }
+
+  .upload-placeholder p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+
+  .upload-placeholder small {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+</style>
+
+<style is:global>
+  /* Fallback para Safari sem :has() - aplica estilos diretamente na grid */
   .images-preview-grid {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
@@ -667,9 +717,31 @@ const { data: categorias } = await supabaseAdmin
     padding: 16px;
   }
 
+  /* Container que tem a grid deve ajustar automaticamente */
+  #upload-area,
+  .form-image-upload {
+    min-height: 0;
+  }
+
+  /* Para navegadores modernos com :has() */
+  @supports selector(:has(*)) {
+    #upload-area:has(.images-preview-grid),
+    .form-image-upload:has(.images-preview-grid) {
+      display: block !important;
+      min-height: auto !important;
+      padding: 0 !important;
+    }
+  }
+
   @media (min-width: 768px) {
     .images-preview-grid {
       grid-template-columns: repeat(5, 1fr) !important;
     }
+  }
+
+  /* Estilos para hover no botão adicionar (Safari-safe) */
+  .add-more-btn:hover {
+    border-color: #f9fafb !important;
+    background: #121212 !important;
   }
 </style>
