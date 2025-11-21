@@ -20,7 +20,7 @@ export const CATALOG_CONFIG = {
   },
   
   cache: {
-    ttl: 10 * 60 * 1000,
+    ttl: 1 * 60 * 1000, // 1 minuto para atualizações rápidas
     key: 'catalog_cache',
   },
   

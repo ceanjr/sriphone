@@ -7,13 +7,12 @@ export default defineConfig({
   site: 'https://sriphonevca.com.br',
   output: 'server', // SSR com prerender seletivo
   adapter: vercel({
-    // ISR habilitado para melhor performance
+    // ISR habilitado com cache reduzido para atualizações mais rápidas
     isr: {
-      // Cache de 5 minutos (300 segundos) para páginas dinâmicas
-      expiration: 300,
-      // Exclui rotas admin do ISR (sempre SSR puro)
-      // IMPORTANTE: usar ** para excluir todas as rotas aninhadas
-      exclude: ['/api/admin/**', '/admin/**'],
+      // Cache de 10 segundos para páginas dinâmicas (atualização rápida)
+      expiration: 10,
+      // Exclui rotas admin e API admin do ISR (sempre SSR puro sem cache)
+      exclude: ['/api/admin', '/api/admin/*', '/admin', '/admin/*', '/admin/**/*'],
     },
     // Configurações de edge functions para baixa latência
     edgeMiddleware: false,
