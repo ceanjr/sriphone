@@ -224,11 +224,34 @@ const { data: categorias } = await supabaseAdmin
   // FUNÇÃO DE UPLOAD IMEDIATO
   // ============================================================================
 
+  // Helper para calcular hash de um ArrayBuffer
+  async function calculateFileHash(file: File): Promise<string> {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+  }
+
   async function uploadImageToStorage(file: File): Promise<string | null> {
+    // DEBUG: Calcular hash do arquivo ANTES de enviar
+    const fileHash = await calculateFileHash(file);
     console.log(`📤 [UPLOAD] Enviando: ${file.name}`);
+    console.log(`🔑 [UPLOAD] Hash do arquivo no frontend: ${fileHash}`);
+    console.log(`📊 [UPLOAD] Tamanho: ${file.size} bytes, Tipo: ${file.type}`);
+    console.log(`📋 [UPLOAD] lastModified: ${file.lastModified}`);
+
+    // CRÍTICO: Ler o arquivo como ArrayBuffer e criar um novo Blob
+    // Isso garante que cada upload tenha seus próprios dados isolados
+    const arrayBuffer = await file.arrayBuffer();
+    const blob = new Blob([arrayBuffer], { type: file.type });
+
+    // DEBUG: Verificar se o blob tem os dados corretos
+    const blobHash = await calculateFileHash(new File([blob], file.name, { type: file.type }));
+    console.log(`🔐 [UPLOAD] Hash do blob criado: ${blobHash}`);
 
     const formData = new FormData();
-    formData.append('file', file);
+    // Usar o blob ao invés do file original para garantir isolamento
+    formData.append('file', blob, file.name);
 
     const response = await fetch('/api/admin/upload', {
       method: 'POST',
@@ -242,6 +265,7 @@ const { data: categorias } = await supabaseAdmin
 
     const result = await response.json();
     console.log(`✅ [UPLOAD] Sucesso: ${result.url}`);
+    console.log(`🔑 [UPLOAD] Hash reportado pelo servidor: ver logs do servidor`);
 
     return result.url;
   }
@@ -252,7 +276,15 @@ const { data: categorias } = await supabaseAdmin
 
   async function addImageWithUpload(file: File): Promise<void> {
     const id = generateId();
+
+    // DEBUG: Calcular hash do arquivo para verificar unicidade
+    const fileHashForPreview = await calculateFileHash(file);
+    console.log(`🖼️ [ADD] Adicionando arquivo: ${file.name}`);
+    console.log(`🖼️ [ADD] Hash: ${fileHashForPreview}`);
+    console.log(`🖼️ [ADD] Tamanho: ${file.size} bytes`);
+
     const previewUrl = URL.createObjectURL(file);
+    console.log(`🖼️ [ADD] Blob URL criado: ${previewUrl}`);
 
     // Adicionar imagem com status "uploading"
     const imageItem: ImageItem = {
@@ -264,6 +296,7 @@ const { data: categorias } = await supabaseAdmin
     };
 
     images.push(imageItem);
+    console.log(`🖼️ [ADD] Total de imagens no array: ${images.length}`);
     renderPreviews();
 
     // Fazer upload
@@ -456,12 +489,25 @@ const { data: categorias } = await supabaseAdmin
     const remainingSlots = MAX_IMAGES - images.length;
     const filesToAdd = Array.from(files).slice(0, remainingSlots);
 
+    // DEBUG EXTENSIVO: Verificar cada arquivo selecionado
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📂 [SELEÇÃO] ${filesToAdd.length} arquivo(s) selecionado(s)`);
+    for (let i = 0; i < filesToAdd.length; i++) {
+      const f = filesToAdd[i];
+      console.log(`📂 [SELEÇÃO] Arquivo ${i + 1}: ${f.name}, ${f.size} bytes, ${f.type}, lastModified: ${f.lastModified}`);
+    }
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     // DEBUG: Mostrar quantos arquivos foram selecionados
     window.showToast(`Processando ${filesToAdd.length} imagem(ns)...`, 'info');
 
     // Processar cada arquivo SEQUENCIALMENTE
     for (let i = 0; i < filesToAdd.length; i++) {
       const file = filesToAdd[i];
+
+      // DEBUG: Log detalhado do arquivo atual
+      console.log(`🔄 [LOOP ${i + 1}/${filesToAdd.length}] Processando: ${file.name}`);
+      console.log(`🔄 [LOOP ${i + 1}] Tamanho: ${file.size}, Tipo: ${file.type}`);
 
       // Validar tamanho
       if (file.size > MAX_FILE_SIZE) {

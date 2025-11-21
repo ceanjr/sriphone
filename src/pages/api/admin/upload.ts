@@ -110,6 +110,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const file = formData.get('file') as File;
 
+    // DEBUG: Log detalhado do arquivo recebido
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📥 [RECEBIDO] Arquivo: ${file?.name || 'N/A'}`);
+    console.log(`📥 [RECEBIDO] Tamanho: ${file?.size || 0} bytes`);
+    console.log(`📥 [RECEBIDO] Tipo: ${file?.type || 'N/A'}`);
+    console.log(`📥 [RECEBIDO] lastModified: ${file?.lastModified || 'N/A'}`);
+
     if (!file) {
       // Log de erro: arquivo não enviado
       await logImageUpload({
@@ -271,14 +278,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     // Upload para Supabase Storage com token autenticado
+    console.log(`☁️ [SUPABASE] Iniciando upload para: ${filePath}`);
+    console.log(`☁️ [SUPABASE] Tamanho do buffer final: ${finalBuffer.length} bytes`);
+
+    // DEBUG: Hash do buffer que será enviado ao Supabase
+    const uploadHash = crypto.createHash('sha256').update(finalBuffer).digest('hex').substring(0, 16);
+    console.log(`☁️ [SUPABASE] Hash do buffer para upload: ${uploadHash}`);
+
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
-    const { error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('imagens')
       .upload(filePath, finalBuffer, {
         contentType: imageContentType,
         cacheControl: '3600',
         upsert: false
       });
+
+    console.log(`☁️ [SUPABASE] Resultado do upload:`, uploadData);
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -319,11 +335,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const cacheBustingId = uuidv4();
     const cacheBustingUrl = `${publicUrl}?v=${cacheBustingId}`;
 
-    console.log('📸 Imagem enviada:', {
-      fileName,
-      path: filePath,
-      url: cacheBustingUrl
-    });
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📸 [RESULTADO] Upload completo!');
+    console.log(`📸 [RESULTADO] Arquivo original: ${file.name}`);
+    console.log(`📸 [RESULTADO] Nome no storage: ${fileName}`);
+    console.log(`📸 [RESULTADO] Path: ${filePath}`);
+    console.log(`📸 [RESULTADO] URL pública: ${publicUrl}`);
+    console.log(`📸 [RESULTADO] URL com cache-busting: ${cacheBustingUrl}`);
+    console.log(`📸 [RESULTADO] Hash original: ${hash}`);
+    console.log(`📸 [RESULTADO] Hash enviado: ${uploadHash}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // Log de sucesso: upload realizado com sucesso
     await logImageUpload({
