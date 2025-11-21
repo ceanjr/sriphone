@@ -453,35 +453,37 @@ const { data: categorias } = await supabaseAdmin
     const files = (e.target as HTMLInputElement).files;
     if (!files || files.length === 0) return;
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📁 [FILE INPUT] ${files.length} arquivo(s) selecionado(s)`);
-
     const remainingSlots = MAX_IMAGES - images.length;
     const filesToAdd = Array.from(files).slice(0, remainingSlots);
 
+    // DEBUG: Mostrar quantos arquivos foram selecionados
+    window.showToast(`Processando ${filesToAdd.length} imagem(ns)...`, 'info');
+
     // Processar cada arquivo SEQUENCIALMENTE
-    for (const file of filesToAdd) {
-      console.log(`  📄 ${file.name}: ${(file.size / 1024).toFixed(1)} KB`);
+    for (let i = 0; i < filesToAdd.length; i++) {
+      const file = filesToAdd[i];
 
       // Validar tamanho
       if (file.size > MAX_FILE_SIZE) {
-        console.warn(`  ⚠️ Arquivo muito grande: ${file.name}`);
         window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
         continue;
       }
 
       // Validar tipo
       if (!file.type.startsWith('image/')) {
-        console.warn(`  ⚠️ Tipo inválido: ${file.name}`);
         window.showToast(`${file.name} não é uma imagem`, 'error');
         continue;
       }
 
+      // DEBUG: Mostrar qual imagem está sendo processada
+      window.showToast(`Enviando imagem ${i + 1}/${filesToAdd.length}...`, 'info');
+
       // Upload imediato (aguarda cada um terminar antes do próximo)
       await addImageWithUpload(file);
-    }
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      // DEBUG: Confirmar que o upload terminou
+      window.showToast(`Imagem ${i + 1} enviada!`, 'success');
+    }
 
     // Limpar input
     fileInput.value = '';
