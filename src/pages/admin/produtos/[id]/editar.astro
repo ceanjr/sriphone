@@ -495,10 +495,18 @@ const { data: categorias } = await supabaseAdmin
   // Helper para parsear JSON de forma segura (Safari retorna erro genérico)
   async function safeJsonParse(response: Response): Promise<any> {
     const text = await response.text();
+
+    // Se a resposta estiver vazia, retornar erro claro
+    if (!text || text.trim() === '') {
+      console.error('Resposta vazia do servidor. Status:', response.status);
+      throw new Error(`Resposta vazia do servidor (status: ${response.status})`);
+    }
+
     try {
       return JSON.parse(text);
     } catch (e) {
       console.error('Erro ao parsear JSON:', text.substring(0, 200));
+      console.error('Status da resposta:', response.status);
       throw new Error('Resposta inválida do servidor');
     }
   }
@@ -529,6 +537,7 @@ const { data: categorias } = await supabaseAdmin
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
+      credentials: 'include', // Importante para Safari iOS enviar cookies
     });
 
     if (!response.ok) {
@@ -593,6 +602,7 @@ const { data: categorias } = await supabaseAdmin
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(produto),
+        credentials: 'include', // Importante para Safari iOS enviar cookies
       });
 
       const data = await safeJsonParse(response);

@@ -158,7 +158,9 @@ Astro.response.headers.set('Expires', '0');
     listRoot.innerHTML = '<div class="admin-list-loading">Carregando...</div>';
 
     try {
-      const res = await fetch('/api/admin/metricas');
+      const res = await fetch('/api/admin/metricas', {
+        credentials: 'include', // Importante para Safari iOS enviar cookies
+      });
       const { data } = await res.json();
       const categorias = data?.categorias || [];
 

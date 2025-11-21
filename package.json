@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev --host",
+    "dev": "astro dev --host 0.0.0.0",
     "dev:debug": "NODE_ENV=development astro dev --host --verbose",
     "dev:build": "echo 'ℹ️  Use npm run preview:local para preview local'",
     "preview:local": "astro build --config astro.config.local.mjs && astro preview --config astro.config.local.mjs --host",
