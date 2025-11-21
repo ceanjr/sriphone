@@ -5,6 +5,14 @@ import '../../../../styles/admin-form.css';
 
 export const prerender = false; // Força SSR sem cache para admin
 
+// CRITICAL: Desabilitar TODOS os caches (Vercel, CDN, browser)
+Astro.response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
+Astro.response.headers.set('CDN-Cache-Control', 'no-store');
+Astro.response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
+Astro.response.headers.set('Surrogate-Control', 'no-store');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+
 const { id } = Astro.params;
 
 const { data: produto, error } = await supabaseAdmin
