@@ -210,17 +210,33 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     try {
       console.log(`🖼️ [SHARP] Processando: ${file.name} -> ${fileName}`);
+      console.log(`🔍 [SHARP] Buffer original: ${buffer.length} bytes, hash: ${hash}`);
 
-      // Criar uma instância COMPLETAMENTE NOVA do Sharp para este arquivo específico
-      // Usar o buffer clonado para garantir isolamento total
-      const bufferCopy = Buffer.from(buffer);
+      // CRÍTICO: Criar uma cópia COMPLETAMENTE INDEPENDENTE do buffer
+      // Usar slice() + Buffer.from() para garantir isolamento total da memória
+      const arrayBufferCopy = buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength
+      );
+      const bufferCopy = Buffer.from(arrayBufferCopy);
 
-      // Processar diretamente sem reutilizar instâncias
-      finalBuffer = await sharp(bufferCopy, {
+      // Verificar que a cópia é realmente diferente
+      const copyHash = crypto.createHash('sha256').update(bufferCopy).digest('hex').substring(0, 16);
+      console.log(`📋 [SHARP] Buffer copiado: ${bufferCopy.length} bytes, hash: ${copyHash}`);
+
+      // CRÍTICO: Forçar reset do cache do Sharp antes de cada processamento
+      sharp.cache(false);
+
+      // Criar instância do Sharp com o buffer isolado
+      const sharpInstance = sharp(bufferCopy, {
         failOnError: false,
         sequentialRead: true,
-        unlimited: true  // Permitir imagens grandes
-      })
+        unlimited: true,  // Permitir imagens grandes
+        limitInputPixels: false  // Sem limite de pixels
+      });
+
+      // Processar a imagem
+      finalBuffer = await sharpInstance
         .resize(1200, 1200, {
           fit: 'inside',
           withoutEnlargement: true
@@ -231,11 +247,19 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         })
         .toBuffer();
 
+      // Destruir a instância explicitamente para liberar recursos
+      sharpInstance.destroy();
+
       imageContentType = 'image/webp';
 
       // Hash do resultado para verificar unicidade
       const resultHash = crypto.createHash('sha256').update(finalBuffer).digest('hex').substring(0, 16);
       console.log(`✅ [SHARP] Resultado: ${hash} -> ${resultHash} (${(originalSize/1024).toFixed(1)}KB -> ${(finalBuffer.length/1024).toFixed(1)}KB)`);
+
+      // Verificar se o resultado é diferente do input (sanity check)
+      if (resultHash === hash) {
+        console.warn(`⚠️ [SHARP] Hash de entrada e saída são iguais - possível problema de processamento`);
+      }
 
     } catch (sharpError: any) {
       console.error('❌ [SHARP] Erro:', sharpError.message);

@@ -596,7 +596,7 @@ const { data: categorias } = await supabaseAdmin
     // Só avisar se:
     // 1. Formulário foi modificado OU tem imagens
     // 2. NÃO está no processo de submit
-    if ((formDirty || selectedFiles.length > 0) && !isSubmitting) {
+    if ((formDirty || images.length > 0) && !isSubmitting) {
       e.preventDefault();
       // Chrome requires returnValue to be set
       e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
@@ -614,12 +614,21 @@ const { data: categorias } = await supabaseAdmin
       // Se mudou mais de uma vez E o usuário está preenchendo o form, avisar
       if (
         controllerChangeCount > 1 &&
-        (formDirty || selectedFiles.length > 0) &&
+        (formDirty || images.length > 0) &&
         !isSubmitting
       ) {
         console.warn(
           '[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)'
         );
+      }
+    });
+  }
+
+  // Função para limpar blob URLs e evitar memory leaks
+  function cleanupBlobUrls() {
+    images.forEach(img => {
+      if (img.previewUrl && img.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(img.previewUrl);
       }
     });
   }
