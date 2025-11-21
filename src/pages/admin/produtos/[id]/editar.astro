@@ -479,37 +479,26 @@ const { data: categorias } = await supabaseAdmin
     fileInput.value = '';
   });
 
-  // Helper para ler arquivo como ArrayBuffer (Safari-compatible)
-  function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as ArrayBuffer);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
   // Função para fazer upload de TODAS as imagens em UMA requisição
   async function uploadAllImages(files: File[]): Promise<string[]> {
-    const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const batchId = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📤 [BATCH UPLOAD] ID: ${batchId}`);
-    console.log(`📤 [BATCH UPLOAD] ${files.length} arquivos para enviar`);
+    console.log('[BATCH UPLOAD] ID: ' + batchId);
+    console.log('[BATCH UPLOAD] ' + files.length + ' arquivos para enviar');
 
+    // Criar FormData com TODOS os arquivos - enviar diretamente sem conversão
     const formData = new FormData();
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      // Usar FileReader em vez de arrayBuffer() para compatibilidade com Safari/iOS
-      const arrayBuffer = await readFileAsArrayBuffer(file);
-      const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type });
-      formData.append(`file${i}`, blob, `${batchId}_${i}_${file.name}`);
-      console.log(`   Arquivo ${i + 1}: ${file.name} (${file.size} bytes)`);
+      // Enviar arquivo diretamente - Safari funciona melhor assim
+      formData.append('file' + i, file, 'image_' + i + '.jpg');
+      console.log('   Arquivo ' + (i + 1) + ': ' + file.name + ' (' + file.size + ' bytes)');
     }
 
-    const url = `/api/admin/upload?batch=${batchId}`;
-    console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
+    const url = '/api/admin/upload?batch=' + batchId;
+    console.log('[BATCH UPLOAD] Enviando para: ' + url);
 
     const response = await fetch(url, {
       method: 'POST',
