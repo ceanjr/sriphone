@@ -185,7 +185,7 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // REFATORAÇÃO COMPLETA - Sistema de Upload de Imagens
+  // SISTEMA DE UPLOAD IMEDIATO - Upload acontece ao adicionar cada imagem
   // ============================================================================
 
   console.log('✅ [NOVO PRODUTO] Script iniciado');
@@ -199,42 +199,111 @@ const { data: categorias } = await supabaseAdmin
   const MAX_IMAGES = 5;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-  // Array de arquivos selecionados (File objects)
-  let selectedFiles: File[] = [];
+  // Interface para imagem com estado de upload
+  interface ImageItem {
+    id: string;           // ID único para cada imagem
+    file: File;           // Arquivo original
+    previewUrl: string;   // Blob URL para preview local
+    serverUrl: string | null;  // URL do servidor após upload
+    status: 'uploading' | 'success' | 'error';
+  }
 
-  // Estado do formulário para prevenir reload acidental
+  // Array de imagens com estado
+  let images: ImageItem[] = [];
+
+  // Estado do formulário
   let formDirty = false;
   let isSubmitting = false;
 
-  // ============================================================================
-  // GESTÃO DE MEMÓRIA - Blob URLs
-  // ============================================================================
-
-  // Armazenar URLs criadas para limpar depois
-  const blobUrls: string[] = [];
-
-  // Função para limpar URLs antigas
-  function cleanupBlobUrls() {
-    blobUrls.forEach((url) => {
-      URL.revokeObjectURL(url);
-    });
-    blobUrls.length = 0;
-    console.log('🧹 [MEMORY] Blob URLs limpas');
+  // Gerar ID único
+  function generateId(): string {
+    return `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   // ============================================================================
-  // FUNÇÕES DE PREVIEW LOCAL (usando Blob URLs)
+  // FUNÇÃO DE UPLOAD IMEDIATO
+  // ============================================================================
+
+  async function uploadImageToStorage(file: File): Promise<string | null> {
+    console.log(`📤 [UPLOAD] Enviando: ${file.name}`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/admin/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro no upload');
+    }
+
+    const result = await response.json();
+    console.log(`✅ [UPLOAD] Sucesso: ${result.url}`);
+
+    return result.url;
+  }
+
+  // ============================================================================
+  // ADICIONAR IMAGEM COM UPLOAD IMEDIATO
+  // ============================================================================
+
+  async function addImageWithUpload(file: File): Promise<void> {
+    const id = generateId();
+    const previewUrl = URL.createObjectURL(file);
+
+    // Adicionar imagem com status "uploading"
+    const imageItem: ImageItem = {
+      id,
+      file,
+      previewUrl,
+      serverUrl: null,
+      status: 'uploading'
+    };
+
+    images.push(imageItem);
+    renderPreviews();
+
+    // Fazer upload
+    try {
+      const serverUrl = await uploadImageToStorage(file);
+
+      // Encontrar a imagem e atualizar status
+      const img = images.find(i => i.id === id);
+      if (img) {
+        if (serverUrl) {
+          img.serverUrl = serverUrl;
+          img.status = 'success';
+          console.log(`✅ [UPLOAD] Imagem ${file.name} enviada com sucesso`);
+        } else {
+          img.status = 'error';
+          window.showToast(`Erro ao enviar ${file.name}`, 'error');
+        }
+      }
+    } catch (error: any) {
+      console.error(`❌ [UPLOAD] Erro:`, error);
+      const img = images.find(i => i.id === id);
+      if (img) {
+        img.status = 'error';
+      }
+      window.showToast(`Erro ao enviar ${file.name}`, 'error');
+    }
+
+    renderPreviews();
+  }
+
+  // ============================================================================
+  // RENDERIZAÇÃO COM ESTADOS DE UPLOAD
   // ============================================================================
 
   function renderPreviews() {
     if (!uploadArea) return;
 
-    console.log(`🖼️ [PREVIEW] Renderizando ${selectedFiles.length} imagens`);
+    console.log(`🖼️ [PREVIEW] Renderizando ${images.length} imagens`);
 
-    // Limpar blob URLs antigas antes de criar novas
-    cleanupBlobUrls();
-
-    if (selectedFiles.length === 0) {
+    if (images.length === 0) {
       uploadArea.innerHTML = `
         <div class="upload-placeholder">
           <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,47 +318,68 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
-    // Grid de imagens - Layout responsivo
-    const imagesHTML = selectedFiles
-      .map((file, index) => {
-        const url = URL.createObjectURL(file);
-        blobUrls.push(url); // Rastrear para limpeza posterior
-        console.log(
-          `  ${index + 1}. ${file.name} (${(file.size / 1024).toFixed(1)} KB)`
-        );
+    const imagesHTML = images
+      .map((img, index) => {
+        const isMain = index === 0;
+        const isUploading = img.status === 'uploading';
+        const isError = img.status === 'error';
+        const isSuccess = img.status === 'success';
+
+        // Usar URL do servidor se disponível, senão preview local
+        const displayUrl = img.serverUrl || img.previewUrl;
+
+        let borderColor = isMain ? '#3b82f6' : '#e5e7eb';
+        if (isUploading) borderColor = '#f59e0b'; // amarelo
+        if (isError) borderColor = '#ef4444'; // vermelho
+
+        let statusBadge = '';
+        if (isUploading) {
+          statusBadge = `
+            <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 5;">
+              <div style="width: 24px; height: 24px; border: 3px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            </div>
+          `;
+        } else if (isError) {
+          statusBadge = `
+            <div style="position: absolute; inset: 0; background: rgba(239,68,68,0.7); display: flex; align-items: center; justify-content: center; z-index: 5;">
+              <span style="color: white; font-size: 24px;">✕</span>
+            </div>
+          `;
+        } else if (isSuccess) {
+          statusBadge = `
+            <div style="position: absolute; top: 6px; left: 6px; background: rgba(34, 197, 94, 0.95); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 5;">✓</div>
+          `;
+        }
 
         return `
-          <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${index === 0 ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; cursor: ${index === 0 ? 'default' : 'pointer'}; transition: all 0.2s;"
-            onclick="${index === 0 ? '' : `event.stopPropagation(); window.setMainImage(${index})`}"
-            onmouseover="${index === 0 ? '' : `this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)'`}"
-            onmouseout="${index === 0 ? '' : `this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'`}"
-            title="${index === 0 ? 'Imagem principal' : 'Clique para tornar principal'}"
+          <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${borderColor}; background: #1a1a1a; cursor: ${isMain || isUploading ? 'default' : 'pointer'}; transition: all 0.2s;"
+            onclick="${isMain || isUploading ? '' : `event.stopPropagation(); window.setMainImage(${index})`}"
+            data-image-id="${img.id}"
           >
             <img
-              src="${url}"
-              alt="${file.name}"
-              style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
+              src="${displayUrl}"
+              alt="${img.file.name}"
+              style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; ${isUploading ? 'opacity: 0.5;' : ''}"
               loading="eager"
             />
-            <button
-              type="button"
-              onclick="event.stopPropagation(); event.preventDefault(); window.removeImageAt(${index})"
-              style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
-              onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.15)'"
-              onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-              title="Remover imagem"
-            >
-              ×
-            </button>
-            ${index === 0 ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
+            ${statusBadge}
+            ${!isUploading ? `
+              <button
+                type="button"
+                onclick="event.stopPropagation(); event.preventDefault(); window.removeImageById('${img.id}')"
+                style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
+                title="Remover imagem"
+              >×</button>
+            ` : ''}
+            ${isMain && isSuccess ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
           </div>
         `;
       })
       .join('');
 
-    const addButtonHTML =
-      selectedFiles.length < MAX_IMAGES
-        ? `
+    const canAddMore = images.length < MAX_IMAGES && !images.some(i => i.status === 'uploading');
+    const addButtonHTML = canAddMore
+      ? `
           <div style="aspect-ratio: 1 / 1; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #0A0A0A; transition: all 0.2s;"
             onmouseover="this.style.borderColor='#f9fafb'; this.style.background='#121212'"
             onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#0A0A0A'"
@@ -300,9 +390,14 @@ const { data: categorias } = await supabaseAdmin
             <span style="font-size: 12px; color: #f9fafb; font-weight: 500;">Adicionar</span>
           </div>
         `
-        : '';
+      : '';
 
     uploadArea.innerHTML = `
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
       <div class="images-preview-grid">
         ${imagesHTML}
         ${addButtonHTML}
@@ -311,56 +406,60 @@ const { data: categorias } = await supabaseAdmin
   }
 
   // ============================================================================
-  // HANDLERS DE ARQUIVO
+  // HANDLERS
   // ============================================================================
 
-  (window as any).removeImageAt = (index: number) => {
-    console.log(
-      `🗑️ [PREVIEW] Removendo imagem ${index + 1}: ${selectedFiles[index].name}`
-    );
-    selectedFiles.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
+  (window as any).removeImageById = (id: string) => {
+    const img = images.find(i => i.id === id);
+    if (img) {
+      console.log(`🗑️ [PREVIEW] Removendo imagem: ${img.file.name}`);
+      URL.revokeObjectURL(img.previewUrl);
+      images = images.filter(i => i.id !== id);
+      renderPreviews();
+      window.showToast('Imagem removida', 'success');
+    }
   };
 
   (window as any).setMainImage = (index: number) => {
-    if (index === 0) return; // Já é a principal
-    console.log(
-      `⭐ [PREVIEW] Tornando imagem ${index + 1} como principal: ${selectedFiles[index].name}`
-    );
-    // Mover a imagem clicada para a primeira posição
-    const [selectedImage] = selectedFiles.splice(index, 1);
-    selectedFiles.unshift(selectedImage);
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
+    if (index === 0) return;
+    const img = images[index];
+    if (img && img.status !== 'uploading') {
+      console.log(`⭐ [PREVIEW] Tornando imagem principal: ${img.file.name}`);
+      images.splice(index, 1);
+      images.unshift(img);
+      renderPreviews();
+      window.showToast('Imagem principal alterada', 'success');
+    }
   };
 
   uploadArea?.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
 
-    // Não abrir input se clicou no botão de remover
-    if (target.closest('.image-remove-btn')) return;
+    const hasUploading = images.some(i => i.status === 'uploading');
+    if (hasUploading) {
+      window.showToast('Aguarde o upload em andamento...', 'warning');
+      return;
+    }
 
-    if (selectedFiles.length < MAX_IMAGES) {
+    if (images.length < MAX_IMAGES) {
       fileInput?.click();
     } else {
       window.showToast(`Máximo de ${MAX_IMAGES} imagens`, 'warning');
     }
   });
 
-  fileInput?.addEventListener('change', (e) => {
+  fileInput?.addEventListener('change', async (e) => {
     const files = (e.target as HTMLInputElement).files;
     if (!files || files.length === 0) return;
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📁 [FILE INPUT] ${files.length} arquivo(s) selecionado(s)`);
 
-    const remainingSlots = MAX_IMAGES - selectedFiles.length;
+    const remainingSlots = MAX_IMAGES - images.length;
     const filesToAdd = Array.from(files).slice(0, remainingSlots);
 
-    let validFiles = 0;
-    let invalidFiles = 0;
-
+    // Processar cada arquivo SEQUENCIALMENTE
     for (const file of filesToAdd) {
       console.log(`  📄 ${file.name}: ${(file.size / 1024).toFixed(1)} KB`);
 
@@ -368,7 +467,6 @@ const { data: categorias } = await supabaseAdmin
       if (file.size > MAX_FILE_SIZE) {
         console.warn(`  ⚠️ Arquivo muito grande: ${file.name}`);
         window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
-        invalidFiles++;
         continue;
       }
 
@@ -376,106 +474,61 @@ const { data: categorias } = await supabaseAdmin
       if (!file.type.startsWith('image/')) {
         console.warn(`  ⚠️ Tipo inválido: ${file.name}`);
         window.showToast(`${file.name} não é uma imagem`, 'error');
-        invalidFiles++;
         continue;
       }
 
-      selectedFiles.push(file);
-      validFiles++;
+      // Upload imediato (aguarda cada um terminar antes do próximo)
+      await addImageWithUpload(file);
     }
 
-    console.log(
-      `✅ ${validFiles} arquivo(s) válido(s), ❌ ${invalidFiles} inválido(s)`
-    );
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    if (validFiles > 0) {
-      renderPreviews();
-      window.showToast(
-        `${validFiles} imagem${validFiles !== 1 ? 'ns' : ''} adicionada${validFiles !== 1 ? 's' : ''}`,
-        'success'
-      );
-    }
 
     // Limpar input
     fileInput.value = '';
   });
 
-  // ============================================================================
-  // UPLOAD E SUBMIT
-  // ============================================================================
-
-  async function uploadImageToStorage(file: File): Promise<string | null> {
-    try {
-      console.log(`📤 [UPLOAD] Enviando: ${file.name}`);
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro no upload');
-      }
-
-      const result = await response.json();
-      console.log(`✅ [UPLOAD] Sucesso: ${result.url}`);
-
-      return result.url;
-    } catch (error: any) {
-      console.error(`❌ [UPLOAD] Erro:`, error);
-      window.showToast(`Erro ao enviar ${file.name}`, 'error');
-      return null;
-    }
-  }
-
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    if (selectedFiles.length === 0) {
+    // Verificar se há imagens
+    if (images.length === 0) {
       window.showToast('Adicione pelo menos uma imagem', 'warning');
       return;
     }
 
-    // Marcar que estamos no processo de submit (desativa aviso de saída)
-    isSubmitting = true;
+    // Verificar se há uploads em andamento
+    const hasUploading = images.some(i => i.status === 'uploading');
+    if (hasUploading) {
+      window.showToast('Aguarde o upload das imagens terminar', 'warning');
+      return;
+    }
 
+    // Verificar se há erros de upload
+    const hasErrors = images.some(i => i.status === 'error');
+    if (hasErrors) {
+      window.showToast('Remova as imagens com erro antes de salvar', 'warning');
+      return;
+    }
+
+    // Pegar apenas URLs de imagens com upload bem-sucedido
+    const validUrls = images
+      .filter(i => i.status === 'success' && i.serverUrl)
+      .map(i => i.serverUrl as string);
+
+    if (validUrls.length === 0) {
+      window.showToast('Nenhuma imagem foi enviada com sucesso', 'error');
+      return;
+    }
+
+    // Marcar que estamos no processo de submit
+    isSubmitting = true;
     submitBtn.disabled = true;
     submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('💾 [SUBMIT] Iniciando salvamento do produto');
-      console.log(
-        `📸 [SUBMIT] Fazendo upload de ${selectedFiles.length} imagens...`
-      );
-
-      // Upload de imagens SEQUENCIALMENTE para evitar colisões no servidor
-      // (uploads paralelos causavam todas as imagens receberem a mesma URL)
-      const validUrls: string[] = [];
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        console.log(`📤 [UPLOAD] Enviando imagem ${i + 1}/${selectedFiles.length}: ${file.name}`);
-        const url = await uploadImageToStorage(file);
-        if (url) {
-          validUrls.push(url);
-          console.log(`✅ [UPLOAD] Imagem ${i + 1} enviada: ${url.substring(0, 80)}...`);
-        } else {
-          console.warn(`⚠️ [UPLOAD] Falha na imagem ${i + 1}`);
-        }
-      }
-
-      if (validUrls.length === 0) {
-        throw new Error('Nenhuma imagem foi enviada com sucesso');
-      }
-
-      console.log(
-        `✅ [SUBMIT] ${validUrls.length}/${selectedFiles.length} imagens enviadas`
-      );
+      console.log('💾 [SUBMIT] Salvando produto com imagens já uploadadas');
+      console.log(`📸 [SUBMIT] ${validUrls.length} imagens prontas`);
 
       // Coletar dados do formulário
       const formData = new FormData(form);
@@ -492,7 +545,7 @@ const { data: categorias } = await supabaseAdmin
         imagens: validUrls,
       };
 
-      console.log('📦 [SUBMIT] Salvando produto:', produto);
+      console.log('📦 [SUBMIT] Dados do produto:', produto);
 
       // Salvar produto
       const response = await fetch('/api/admin/produtos', {
@@ -514,14 +567,12 @@ const { data: categorias } = await supabaseAdmin
       window.showToast('Produto adicionado com sucesso!', 'success');
 
       setTimeout(() => {
-        // Forçar reload completo sem cache usando cache-busting
         const timestamp = new Date().getTime();
         window.location.href = `/admin/produtos?_t=${timestamp}`;
       }, 1000);
     } catch (error: any) {
       console.error('❌ [SUBMIT] Erro:', error);
       window.showToast(error.message || 'Erro ao salvar produto', 'error');
-      // Resetar isSubmitting em caso de erro (permite avisar se usuário tentar sair)
       isSubmitting = false;
     } finally {
       submitBtn.disabled = false;
