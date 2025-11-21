@@ -184,100 +184,75 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // IMPORTANTE: Criar hash do buffer para identificar arquivos únicos
+    // Criar hash do buffer original para identificar arquivos únicos
     const crypto = await import('crypto');
     const hash = crypto.createHash('sha256').update(buffer).digest('hex').substring(0, 16);
-    console.log(`🔑 [UPLOAD] Hash do arquivo: ${hash} (${file.name})`);
+    console.log(`🔑 [UPLOAD] Hash do arquivo original: ${hash} (${file.name})`);
 
-    // Otimizar imagem com Sharp
-    const originalSize = buffer.length;
-    let optimizedBuffer: Buffer;
-
-    try {
-      console.log(`🖼️ [SHARP] Iniciando processamento do arquivo ${file.name} (hash: ${hash})`);
-
-      // IMPORTANTE: Criar uma NOVA instância do Sharp para cada upload
-      // para evitar reutilização de estado/cache entre processamentos paralelos
-      const image = sharp(buffer, {
-        failOnError: false,
-        // Desabilitar cache para evitar problemas com uploads paralelos
-        sequentialRead: true
-      });
-
-      const metadata = await image.metadata();
-      console.log(`📐 [SHARP] Metadata (${hash}): ${metadata.width}x${metadata.height}, format: ${metadata.format}`);
-
-      // IMPORTANTE: Sempre criar uma nova pipeline de transformação
-      // sem reutilizar a instância anterior
-      const shouldResize = metadata.width && metadata.width > 1200;
-      console.log(`🔧 [SHARP] Redimensionar (${hash}): ${shouldResize ? 'SIM' : 'NÃO'}`);
-
-      // Criar pipeline de transformação completa
-      let pipeline = sharp(buffer, { sequentialRead: true });
-
-      if (shouldResize) {
-        pipeline = pipeline.resize(1200, 1200, {
-          fit: 'inside',
-          withoutEnlargement: true
-        });
-      }
-
-      // Converter para WebP com qualidade 80
-      optimizedBuffer = await pipeline
-        .webp({
-          quality: 80,
-          effort: 4 // Balanço entre compressão e velocidade
-        })
-        .toBuffer();
-
-      // Hash do buffer otimizado para confirmar que é único
-      const optimizedHash = crypto.createHash('sha256').update(optimizedBuffer).digest('hex').substring(0, 16);
-      console.log(`🔑 [SHARP] Hash do resultado (${hash}): ${optimizedHash}`);
-      console.log(`📊 [SHARP] Otimização (${hash}): ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedBuffer.length / 1024).toFixed(1)}KB (${((1 - optimizedBuffer.length / originalSize) * 100).toFixed(1)}% redução)`);
-    } catch (sharpError: any) {
-      console.error('Erro ao otimizar imagem:', sharpError);
-
-      // Log de erro: falha ao processar imagem com Sharp
-      await logImageUpload({
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-        imageUrl: '',
-        userEmail,
-        status: 'error',
-        errorMessage: 'Erro ao processar imagem com Sharp',
-        errorDetails: {
-          error: sharpError.message,
-          stack: sharpError.stack,
-        },
-        ipAddress,
-        userAgent,
-      });
-
-      return new Response(JSON.stringify({
-        error: 'Erro ao processar imagem'
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Gerar nome ABSOLUTAMENTE único com múltiplas fontes de entropia
+    // Gerar nome ÚNICO antes de qualquer processamento
     const timestamp = Date.now();
     const uuid = uuidv4();
-    const randomSuffix = randomBytes(8).toString('hex'); // 16 caracteres aleatórios extras
-    const fileName = `${timestamp}-${uuid}-${randomSuffix}.webp`;
+    const randomSuffix = randomBytes(8).toString('hex');
+
+    // Determinar extensão baseada no tipo original ou usar webp
+    const originalExt = file.type.split('/')[1] || 'webp';
+    const useWebp = true; // Converter para WebP para otimização
+    const fileExt = useWebp ? 'webp' : originalExt;
+    const fileName = `${timestamp}-${uuid}-${randomSuffix}.${fileExt}`;
     const filePath = `produtos/${fileName}`;
 
     console.log(`📁 [UPLOAD] Nome do arquivo gerado: ${fileName}`);
+
+    // Processar imagem com Sharp (cada operação cria instância nova)
+    const originalSize = buffer.length;
+    let finalBuffer: Buffer;
+    let imageContentType: string;
+
+    try {
+      console.log(`🖼️ [SHARP] Processando: ${file.name} -> ${fileName}`);
+
+      // Criar uma instância COMPLETAMENTE NOVA do Sharp para este arquivo específico
+      // Usar o buffer clonado para garantir isolamento total
+      const bufferCopy = Buffer.from(buffer);
+
+      // Processar diretamente sem reutilizar instâncias
+      finalBuffer = await sharp(bufferCopy, {
+        failOnError: false,
+        sequentialRead: true,
+        unlimited: true  // Permitir imagens grandes
+      })
+        .resize(1200, 1200, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .webp({
+          quality: 80,
+          effort: 4
+        })
+        .toBuffer();
+
+      imageContentType = 'image/webp';
+
+      // Hash do resultado para verificar unicidade
+      const resultHash = crypto.createHash('sha256').update(finalBuffer).digest('hex').substring(0, 16);
+      console.log(`✅ [SHARP] Resultado: ${hash} -> ${resultHash} (${(originalSize/1024).toFixed(1)}KB -> ${(finalBuffer.length/1024).toFixed(1)}KB)`);
+
+    } catch (sharpError: any) {
+      console.error('❌ [SHARP] Erro:', sharpError.message);
+
+      // Fallback: usar imagem original sem processamento
+      console.log(`⚠️ [UPLOAD] Usando imagem original sem processamento`);
+      finalBuffer = buffer;
+      imageContentType = file.type;
+    }
 
     // Upload para Supabase Storage com token autenticado
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { error: uploadError } = await supabase.storage
       .from('imagens')
-      .upload(filePath, optimizedBuffer, {
-        contentType: 'image/webp',
-        cacheControl: '3600', // 1 hora (reduzido para evitar problemas de cache)
+      .upload(filePath, finalBuffer, {
+        contentType: imageContentType,
+        cacheControl: '3600',
         upsert: false
       });
 
@@ -344,8 +319,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       fileName: fileName,
       optimized: true,
       originalSize: originalSize,
-      optimizedSize: optimizedBuffer.length,
-      savings: ((1 - optimizedBuffer.length / originalSize) * 100).toFixed(1) + '%'
+      optimizedSize: finalBuffer.length,
+      savings: ((1 - finalBuffer.length / originalSize) * 100).toFixed(1) + '%'
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
