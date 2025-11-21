@@ -233,12 +233,16 @@ const { data: categorias } = await supabaseAdmin
   }
 
   async function uploadImageToStorage(file: File): Promise<string | null> {
+    // CRÍTICO: Gerar ID único para esta requisição no frontend
+    const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    console.log(`📤 [UPLOAD ${uploadId}] Iniciando upload: ${file.name}`);
+
     // DEBUG: Calcular hash do arquivo ANTES de enviar
     const fileHash = await calculateFileHash(file);
-    console.log(`📤 [UPLOAD] Enviando: ${file.name}`);
-    console.log(`🔑 [UPLOAD] Hash do arquivo no frontend: ${fileHash}`);
-    console.log(`📊 [UPLOAD] Tamanho: ${file.size} bytes, Tipo: ${file.type}`);
-    console.log(`📋 [UPLOAD] lastModified: ${file.lastModified}`);
+    console.log(`📤 [UPLOAD ${uploadId}] Enviando: ${file.name}`);
+    console.log(`🔑 [UPLOAD ${uploadId}] Hash do arquivo no frontend: ${fileHash}`);
+    console.log(`📊 [UPLOAD ${uploadId}] Tamanho: ${file.size} bytes, Tipo: ${file.type}`);
+    console.log(`📋 [UPLOAD ${uploadId}] lastModified: ${file.lastModified}`);
 
     // CRÍTICO: Ler o arquivo como ArrayBuffer e criar um novo Blob
     // Isso garante que cada upload tenha seus próprios dados isolados
@@ -247,15 +251,25 @@ const { data: categorias } = await supabaseAdmin
 
     // DEBUG: Verificar se o blob tem os dados corretos
     const blobHash = await calculateFileHash(new File([blob], file.name, { type: file.type }));
-    console.log(`🔐 [UPLOAD] Hash do blob criado: ${blobHash}`);
+    console.log(`🔐 [UPLOAD ${uploadId}] Hash do blob criado: ${blobHash}`);
 
     const formData = new FormData();
     // Usar o blob ao invés do file original para garantir isolamento
     formData.append('file', blob, file.name);
 
-    const response = await fetch('/api/admin/upload', {
+    // CRÍTICO: Adicionar parâmetro único na URL para evitar cache do navegador/CDN
+    // Cada requisição DEVE ter uma URL diferente para evitar deduplicação
+    const uploadUrl = `/api/admin/upload?_t=${uploadId}`;
+    console.log(`🌐 [UPLOAD ${uploadId}] URL: ${uploadUrl}`);
+
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
+      // Headers adicionais para evitar cache
+      headers: {
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache',
+      },
     });
 
     if (!response.ok) {
