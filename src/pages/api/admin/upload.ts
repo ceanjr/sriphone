@@ -7,6 +7,16 @@ import { randomBytes } from 'crypto';
 
 export const prerender = false;
 
+// Headers para NUNCA cachear esta API
+const NO_CACHE_HEADERS = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+  'Surrogate-Control': 'no-store',
+  'X-Request-Id': '', // Será preenchido em cada requisição
+};
+
 // CRÍTICO: Desabilitar TODOS os caches do Sharp para evitar problemas em serverless
 // Isso é necessário porque funções serverless podem reutilizar instâncias
 sharp.cache(false);
@@ -35,16 +45,28 @@ async function getUserEmail(cookies: any) {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  // CRÍTICO: Gerar ID único para esta requisição IMEDIATAMENTE
+  const requestId = `req_${Date.now()}_${uuidv4()}`;
+  console.log(`\n\n${'='.repeat(60)}`);
+  console.log(`🆕 [REQUEST ${requestId}] Nova requisição de upload iniciada`);
+  console.log(`${'='.repeat(60)}`);
+
   const { userAgent, ipAddress } = getRequestInfo(request);
   const userEmail = await getUserEmail(cookies);
+
+  // Headers de resposta com ID único
+  const responseHeaders = {
+    ...NO_CACHE_HEADERS,
+    'X-Request-Id': requestId,
+  };
 
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
+      return new Response(JSON.stringify({ error: 'Não autenticado', requestId }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: responseHeaders,
       });
     }
 
@@ -71,10 +93,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
 
       return new Response(JSON.stringify({
-        error: 'Content-Type deve ser multipart/form-data para upload de arquivos'
+        error: 'Content-Type deve ser multipart/form-data para upload de arquivos',
+        requestId
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: responseHeaders,
       });
     }
 
@@ -101,10 +124,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
 
       return new Response(JSON.stringify({
-        error: 'Erro ao processar upload. Verifique se o arquivo foi enviado corretamente.'
+        error: 'Erro ao processar upload. Verifique se o arquivo foi enviado corretamente.',
+        requestId
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: responseHeaders,
       });
     }
 
@@ -131,9 +155,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         userAgent,
       });
 
-      return new Response(JSON.stringify({ error: 'Nenhum arquivo enviado' }), {
+      return new Response(JSON.stringify({ error: 'Nenhum arquivo enviado', requestId }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: responseHeaders,
       });
     }
 
@@ -155,10 +179,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
 
       return new Response(JSON.stringify({
-        error: 'Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.'
+        error: 'Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.',
+        requestId
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: responseHeaders,
       });
     }
 
@@ -180,10 +205,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
 
       return new Response(JSON.stringify({
-        error: 'Arquivo muito grande. Tamanho máximo: 10MB'
+        error: 'Arquivo muito grande. Tamanho máximo: 10MB',
+        requestId
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: responseHeaders,
       });
     }
 
@@ -327,10 +353,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
 
       return new Response(JSON.stringify({
-        error: 'Erro ao fazer upload da imagem'
+        error: 'Erro ao fazer upload da imagem',
+        requestId
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: responseHeaders,
       });
     }
 
@@ -368,6 +395,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       userAgent,
     });
 
+    console.log(`✅ [REQUEST ${requestId}] Upload completo com sucesso!`);
+
     return new Response(JSON.stringify({
       url: cacheBustingUrl,
       path: filePath,
@@ -375,13 +404,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       optimized: true,
       originalSize: originalSize,
       optimizedSize: finalBuffer.length,
-      savings: ((1 - finalBuffer.length / originalSize) * 100).toFixed(1) + '%'
+      savings: ((1 - finalBuffer.length / originalSize) * 100).toFixed(1) + '%',
+      requestId // Incluir ID da requisição na resposta
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: responseHeaders,
     });
   } catch (error: any) {
-    console.error('Upload error:', error);
+    console.error(`❌ [REQUEST ${requestId}] Upload error:`, error);
 
     // Log de erro: exceção não tratada
     await logImageUpload({
@@ -395,14 +425,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       errorDetails: {
         error: error.message,
         stack: error.stack,
+        requestId,
       },
       ipAddress,
       userAgent,
     });
 
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message, requestId }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: responseHeaders,
     });
   }
 };
