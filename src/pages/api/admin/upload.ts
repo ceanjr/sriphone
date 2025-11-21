@@ -3,8 +3,14 @@ import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../lib/auth';
 import { logImageUpload, logImageRemove } from '../../../lib/logger';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 
 export const prerender = false;
+
+// CRÍTICO: Desabilitar TODOS os caches do Sharp para evitar problemas em serverless
+// Isso é necessário porque funções serverless podem reutilizar instâncias
+sharp.cache(false);
+sharp.concurrency(1); // Processar uma imagem por vez
 
 // Helper para obter informações do request
 function getRequestInfo(request: Request) {
@@ -256,11 +262,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       });
     }
 
-    // Gerar nome único com extensão .webp usando UUID
+    // Gerar nome ABSOLUTAMENTE único com múltiplas fontes de entropia
     const timestamp = Date.now();
-    const uuid = uuidv4(); // UUID v4 garante unicidade total
-    const fileName = `${timestamp}-${uuid}.webp`;
+    const uuid = uuidv4();
+    const randomSuffix = randomBytes(8).toString('hex'); // 16 caracteres aleatórios extras
+    const fileName = `${timestamp}-${uuid}-${randomSuffix}.webp`;
     const filePath = `produtos/${fileName}`;
+
+    console.log(`📁 [UPLOAD] Nome do arquivo gerado: ${fileName}`);
 
     // Upload para Supabase Storage com token autenticado
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
