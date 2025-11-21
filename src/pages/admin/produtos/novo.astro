@@ -379,18 +379,32 @@ const { data: categorias } = await supabaseAdmin
   async function uploadImageToStorage(file: File, index: number, total: number): Promise<string | null> {
     const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    console.log(`📤 [UPLOAD ${index + 1}/${total}] Enviando: ${file.name} (ID: ${uploadId})`);
+    console.log(`📤 [UPLOAD ${index + 1}/${total}] Iniciando: ${file.name}`);
+    console.log(`   ID: ${uploadId}`);
+    console.log(`   Tamanho: ${file.size} bytes`);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // CRÍTICO: Ler os dados do arquivo em um buffer ISOLADO
+      // Isso evita problemas de referência compartilhada
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const isolatedCopy = uint8Array.slice(); // Cópia independente
+      const blob = new Blob([isolatedCopy], { type: file.type });
 
-      // URL com cache-buster
-      const url = `/api/admin/upload?_t=${uploadId}`;
+      console.log(`   Blob criado: ${blob.size} bytes`);
+
+      const formData = new FormData();
+      formData.append('file', blob, `${uploadId}_${file.name}`);
+
+      // URL única para cada upload
+      const url = `/api/admin/upload?_t=${uploadId}&i=${index}`;
+
+      console.log(`   Enviando para: ${url}`);
 
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
+        cache: 'no-store',
       });
 
       if (!response.ok) {
@@ -399,8 +413,10 @@ const { data: categorias } = await supabaseAdmin
       }
 
       const result = await response.json();
-      console.log(`✅ [UPLOAD ${index + 1}/${total}] Sucesso: ${result.url}`);
-      console.log(`   📁 fileName: ${result.fileName}`);
+      console.log(`✅ [UPLOAD ${index + 1}/${total}] Sucesso!`);
+      console.log(`   URL: ${result.url}`);
+      console.log(`   fileName: ${result.fileName}`);
+      console.log(`   inputHash: ${result.inputHash}`);
 
       return result.url;
     } catch (error: any) {

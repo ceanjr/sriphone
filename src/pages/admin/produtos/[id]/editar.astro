@@ -479,22 +479,31 @@ const { data: categorias } = await supabaseAdmin
     fileInput.value = '';
   });
 
-  // Função SIMPLES para fazer upload de um arquivo
+  // Função para fazer upload de um arquivo com dados isolados
   async function uploadImageToStorage(file: File, index: number, total: number): Promise<string | null> {
     const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    console.log(`📤 [UPLOAD ${index + 1}/${total}] Enviando: ${file.name} (ID: ${uploadId})`);
+    console.log(`📤 [UPLOAD ${index + 1}/${total}] Iniciando: ${file.name}`);
+    console.log(`   ID: ${uploadId}, Tamanho: ${file.size} bytes`);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      // CRÍTICO: Ler dados do arquivo em buffer ISOLADO
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const isolatedCopy = uint8Array.slice();
+      const blob = new Blob([isolatedCopy], { type: file.type });
 
-      // URL com cache-buster
-      const url = `/api/admin/upload?_t=${uploadId}`;
+      console.log(`   Blob criado: ${blob.size} bytes`);
+
+      const formData = new FormData();
+      formData.append('file', blob, `${uploadId}_${file.name}`);
+
+      const url = `/api/admin/upload?_t=${uploadId}&i=${index}`;
 
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
+        cache: 'no-store',
       });
 
       if (!response.ok) {
