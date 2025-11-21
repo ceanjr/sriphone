@@ -525,7 +525,8 @@ const { data: categorias } = await supabaseAdmin
     submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
-      // 1. Fazer upload das novas imagens
+      // 1. Fazer upload das novas imagens SEQUENCIALMENTE
+      // (uploads paralelos causavam todas as imagens receberem a mesma URL)
       let newImageUrls: string[] = [];
       if (newImageFiles.length > 0) {
         window.showToast(
@@ -533,15 +534,16 @@ const { data: categorias } = await supabaseAdmin
           'info'
         );
 
-        const uploadPromises = newImageFiles.map((file) =>
-          uploadImageToStorage(file)
-        );
-        const results = await Promise.all(uploadPromises);
-
-        newImageUrls = results.filter((url): url is string => url !== null);
-
-        if (newImageUrls.length !== newImageFiles.length) {
-          throw new Error('Algumas imagens falharam no upload');
+        for (let i = 0; i < newImageFiles.length; i++) {
+          const file = newImageFiles[i];
+          console.log(`📤 [UPLOAD] Enviando imagem ${i + 1}/${newImageFiles.length}: ${file.name}`);
+          const url = await uploadImageToStorage(file);
+          if (url) {
+            newImageUrls.push(url);
+            console.log(`✅ [UPLOAD] Imagem ${i + 1} enviada`);
+          } else {
+            throw new Error(`Falha no upload da imagem ${i + 1}`);
+          }
         }
 
         console.log(

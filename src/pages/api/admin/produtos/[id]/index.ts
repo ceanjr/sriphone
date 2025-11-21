@@ -148,9 +148,9 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
 export const DELETE: APIRoute = async ({ params, request, cookies }) => {
   const { userAgent, ipAddress } = getRequestInfo(request);
   const userEmail = await getUserEmail(cookies);
+  const { id } = params;
 
   try {
-    const { id } = params;
     console.log('🗑️ DELETE /api/admin/produtos/' + id);
 
     if (!id) {
@@ -160,46 +160,75 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       );
     }
 
-    // Primeiro, buscar o produto para obter o nome antes de deletar
-    const { data: produto } = await supabaseAdmin
+    // Primeiro, buscar o produto para verificar se existe e obter o nome
+    const { data: produto, error: fetchError } = await supabaseAdmin
       .from('produtos')
-      .select('nome')
+      .select('id, nome, imagens')
       .eq('id', id)
       .single();
 
-    const { error } = await supabaseAdmin
+    if (fetchError || !produto) {
+      console.error('❌ Produto não encontrado:', fetchError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Produto não encontrado' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('📦 Produto encontrado:', produto.nome);
+
+    // Deletar o produto
+    console.log('🗑️ Executando delete para ID:', id);
+    const deleteResult = await supabaseAdmin
       .from('produtos')
       .delete()
       .eq('id', id);
 
-    if (error) {
-      console.error('❌ Erro Supabase:', error);
+    console.log('🗑️ Resultado do delete:', JSON.stringify(deleteResult, null, 2));
+
+    if (deleteResult.error) {
+      console.error('❌ Erro Supabase ao deletar:', deleteResult.error);
 
       // Log de erro: falha ao deletar produto
       await logProductAction({
         action: 'delete_product',
         productId: id,
-        productName: produto?.nome || 'unknown',
+        productName: produto.nome,
         userEmail,
         status: 'error',
-        errorMessage: error.message,
+        errorMessage: deleteResult.error.message,
         ipAddress,
         userAgent,
       });
 
       return new Response(
-        JSON.stringify({ success: false, error: error.message }),
+        JSON.stringify({ success: false, error: deleteResult.error.message }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ Produto deletado');
+    // Verificar se o produto ainda existe (para confirmar deleção)
+    const { data: checkProduct } = await supabaseAdmin
+      .from('produtos')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (checkProduct) {
+      console.error('❌ Produto ainda existe após tentativa de deleção');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Falha ao deletar produto - produto ainda existe' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('✅ Produto deletado com sucesso:', produto.nome);
 
     // Log de sucesso: produto deletado
     await logProductAction({
       action: 'delete_product',
       productId: id,
-      productName: produto?.nome || 'unknown',
+      productName: produto.nome,
       userEmail,
       status: 'success',
       ipAddress,
@@ -214,7 +243,7 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, message: `Produto "${produto.nome}" deletado com sucesso` }),
       {
         status: 200,
         headers: {

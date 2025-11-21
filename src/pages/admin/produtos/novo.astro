@@ -454,14 +454,20 @@ const { data: categorias } = await supabaseAdmin
         `📸 [SUBMIT] Fazendo upload de ${selectedFiles.length} imagens...`
       );
 
-      // Upload de todas as imagens em paralelo
-      const uploadPromises = selectedFiles.map((file) =>
-        uploadImageToStorage(file)
-      );
-      const imageUrls = await Promise.all(uploadPromises);
-
-      // Filtrar URLs válidas
-      const validUrls = imageUrls.filter((url): url is string => url !== null);
+      // Upload de imagens SEQUENCIALMENTE para evitar colisões no servidor
+      // (uploads paralelos causavam todas as imagens receberem a mesma URL)
+      const validUrls: string[] = [];
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        console.log(`📤 [UPLOAD] Enviando imagem ${i + 1}/${selectedFiles.length}: ${file.name}`);
+        const url = await uploadImageToStorage(file);
+        if (url) {
+          validUrls.push(url);
+          console.log(`✅ [UPLOAD] Imagem ${i + 1} enviada: ${url.substring(0, 80)}...`);
+        } else {
+          console.warn(`⚠️ [UPLOAD] Falha na imagem ${i + 1}`);
+        }
+      }
 
       if (validUrls.length === 0) {
         throw new Error('Nenhuma imagem foi enviada com sucesso');
