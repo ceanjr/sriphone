@@ -496,7 +496,7 @@ const { data: categorias } = await supabaseAdmin
       text = await response.text();
     } catch (readError: any) {
       console.error('❌ Erro ao ler resposta:', readError.message);
-      throw new Error(`Erro ao ler resposta do servidor: ${readError.message}`);
+      throw new Error(`Erro ao ler resposta: ${readError.message}`);
     }
 
     console.log(`📥 [RESPONSE] Status: ${response.status}, Tamanho: ${text.length} chars`);
@@ -504,22 +504,23 @@ const { data: categorias } = await supabaseAdmin
     // Se a resposta estiver vazia, retornar erro claro
     if (!text || text.trim() === '') {
       console.error('❌ Resposta vazia do servidor. Status:', response.status);
-      console.error('❌ Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
-      throw new Error(`Resposta vazia do servidor (status: ${response.status})`);
+      throw new Error(`Erro ${response.status}: resposta vazia`);
     }
 
     // Verificar se parece HTML (erro de servidor)
     if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
       console.error('❌ Servidor retornou HTML em vez de JSON:', text.substring(0, 300));
-      throw new Error('Erro no servidor (retornou HTML)');
+      const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
+      const errorMsg = titleMatch ? titleMatch[1] : 'Erro no servidor';
+      throw new Error(`${response.status}: ${errorMsg}`);
     }
 
     try {
       return JSON.parse(text);
     } catch (e) {
       console.error('❌ Erro ao parsear JSON:', text.substring(0, 500));
-      console.error('❌ Status da resposta:', response.status);
-      throw new Error('Resposta inválida do servidor');
+      const preview = text.substring(0, 100).replace(/\s+/g, ' ');
+      throw new Error(`Erro ${response.status}: ${preview}...`);
     }
   }
 
