@@ -108,8 +108,9 @@ const { data: categorias } = await supabaseAdmin
               <input
                 id="preco"
                 name="preco"
-                type="number"
-                step="0.01"
+                type="text"
+                inputmode="decimal"
+                pattern="[0-9]*[.,]?[0-9]*"
                 class="form-input"
                 placeholder="0.00"
                 value={produto.preco}
@@ -163,13 +164,15 @@ const { data: categorias } = await supabaseAdmin
 
           <!-- Bateria -->
           <div class="form-group">
-            <label class="form-label" for="bateria">Bateria (mAh)</label>
+            <label class="form-label" for="bateria">Bateria (%)</label>
             <input
               id="bateria"
               name="bateria"
-              type="number"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
               class="form-input"
-              placeholder="Ex: 4352"
+              placeholder="Ex: 80"
               value={produto.bateria || ''}
             />
           </div>
@@ -479,7 +482,29 @@ const { data: categorias } = await supabaseAdmin
     fileInput.value = '';
   });
 
+  // Helper para ler arquivo como ArrayBuffer (compatível com Safari iOS)
+  function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  // Helper para parsear JSON de forma segura (Safari retorna erro genérico)
+  async function safeJsonParse(response: Response): Promise<any> {
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error('Erro ao parsear JSON:', text.substring(0, 200));
+      throw new Error('Resposta inválida do servidor');
+    }
+  }
+
   // Função para fazer upload de TODAS as imagens em UMA requisição
+  // Safari iOS compatible version
   async function uploadAllImages(files: File[]): Promise<string[]> {
     const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
@@ -491,7 +516,8 @@ const { data: categorias } = await supabaseAdmin
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const arrayBuffer = await file.arrayBuffer();
+      // Usar FileReader para compatibilidade com Safari iOS
+      const arrayBuffer = await readFileAsArrayBuffer(file);
       const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type });
       formData.append(`file${i}`, blob, `${batchId}_${i}_${file.name}`);
       console.log(`   Arquivo ${i + 1}: ${file.name} (${file.size} bytes)`);
@@ -506,11 +532,11 @@ const { data: categorias } = await supabaseAdmin
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await safeJsonParse(response);
       throw new Error(error.error || 'Erro no upload');
     }
 
-    const result = await response.json();
+    const result = await safeJsonParse(response);
 
     console.log(`✅ [BATCH UPLOAD] Sucesso! ${result.count} imagens processadas`);
     result.urls.forEach((url: string, i: number) => {
@@ -546,13 +572,15 @@ const { data: categorias } = await supabaseAdmin
       // 3. Preparar dados do produto
       const formData = new FormData(form);
 
+      // Converter vírgula para ponto no preço (compatibilidade com locale BR)
+      const precoStr = (formData.get('preco') as string || '').replace(',', '.');
+      const bateriaStr = formData.get('bateria') as string;
+
       const produto = {
         nome: formData.get('nome'),
         codigo: formData.get('codigo'),
-        preco: parseFloat(formData.get('preco') as string),
-        bateria: formData.get('bateria')
-          ? parseInt(formData.get('bateria') as string)
-          : null,
+        preco: parseFloat(precoStr) || 0,
+        bateria: bateriaStr ? parseInt(bateriaStr, 10) : null,
         condicao: formData.get('condicao'),
         categoria_id: formData.get('categoria_id'),
         descricao: formData.get('descricao') || null,
@@ -567,7 +595,7 @@ const { data: categorias } = await supabaseAdmin
         body: JSON.stringify(produto),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao atualizar produto');
