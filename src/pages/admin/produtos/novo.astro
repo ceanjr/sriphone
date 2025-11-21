@@ -373,56 +373,58 @@ const { data: categorias } = await supabaseAdmin
   });
 
   // ============================================================================
-  // FUNÇÃO DE UPLOAD (chamada apenas no submit)
+  // FUNÇÃO DE UPLOAD - TODAS AS IMAGENS EM UMA REQUISIÇÃO
   // ============================================================================
 
-  async function uploadImageToStorage(file: File, index: number, total: number): Promise<string | null> {
-    const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  async function uploadAllImages(files: File[]): Promise<string[]> {
+    const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    console.log(`📤 [UPLOAD ${index + 1}/${total}] Iniciando: ${file.name}`);
-    console.log(`   ID: ${uploadId}`);
-    console.log(`   Tamanho: ${file.size} bytes`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📤 [BATCH UPLOAD] ID: ${batchId}`);
+    console.log(`📤 [BATCH UPLOAD] ${files.length} arquivos para enviar`);
 
-    try {
-      // CRÍTICO: Ler os dados do arquivo em um buffer ISOLADO
-      // Isso evita problemas de referência compartilhada
+    // Criar FormData com TODOS os arquivos
+    const formData = new FormData();
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // Ler dados do arquivo em buffer isolado
       const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      const isolatedCopy = uint8Array.slice(); // Cópia independente
-      const blob = new Blob([isolatedCopy], { type: file.type });
+      const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type });
 
-      console.log(`   Blob criado: ${blob.size} bytes`);
-
-      const formData = new FormData();
-      formData.append('file', blob, `${uploadId}_${file.name}`);
-
-      // URL única para cada upload
-      const url = `/api/admin/upload?_t=${uploadId}&i=${index}`;
-
-      console.log(`   Enviando para: ${url}`);
-
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro no upload');
-      }
-
-      const result = await response.json();
-      console.log(`✅ [UPLOAD ${index + 1}/${total}] Sucesso!`);
-      console.log(`   URL: ${result.url}`);
-      console.log(`   fileName: ${result.fileName}`);
-      console.log(`   inputHash: ${result.inputHash}`);
-
-      return result.url;
-    } catch (error: any) {
-      console.error(`❌ [UPLOAD ${index + 1}/${total}] Erro:`, error);
-      return null;
+      // Adicionar com nome único: file0, file1, file2...
+      formData.append(`file${i}`, blob, `${batchId}_${i}_${file.name}`);
+      console.log(`   Arquivo ${i + 1}: ${file.name} (${file.size} bytes)`);
     }
+
+    // UMA ÚNICA requisição para todas as imagens
+    const url = `/api/admin/upload?batch=${batchId}`;
+    console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Erro no upload');
+    }
+
+    const result = await response.json();
+
+    console.log(`✅ [BATCH UPLOAD] Sucesso!`);
+    console.log(`   ${result.count} imagens processadas`);
+    result.urls.forEach((url: string, i: number) => {
+      console.log(`   URL ${i + 1}: ${url}`);
+    });
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (result.errors && result.errors.length > 0) {
+      console.warn('⚠️ Alguns erros:', result.errors);
+    }
+
+    return result.urls;
   }
 
   // ============================================================================
@@ -446,26 +448,11 @@ const { data: categorias } = await supabaseAdmin
       console.log('💾 [SUBMIT] Iniciando salvamento');
       console.log(`📸 [SUBMIT] ${selectedFiles.length} imagens para enviar`);
 
-      // Upload SEQUENCIAL de todas as imagens
-      const uploadedUrls: string[] = [];
+      // Upload de TODAS as imagens em UMA requisição
+      const uploadedUrls = await uploadAllImages(selectedFiles);
 
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-
-        submitText.innerHTML = `<div class="form-spinner"></div> Enviando ${i + 1}/${selectedFiles.length}...`;
-
-        const url = await uploadImageToStorage(file, i, selectedFiles.length);
-
-        if (url) {
-          uploadedUrls.push(url);
-        } else {
-          throw new Error(`Falha no upload da imagem ${i + 1}: ${file.name}`);
-        }
-
-        // Pequeno delay entre uploads para evitar problemas
-        if (i < selectedFiles.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
+      if (uploadedUrls.length === 0) {
+        throw new Error('Nenhuma imagem foi enviada com sucesso');
       }
 
       console.log(`✅ [SUBMIT] ${uploadedUrls.length} imagens enviadas com sucesso`);
