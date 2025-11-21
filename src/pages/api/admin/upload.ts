@@ -134,8 +134,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const file = formData.get('file') as File;
 
+    // CRÍTICO: Extrair campos únicos enviados pelo frontend para debug
+    const frontendRequestId = formData.get('_requestId') as string;
+    const frontendTimestamp = formData.get('_timestamp') as string;
+    const frontendFileHash = formData.get('_fileHash') as string;
+
     // DEBUG: Log detalhado do arquivo recebido
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📥 [RECEBIDO] RequestId do servidor: ${requestId}`);
+    console.log(`📥 [RECEBIDO] RequestId do frontend: ${frontendRequestId || 'N/A'}`);
+    console.log(`📥 [RECEBIDO] Timestamp do frontend: ${frontendTimestamp || 'N/A'}`);
+    console.log(`📥 [RECEBIDO] Hash do frontend: ${frontendFileHash || 'N/A'}`);
     console.log(`📥 [RECEBIDO] Arquivo: ${file?.name || 'N/A'}`);
     console.log(`📥 [RECEBIDO] Tamanho: ${file?.size || 0} bytes`);
     console.log(`📥 [RECEBIDO] Tipo: ${file?.type || 'N/A'}`);
@@ -405,7 +414,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       originalSize: originalSize,
       optimizedSize: finalBuffer.length,
       savings: ((1 - finalBuffer.length / originalSize) * 100).toFixed(1) + '%',
-      requestId // Incluir ID da requisição na resposta
+      requestId, // ID gerado pelo servidor
+      frontendRequestId: frontendRequestId || null, // ID enviado pelo frontend
+      frontendFileHash: frontendFileHash || null, // Hash enviado pelo frontend
+      serverFileHash: hash, // Hash calculado pelo servidor
     }), {
       status: 200,
       headers: responseHeaders,

@@ -235,14 +235,18 @@ const { data: categorias } = await supabaseAdmin
   async function uploadImageToStorage(file: File): Promise<string | null> {
     // CRÍTICO: Gerar ID único para esta requisição no frontend
     const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    console.log(`📤 [UPLOAD ${uploadId}] Iniciando upload: ${file.name}`);
+    // ID adicional com crypto para máxima unicidade
+    const cryptoId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+    const fullUploadId = `${uploadId}_${cryptoId}`;
+
+    console.log(`📤 [UPLOAD ${fullUploadId}] Iniciando upload: ${file.name}`);
 
     // DEBUG: Calcular hash do arquivo ANTES de enviar
     const fileHash = await calculateFileHash(file);
-    console.log(`📤 [UPLOAD ${uploadId}] Enviando: ${file.name}`);
-    console.log(`🔑 [UPLOAD ${uploadId}] Hash do arquivo no frontend: ${fileHash}`);
-    console.log(`📊 [UPLOAD ${uploadId}] Tamanho: ${file.size} bytes, Tipo: ${file.type}`);
-    console.log(`📋 [UPLOAD ${uploadId}] lastModified: ${file.lastModified}`);
+    console.log(`📤 [UPLOAD ${fullUploadId}] Enviando: ${file.name}`);
+    console.log(`🔑 [UPLOAD ${fullUploadId}] Hash do arquivo no frontend: ${fileHash}`);
+    console.log(`📊 [UPLOAD ${fullUploadId}] Tamanho: ${file.size} bytes, Tipo: ${file.type}`);
+    console.log(`📋 [UPLOAD ${fullUploadId}] lastModified: ${file.lastModified}`);
 
     // CRÍTICO: Ler o arquivo como ArrayBuffer e criar um novo Blob
     // Isso garante que cada upload tenha seus próprios dados isolados
@@ -251,24 +255,32 @@ const { data: categorias } = await supabaseAdmin
 
     // DEBUG: Verificar se o blob tem os dados corretos
     const blobHash = await calculateFileHash(new File([blob], file.name, { type: file.type }));
-    console.log(`🔐 [UPLOAD ${uploadId}] Hash do blob criado: ${blobHash}`);
+    console.log(`🔐 [UPLOAD ${fullUploadId}] Hash do blob criado: ${blobHash}`);
 
     const formData = new FormData();
     // Usar o blob ao invés do file original para garantir isolamento
     formData.append('file', blob, file.name);
 
+    // CRÍTICO: Adicionar campo único ao FormData para FORÇAR body diferente em cada requisição
+    // Isso previne deduplicação de requisições pelo Vercel/CDN baseada em hash do body
+    formData.append('_requestId', fullUploadId);
+    formData.append('_timestamp', Date.now().toString());
+    formData.append('_fileHash', fileHash);
+
     // CRÍTICO: Adicionar parâmetro único na URL para evitar cache do navegador/CDN
     // Cada requisição DEVE ter uma URL diferente para evitar deduplicação
-    const uploadUrl = `/api/admin/upload?_t=${uploadId}`;
-    console.log(`🌐 [UPLOAD ${uploadId}] URL: ${uploadUrl}`);
+    const uploadUrl = `/api/admin/upload?_t=${fullUploadId}`;
+    console.log(`🌐 [UPLOAD ${fullUploadId}] URL: ${uploadUrl}`);
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
-      // Headers adicionais para evitar cache
+      // Headers adicionais para evitar cache e deduplicação
       headers: {
-        'Cache-Control': 'no-cache, no-store',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
+        'X-Request-Id': fullUploadId,
+        'X-Vercel-Skip-Toolbar': 'true',
       },
     });
 
@@ -278,8 +290,24 @@ const { data: categorias } = await supabaseAdmin
     }
 
     const result = await response.json();
-    console.log(`✅ [UPLOAD] Sucesso: ${result.url}`);
-    console.log(`🔑 [UPLOAD] Hash reportado pelo servidor: ver logs do servidor`);
+    // DEBUG EXTENSIVO: Logar TODOS os campos da resposta para verificar unicidade
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`✅ [RESPOSTA ${fullUploadId}] Upload completo!`);
+    console.log(`📸 URL: ${result.url}`);
+    console.log(`📁 fileName: ${result.fileName}`);
+    console.log(`🆔 RequestId do servidor: ${result.requestId}`);
+    console.log(`🔗 frontendRequestId recebido: ${result.frontendRequestId}`);
+    console.log(`🔑 frontendFileHash: ${result.frontendFileHash}`);
+    console.log(`🔐 serverFileHash: ${result.serverFileHash}`);
+    console.log(`📊 Economia: ${result.savings}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    // VERIFICAÇÃO DE UNICIDADE: Alertar se os IDs não batem
+    if (result.frontendRequestId && result.frontendRequestId !== fullUploadId) {
+      console.error(`❌ ERRO DE UNICIDADE: frontendRequestId não bate!`);
+      console.error(`   Enviado: ${fullUploadId}`);
+      console.error(`   Recebido: ${result.frontendRequestId}`);
+    }
 
     return result.url;
   }
@@ -515,9 +543,15 @@ const { data: categorias } = await supabaseAdmin
     // DEBUG: Mostrar quantos arquivos foram selecionados
     window.showToast(`Processando ${filesToAdd.length} imagem(ns)...`, 'info');
 
-    // Processar cada arquivo SEQUENCIALMENTE
+    // Processar cada arquivo SEQUENCIALMENTE com delay entre uploads
     for (let i = 0; i < filesToAdd.length; i++) {
       const file = filesToAdd[i];
+
+      // CRÍTICO: Adicionar delay entre uploads para evitar deduplicação
+      if (i > 0) {
+        console.log(`⏳ [DELAY] Aguardando 500ms antes do próximo upload...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
 
       // DEBUG: Log detalhado do arquivo atual
       console.log(`🔄 [LOOP ${i + 1}/${filesToAdd.length}] Processando: ${file.name}`);

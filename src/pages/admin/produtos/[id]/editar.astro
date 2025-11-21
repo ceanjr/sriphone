@@ -479,17 +479,52 @@ const { data: categorias } = await supabaseAdmin
     fileInput.value = '';
   });
 
+  // Helper para calcular hash de um arquivo
+  async function calculateFileHash(file: File): Promise<string> {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+  }
+
   // Função para fazer upload de um arquivo
   async function uploadImageToStorage(file: File): Promise<string | null> {
     try {
-      console.log(`📤 [UPLOAD] Fazendo upload de: ${file.name}`);
+      // CRÍTICO: Gerar IDs únicos para evitar deduplicação de requisições
+      const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      const cryptoId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+      const fullUploadId = `${uploadId}_${cryptoId}`;
+
+      console.log(`📤 [UPLOAD ${fullUploadId}] Fazendo upload de: ${file.name}`);
+
+      // Calcular hash do arquivo para debug
+      const fileHash = await calculateFileHash(file);
+      console.log(`🔑 [UPLOAD ${fullUploadId}] Hash do arquivo: ${fileHash}`);
+
+      // CRÍTICO: Ler o arquivo como ArrayBuffer e criar um novo Blob isolado
+      const arrayBuffer = await file.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { type: file.type });
 
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', blob, file.name);
 
-      const response = await fetch('/api/admin/upload', {
+      // CRÍTICO: Adicionar campos únicos ao FormData para evitar deduplicação
+      formData.append('_requestId', fullUploadId);
+      formData.append('_timestamp', Date.now().toString());
+      formData.append('_fileHash', fileHash);
+
+      // URL com cache-buster
+      const uploadUrl = `/api/admin/upload?_t=${fullUploadId}`;
+
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'X-Request-Id': fullUploadId,
+          'X-Vercel-Skip-Toolbar': 'true',
+        },
       });
 
       if (!response.ok) {
@@ -500,11 +535,27 @@ const { data: categorias } = await supabaseAdmin
 
       const result = await response.json();
 
-      if (result.savings) {
-        console.log(
-          `✅ [UPLOAD] Imagem otimizada: ${result.savings} de redução`
-        );
+      // DEBUG: Logar resposta completa para verificar unicidade
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`✅ [RESPOSTA ${fullUploadId}] Upload completo!`);
+      console.log(`📸 URL: ${result.url}`);
+      console.log(`📁 fileName: ${result.fileName}`);
+      console.log(`🆔 RequestId do servidor: ${result.requestId}`);
+      console.log(`🔗 frontendRequestId recebido: ${result.frontendRequestId}`);
+      console.log(`🔑 frontendFileHash: ${result.frontendFileHash}`);
+      console.log(`🔐 serverFileHash: ${result.serverFileHash}`);
+
+      // Verificação de unicidade
+      if (result.frontendRequestId && result.frontendRequestId !== fullUploadId) {
+        console.error(`❌ ERRO DE UNICIDADE: frontendRequestId não bate!`);
+        console.error(`   Enviado: ${fullUploadId}`);
+        console.error(`   Recebido: ${result.frontendRequestId}`);
       }
+
+      if (result.savings) {
+        console.log(`📊 Economia: ${result.savings}`);
+      }
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       return result.url;
     } catch (error: any) {
@@ -525,8 +576,8 @@ const { data: categorias } = await supabaseAdmin
     submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
-      // 1. Fazer upload das novas imagens SEQUENCIALMENTE
-      // (uploads paralelos causavam todas as imagens receberem a mesma URL)
+      // 1. Fazer upload das novas imagens SEQUENCIALMENTE COM DELAY
+      // (uploads paralelos/rápidos causavam deduplicação no Vercel)
       let newImageUrls: string[] = [];
       if (newImageFiles.length > 0) {
         window.showToast(
@@ -536,6 +587,13 @@ const { data: categorias } = await supabaseAdmin
 
         for (let i = 0; i < newImageFiles.length; i++) {
           const file = newImageFiles[i];
+
+          // CRÍTICO: Adicionar delay entre uploads para evitar deduplicação
+          if (i > 0) {
+            console.log(`⏳ [DELAY] Aguardando 500ms antes do próximo upload...`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
           console.log(`📤 [UPLOAD] Enviando imagem ${i + 1}/${newImageFiles.length}: ${file.name}`);
           const url = await uploadImageToStorage(file);
           if (url) {
