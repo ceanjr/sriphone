@@ -101,6 +101,14 @@ const schemaData = {
 
   <main class="produto-page">
     <div class="container">
+      <!-- Botão Voltar no topo -->
+      <a href="/catalogo" class="btn-voltar-topo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        Voltar ao Catálogo
+      </a>
+
       <div class="produto-grid">
         <!-- Galeria de Imagens -->
         <div class="produto-galeria">
@@ -204,9 +212,11 @@ const schemaData = {
             }
           </div>
 
-          <div class="produto-descricao">
-            <p>{produto.descricao}</p>
-          </div>
+          {produto.descricao && (
+            <div class="produto-descricao">
+              <p>{produto.descricao}</p>
+            </div>
+          )}
 
           <div class="produto-specs">
             <div class="spec-item">
@@ -255,21 +265,6 @@ const schemaData = {
               Consultar no WhatsApp
             </a>
 
-            <a href="/catalogo" class="btn-voltar">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 12H5M5 12L12 19M5 12L12 5"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"></path>
-              </svg>
-              Voltar ao Catálogo
-            </a>
           </div>
         </div>
       </div>

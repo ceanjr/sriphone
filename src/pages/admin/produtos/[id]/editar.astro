@@ -482,31 +482,43 @@ const { data: categorias } = await supabaseAdmin
     fileInput.value = '';
   });
 
-  // Helper para ler arquivo como ArrayBuffer (compatível com Safari iOS)
-  function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as ArrayBuffer);
-      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
-      reader.readAsArrayBuffer(file);
-    });
-  }
+  // Detectar Safari iOS
+  const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+                      !('MSStream' in window) &&
+                      /Safari/.test(navigator.userAgent);
+
+  console.log(`🔍 [BROWSER] Safari iOS: ${isSafariIOS}, UA: ${navigator.userAgent.substring(0, 100)}`);
 
   // Helper para parsear JSON de forma segura (Safari retorna erro genérico)
   async function safeJsonParse(response: Response): Promise<any> {
-    const text = await response.text();
+    let text = '';
+    try {
+      text = await response.text();
+    } catch (readError: any) {
+      console.error('❌ Erro ao ler resposta:', readError.message);
+      throw new Error(`Erro ao ler resposta do servidor: ${readError.message}`);
+    }
+
+    console.log(`📥 [RESPONSE] Status: ${response.status}, Tamanho: ${text.length} chars`);
 
     // Se a resposta estiver vazia, retornar erro claro
     if (!text || text.trim() === '') {
-      console.error('Resposta vazia do servidor. Status:', response.status);
+      console.error('❌ Resposta vazia do servidor. Status:', response.status);
+      console.error('❌ Headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
       throw new Error(`Resposta vazia do servidor (status: ${response.status})`);
+    }
+
+    // Verificar se parece HTML (erro de servidor)
+    if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
+      console.error('❌ Servidor retornou HTML em vez de JSON:', text.substring(0, 300));
+      throw new Error('Erro no servidor (retornou HTML)');
     }
 
     try {
       return JSON.parse(text);
     } catch (e) {
-      console.error('Erro ao parsear JSON:', text.substring(0, 200));
-      console.error('Status da resposta:', response.status);
+      console.error('❌ Erro ao parsear JSON:', text.substring(0, 500));
+      console.error('❌ Status da resposta:', response.status);
       throw new Error('Resposta inválida do servidor');
     }
   }
@@ -519,30 +531,48 @@ const { data: categorias } = await supabaseAdmin
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📤 [BATCH UPLOAD] ID: ${batchId}`);
     console.log(`📤 [BATCH UPLOAD] ${files.length} arquivos para enviar`);
+    console.log(`📤 [BATCH UPLOAD] Safari iOS: ${isSafariIOS}`);
 
     const formData = new FormData();
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      // Usar FileReader para compatibilidade com Safari iOS
-      const arrayBuffer = await readFileAsArrayBuffer(file);
-      const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type });
-      formData.append(`file${i}`, blob, `${batchId}_${i}_${file.name}`);
-      console.log(`   Arquivo ${i + 1}: ${file.name} (${file.size} bytes)`);
+      const fileName = `${batchId}_${i}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
+      // Safari iOS antigo não suporta new File(), então usamos o arquivo original
+      // e deixamos o servidor lidar com o nome
+      try {
+        // Tentar criar novo File (browsers modernos)
+        const newFile = new File([file], fileName, { type: file.type });
+        formData.append(`file${i}`, newFile);
+        console.log(`   📁 Arquivo ${i + 1} (File): ${fileName} (${file.size} bytes)`);
+      } catch (fileError) {
+        // Fallback para Safari iOS antigo: usar arquivo original
+        console.log(`   📁 Arquivo ${i + 1} (original): ${file.name} (${file.size} bytes)`);
+        formData.append(`file${i}`, file, fileName);
+      }
     }
 
     const url = `/api/admin/upload?batch=${batchId}`;
     console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include', // Importante para Safari iOS enviar cookies
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // Importante para Safari iOS enviar cookies
+      });
+      console.log(`📥 [BATCH UPLOAD] Resposta recebida: ${response.status} ${response.statusText}`);
+    } catch (fetchError: any) {
+      console.error('❌ [BATCH UPLOAD] Erro de rede:', fetchError.message);
+      throw new Error(`Erro de conexão: ${fetchError.message}`);
+    }
 
     if (!response.ok) {
+      console.error(`❌ [BATCH UPLOAD] Resposta não OK: ${response.status}`);
       const error = await safeJsonParse(response);
-      throw new Error(error.error || 'Erro no upload');
+      throw new Error(error.error || `Erro no upload (${response.status})`);
     }
 
     const result = await safeJsonParse(response);

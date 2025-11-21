@@ -84,6 +84,7 @@ async function processOneImage(
     });
 
     optimizedBuffer = await sharpInstance
+      .rotate() // Corrige orientação EXIF automaticamente (fotos de celular)
       .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 80, effort: 4 })
       .toBuffer();
