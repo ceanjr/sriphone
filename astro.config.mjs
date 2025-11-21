@@ -39,11 +39,12 @@ export default defineConfig({
   vite: {
     build: {
       assetsDir: '_astro',
-      // Minificação apenas em produção
+      // Minificação apenas em produção - MAS manter console.logs para debug
       minify: process.env.NODE_ENV === 'production' ? 'terser' : false,
       terserOptions: process.env.NODE_ENV === 'production' ? {
         compress: {
-          drop_console: true,
+          // IMPORTANTE: NÃO remover console.logs para permitir debug em produção
+          drop_console: false,
           drop_debugger: true,
         },
       } : undefined,

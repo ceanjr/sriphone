@@ -479,87 +479,35 @@ const { data: categorias } = await supabaseAdmin
     fileInput.value = '';
   });
 
-  // Helper para calcular hash de um arquivo
-  async function calculateFileHash(file: File): Promise<string> {
-    const buffer = await file.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
-  }
+  // Função SIMPLES para fazer upload de um arquivo
+  async function uploadImageToStorage(file: File, index: number, total: number): Promise<string | null> {
+    const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-  // Função para fazer upload de um arquivo
-  async function uploadImageToStorage(file: File): Promise<string | null> {
+    console.log(`📤 [UPLOAD ${index + 1}/${total}] Enviando: ${file.name} (ID: ${uploadId})`);
+
     try {
-      // CRÍTICO: Gerar IDs únicos para evitar deduplicação de requisições
-      const uploadId = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-      const cryptoId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-      const fullUploadId = `${uploadId}_${cryptoId}`;
-
-      console.log(`📤 [UPLOAD ${fullUploadId}] Fazendo upload de: ${file.name}`);
-
-      // Calcular hash do arquivo para debug
-      const fileHash = await calculateFileHash(file);
-      console.log(`🔑 [UPLOAD ${fullUploadId}] Hash do arquivo: ${fileHash}`);
-
-      // CRÍTICO: Ler o arquivo como ArrayBuffer e criar um novo Blob isolado
-      const arrayBuffer = await file.arrayBuffer();
-      const blob = new Blob([arrayBuffer], { type: file.type });
-
       const formData = new FormData();
-      formData.append('file', blob, file.name);
-
-      // CRÍTICO: Adicionar campos únicos ao FormData para evitar deduplicação
-      formData.append('_requestId', fullUploadId);
-      formData.append('_timestamp', Date.now().toString());
-      formData.append('_fileHash', fileHash);
+      formData.append('file', file);
 
       // URL com cache-buster
-      const uploadUrl = `/api/admin/upload?_t=${fullUploadId}`;
+      const url = `/api/admin/upload?_t=${uploadId}`;
 
-      const response = await fetch(uploadUrl, {
+      const response = await fetch(url, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'X-Request-Id': fullUploadId,
-          'X-Vercel-Skip-Toolbar': 'true',
-        },
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || 'Erro ao fazer upload';
-        throw new Error(errorMessage);
+        const error = await response.json();
+        throw new Error(error.error || 'Erro no upload');
       }
 
       const result = await response.json();
-
-      // DEBUG: Logar resposta completa para verificar unicidade
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`✅ [RESPOSTA ${fullUploadId}] Upload completo!`);
-      console.log(`📸 URL: ${result.url}`);
-      console.log(`📁 fileName: ${result.fileName}`);
-      console.log(`🆔 RequestId do servidor: ${result.requestId}`);
-      console.log(`🔗 frontendRequestId recebido: ${result.frontendRequestId}`);
-      console.log(`🔑 frontendFileHash: ${result.frontendFileHash}`);
-      console.log(`🔐 serverFileHash: ${result.serverFileHash}`);
-
-      // Verificação de unicidade
-      if (result.frontendRequestId && result.frontendRequestId !== fullUploadId) {
-        console.error(`❌ ERRO DE UNICIDADE: frontendRequestId não bate!`);
-        console.error(`   Enviado: ${fullUploadId}`);
-        console.error(`   Recebido: ${result.frontendRequestId}`);
-      }
-
-      if (result.savings) {
-        console.log(`📊 Economia: ${result.savings}`);
-      }
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`✅ [UPLOAD ${index + 1}/${total}] Sucesso: ${result.url}`);
 
       return result.url;
     } catch (error: any) {
-      console.error(`❌ [UPLOAD] Erro ao fazer upload de ${file.name}:`, error);
+      console.error(`❌ [UPLOAD ${index + 1}/${total}] Erro:`, error);
       window.showToast(`Erro ao fazer upload de ${file.name}`, 'error');
       return null;
     }
@@ -576,37 +524,30 @@ const { data: categorias } = await supabaseAdmin
     submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
-      // 1. Fazer upload das novas imagens SEQUENCIALMENTE COM DELAY
-      // (uploads paralelos/rápidos causavam deduplicação no Vercel)
+      // Upload das novas imagens SEQUENCIALMENTE
       let newImageUrls: string[] = [];
       if (newImageFiles.length > 0) {
-        window.showToast(
-          `Fazendo upload de ${newImageFiles.length} nova(s) imagem(ns)...`,
-          'info'
-        );
+        console.log(`📸 [SUBMIT] ${newImageFiles.length} imagens para enviar`);
 
         for (let i = 0; i < newImageFiles.length; i++) {
           const file = newImageFiles[i];
 
-          // CRÍTICO: Adicionar delay entre uploads para evitar deduplicação
-          if (i > 0) {
-            console.log(`⏳ [DELAY] Aguardando 500ms antes do próximo upload...`);
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
+          submitText.innerHTML = `<div class="form-spinner"></div> Enviando ${i + 1}/${newImageFiles.length}...`;
 
-          console.log(`📤 [UPLOAD] Enviando imagem ${i + 1}/${newImageFiles.length}: ${file.name}`);
-          const url = await uploadImageToStorage(file);
+          const url = await uploadImageToStorage(file, i, newImageFiles.length);
           if (url) {
             newImageUrls.push(url);
-            console.log(`✅ [UPLOAD] Imagem ${i + 1} enviada`);
           } else {
-            throw new Error(`Falha no upload da imagem ${i + 1}`);
+            throw new Error(`Falha no upload da imagem ${i + 1}: ${file.name}`);
+          }
+
+          // Pequeno delay entre uploads
+          if (i < newImageFiles.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
 
-        console.log(
-          `✅ [UPLOAD] ${newImageUrls.length} nova(s) imagem(ns) enviada(s)`
-        );
+        console.log(`✅ [SUBMIT] ${newImageUrls.length} imagens enviadas`);
       }
 
       // 2. Combinar imagens: existentes + novas

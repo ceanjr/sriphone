@@ -3,24 +3,12 @@ import { verifyAuth, getAuthenticatedSupabaseClient } from '../../../lib/auth';
 import { logImageUpload, logImageRemove } from '../../../lib/logger';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
-import { randomBytes } from 'crypto';
 
 export const prerender = false;
 
-// Headers para NUNCA cachear esta API
-const NO_CACHE_HEADERS = {
-  'Content-Type': 'application/json',
-  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-  'Pragma': 'no-cache',
-  'Expires': '0',
-  'Surrogate-Control': 'no-store',
-  'X-Request-Id': '', // Será preenchido em cada requisição
-};
-
-// CRÍTICO: Desabilitar TODOS os caches do Sharp para evitar problemas em serverless
-// Isso é necessário porque funções serverless podem reutilizar instâncias
+// Desabilitar cache do Sharp para evitar problemas em serverless
 sharp.cache(false);
-sharp.concurrency(1); // Processar uma imagem por vez
+sharp.concurrency(1);
 
 // Helper para obter informações do request
 function getRequestInfo(request: Request) {
@@ -45,113 +33,52 @@ async function getUserEmail(cookies: any) {
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  // CRÍTICO: Gerar ID único para esta requisição IMEDIATAMENTE
-  const requestId = `req_${Date.now()}_${uuidv4()}`;
-  console.log(`\n\n${'='.repeat(60)}`);
-  console.log(`🆕 [REQUEST ${requestId}] Nova requisição de upload iniciada`);
-  console.log(`${'='.repeat(60)}`);
+  const requestId = `${Date.now()}_${uuidv4().substring(0, 8)}`;
+  console.log(`\n📤 [UPLOAD ${requestId}] Nova requisição de upload`);
 
   const { userAgent, ipAddress } = getRequestInfo(request);
   const userEmail = await getUserEmail(cookies);
-
-  // Headers de resposta com ID único
-  const responseHeaders = {
-    ...NO_CACHE_HEADERS,
-    'X-Request-Id': requestId,
-  };
 
   try {
     const authHeader = request.headers.get('Authorization');
     const isAuth = await verifyAuth(cookies, authHeader);
     if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Não autenticado', requestId }), {
+      return new Response(JSON.stringify({ error: 'Não autenticado' }), {
         status: 401,
-        headers: responseHeaders,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Validar Content-Type antes de tentar parsear formData
+    // Validar Content-Type
     const contentType = request.headers.get('Content-Type') || '';
-    console.log('📋 Content-Type recebido:', contentType);
-
     if (!contentType.includes('multipart/form-data')) {
-      await logImageUpload({
-        fileName: 'unknown',
-        fileSize: 0,
-        mimeType: 'unknown',
-        imageUrl: '',
-        userEmail,
-        status: 'error',
-        errorMessage: 'Content-Type inválido para upload de arquivo',
-        errorDetails: {
-          receivedContentType: contentType,
-          expectedContentType: 'multipart/form-data',
-          headers: Object.fromEntries(request.headers.entries()),
-        },
-        ipAddress,
-        userAgent,
-      });
-
+      console.error(`[UPLOAD ${requestId}] Content-Type inválido: ${contentType}`);
       return new Response(JSON.stringify({
-        error: 'Content-Type deve ser multipart/form-data para upload de arquivos',
-        requestId
+        error: 'Content-Type deve ser multipart/form-data'
       }), {
         status: 400,
-        headers: responseHeaders,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    // Parsear FormData
     let formData: FormData;
     try {
       formData = await request.formData();
     } catch (formDataError: any) {
-      console.error('Erro ao parsear formData:', formDataError);
-      await logImageUpload({
-        fileName: 'unknown',
-        fileSize: 0,
-        mimeType: 'unknown',
-        imageUrl: '',
-        userEmail,
-        status: 'error',
-        errorMessage: 'Erro ao processar dados do formulário',
-        errorDetails: {
-          error: formDataError.message,
-          contentType: contentType,
-          headers: Object.fromEntries(request.headers.entries()),
-        },
-        ipAddress,
-        userAgent,
-      });
-
+      console.error(`[UPLOAD ${requestId}] Erro ao parsear formData:`, formDataError);
       return new Response(JSON.stringify({
-        error: 'Erro ao processar upload. Verifique se o arquivo foi enviado corretamente.',
-        requestId
+        error: 'Erro ao processar upload'
       }), {
         status: 400,
-        headers: responseHeaders,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
     const file = formData.get('file') as File;
 
-    // CRÍTICO: Extrair campos únicos enviados pelo frontend para debug
-    const frontendRequestId = formData.get('_requestId') as string;
-    const frontendTimestamp = formData.get('_timestamp') as string;
-    const frontendFileHash = formData.get('_fileHash') as string;
-
-    // DEBUG: Log detalhado do arquivo recebido
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📥 [RECEBIDO] RequestId do servidor: ${requestId}`);
-    console.log(`📥 [RECEBIDO] RequestId do frontend: ${frontendRequestId || 'N/A'}`);
-    console.log(`📥 [RECEBIDO] Timestamp do frontend: ${frontendTimestamp || 'N/A'}`);
-    console.log(`📥 [RECEBIDO] Hash do frontend: ${frontendFileHash || 'N/A'}`);
-    console.log(`📥 [RECEBIDO] Arquivo: ${file?.name || 'N/A'}`);
-    console.log(`📥 [RECEBIDO] Tamanho: ${file?.size || 0} bytes`);
-    console.log(`📥 [RECEBIDO] Tipo: ${file?.type || 'N/A'}`);
-    console.log(`📥 [RECEBIDO] lastModified: ${file?.lastModified || 'N/A'}`);
-
     if (!file) {
-      // Log de erro: arquivo não enviado
+      console.error(`[UPLOAD ${requestId}] Nenhum arquivo enviado`);
       await logImageUpload({
         fileName: 'unknown',
         fileSize: 0,
@@ -164,16 +91,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         userAgent,
       });
 
-      return new Response(JSON.stringify({ error: 'Nenhum arquivo enviado', requestId }), {
+      return new Response(JSON.stringify({ error: 'Nenhum arquivo enviado' }), {
         status: 400,
-        headers: responseHeaders,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    console.log(`[UPLOAD ${requestId}] Arquivo: ${file.name}, ${file.size} bytes, ${file.type}`);
 
     // Validar tipo de arquivo
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
-      // Log de erro: tipo de arquivo não permitido
+      console.error(`[UPLOAD ${requestId}] Tipo não permitido: ${file.type}`);
       await logImageUpload({
         fileName: file.name,
         fileSize: file.size,
@@ -182,24 +111,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         userEmail,
         status: 'error',
         errorMessage: 'Tipo de arquivo não permitido',
-        errorDetails: { allowedTypes, receivedType: file.type },
         ipAddress,
         userAgent,
       });
 
       return new Response(JSON.stringify({
-        error: 'Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.',
-        requestId
+        error: 'Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.'
       }), {
         status: 400,
-        headers: responseHeaders,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Validar tamanho antes da otimização (máximo 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Validar tamanho (máximo 10MB)
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      // Log de erro: arquivo muito grande
+      console.error(`[UPLOAD ${requestId}] Arquivo muito grande: ${file.size}`);
       await logImageUpload({
         fileName: file.name,
         fileSize: file.size,
@@ -208,87 +135,43 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         userEmail,
         status: 'error',
         errorMessage: 'Arquivo muito grande',
-        errorDetails: { maxSize, receivedSize: file.size },
         ipAddress,
         userAgent,
       });
 
       return new Response(JSON.stringify({
-        error: 'Arquivo muito grande. Tamanho máximo: 10MB',
-        requestId
+        error: 'Arquivo muito grande. Tamanho máximo: 10MB'
       }), {
         status: 400,
-        headers: responseHeaders,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // CRÍTICO: Converter File para Buffer com CÓPIA REAL dos dados
-    // O file.arrayBuffer() pode retornar um buffer compartilhado em serverless
-    // Precisamos garantir que temos uma cópia isolada dos dados
+    // Converter File para Buffer
     const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    // Criar uma cópia REAL do ArrayBuffer usando Uint8Array + slice
-    // Isso força uma cópia dos dados em vez de criar uma view
-    const uint8Array = new Uint8Array(arrayBuffer);
-    const copiedArray = uint8Array.slice(); // slice() sem argumentos cria uma cópia
-    const buffer = Buffer.from(copiedArray.buffer);
+    console.log(`[UPLOAD ${requestId}] Buffer: ${buffer.length} bytes`);
 
-    console.log(`📥 [BUFFER] ArrayBuffer original byteLength: ${arrayBuffer.byteLength}`);
-    console.log(`📥 [BUFFER] Uint8Array length: ${uint8Array.length}`);
-    console.log(`📥 [BUFFER] Copied array length: ${copiedArray.length}`);
-    console.log(`📥 [BUFFER] Buffer final length: ${buffer.length}`);
-
-    // Criar hash do buffer original para identificar arquivos únicos
-    const crypto = await import('crypto');
-    const hash = crypto.createHash('sha256').update(buffer).digest('hex').substring(0, 16);
-    console.log(`🔑 [UPLOAD] Hash do arquivo original: ${hash} (${file.name})`);
-
-    // Gerar nome ÚNICO antes de qualquer processamento
+    // Gerar nome único para o arquivo
     const timestamp = Date.now();
     const uuid = uuidv4();
-    const randomSuffix = randomBytes(8).toString('hex');
-
-    // Determinar extensão baseada no tipo original ou usar webp
-    const originalExt = file.type.split('/')[1] || 'webp';
-    const useWebp = true; // Converter para WebP para otimização
-    const fileExt = useWebp ? 'webp' : originalExt;
-    const fileName = `${timestamp}-${uuid}-${randomSuffix}.${fileExt}`;
+    const fileName = `${timestamp}-${uuid}.webp`;
     const filePath = `produtos/${fileName}`;
 
-    console.log(`📁 [UPLOAD] Nome do arquivo gerado: ${fileName}`);
+    console.log(`[UPLOAD ${requestId}] Destino: ${filePath}`);
 
-    // Processar imagem com Sharp (cada operação cria instância nova)
+    // Otimizar imagem com Sharp
     const originalSize = buffer.length;
-    let finalBuffer: Buffer;
-    let imageContentType: string;
+    let optimizedBuffer: Buffer;
 
     try {
-      console.log(`🖼️ [SHARP] Processando: ${file.name} -> ${fileName}`);
-      console.log(`🔍 [SHARP] Buffer original: ${buffer.length} bytes, hash: ${hash}`);
+      console.log(`[UPLOAD ${requestId}] Processando com Sharp...`);
 
-      // CRÍTICO: Criar uma cópia COMPLETAMENTE INDEPENDENTE do buffer para o Sharp
-      // Usar Uint8Array + slice() para garantir cópia real dos dados
-      const uint8ForSharp = new Uint8Array(buffer);
-      const sharpArrayCopy = uint8ForSharp.slice();
-      const bufferCopy = Buffer.from(sharpArrayCopy);
-
-      // Verificar que a cópia é realmente diferente
-      const copyHash = crypto.createHash('sha256').update(bufferCopy).digest('hex').substring(0, 16);
-      console.log(`📋 [SHARP] Buffer copiado para Sharp: ${bufferCopy.length} bytes, hash: ${copyHash}`);
-
-      // CRÍTICO: Forçar reset do cache do Sharp antes de cada processamento
-      sharp.cache(false);
-
-      // Criar instância do Sharp com o buffer isolado
-      const sharpInstance = sharp(bufferCopy, {
+      optimizedBuffer = await sharp(buffer, {
         failOnError: false,
         sequentialRead: true,
-        unlimited: true,  // Permitir imagens grandes
-        limitInputPixels: false  // Sem limite de pixels
-      });
-
-      // Processar a imagem
-      finalBuffer = await sharpInstance
+      })
         .resize(1200, 1200, {
           fit: 'inside',
           withoutEnlargement: true
@@ -299,52 +182,28 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         })
         .toBuffer();
 
-      // Destruir a instância explicitamente para liberar recursos
-      sharpInstance.destroy();
-
-      imageContentType = 'image/webp';
-
-      // Hash do resultado para verificar unicidade
-      const resultHash = crypto.createHash('sha256').update(finalBuffer).digest('hex').substring(0, 16);
-      console.log(`✅ [SHARP] Resultado: ${hash} -> ${resultHash} (${(originalSize/1024).toFixed(1)}KB -> ${(finalBuffer.length/1024).toFixed(1)}KB)`);
-
-      // Verificar se o resultado é diferente do input (sanity check)
-      if (resultHash === hash) {
-        console.warn(`⚠️ [SHARP] Hash de entrada e saída são iguais - possível problema de processamento`);
-      }
+      console.log(`[UPLOAD ${requestId}] Sharp OK: ${originalSize} -> ${optimizedBuffer.length} bytes`);
 
     } catch (sharpError: any) {
-      console.error('❌ [SHARP] Erro:', sharpError.message);
-
-      // Fallback: usar imagem original sem processamento
-      console.log(`⚠️ [UPLOAD] Usando imagem original sem processamento`);
-      finalBuffer = buffer;
-      imageContentType = file.type;
+      console.error(`[UPLOAD ${requestId}] Erro Sharp:`, sharpError.message);
+      // Fallback: usar imagem original
+      optimizedBuffer = buffer;
     }
 
-    // Upload para Supabase Storage com token autenticado
-    console.log(`☁️ [SUPABASE] Iniciando upload para: ${filePath}`);
-    console.log(`☁️ [SUPABASE] Tamanho do buffer final: ${finalBuffer.length} bytes`);
-
-    // DEBUG: Hash do buffer que será enviado ao Supabase
-    const uploadHash = crypto.createHash('sha256').update(finalBuffer).digest('hex').substring(0, 16);
-    console.log(`☁️ [SUPABASE] Hash do buffer para upload: ${uploadHash}`);
+    // Upload para Supabase Storage
+    console.log(`[UPLOAD ${requestId}] Enviando para Supabase...`);
 
     const supabase = getAuthenticatedSupabaseClient(cookies, authHeader);
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('imagens')
-      .upload(filePath, finalBuffer, {
-        contentType: imageContentType,
+      .upload(filePath, optimizedBuffer, {
+        contentType: 'image/webp',
         cacheControl: '3600',
         upsert: false
       });
 
-    console.log(`☁️ [SUPABASE] Resultado do upload:`, uploadData);
-
     if (uploadError) {
-      console.error('Upload error:', uploadError);
-
-      // Log de erro: falha no upload para Supabase Storage
+      console.error(`[UPLOAD ${requestId}] Erro Supabase:`, uploadError);
       await logImageUpload({
         fileName: file.name,
         fileSize: file.size,
@@ -352,80 +211,58 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         imageUrl: '',
         userEmail,
         status: 'error',
-        errorMessage: 'Erro ao fazer upload para Supabase Storage',
-        errorDetails: {
-          error: uploadError.message,
-          filePath,
-        },
+        errorMessage: 'Erro ao fazer upload para Storage',
+        errorDetails: { error: uploadError.message },
         ipAddress,
         userAgent,
       });
 
       return new Response(JSON.stringify({
-        error: 'Erro ao fazer upload da imagem',
-        requestId
+        error: 'Erro ao fazer upload da imagem'
       }), {
         status: 500,
-        headers: responseHeaders,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // Obter URL pública com cache-busting
+    // Obter URL pública
     const { data: { publicUrl } } = supabase.storage
       .from('imagens')
       .getPublicUrl(filePath);
 
-    // IMPORTANTE: Usar UUID único para cache-busting ao invés de timestamp
-    // Quando múltiplas imagens são enviadas em paralelo, timestamp pode ser o mesmo,
-    // causando cache incorreto no navegador
-    const cacheBustingId = uuidv4();
-    const cacheBustingUrl = `${publicUrl}?v=${cacheBustingId}`;
+    // Adicionar cache-buster
+    const finalUrl = `${publicUrl}?v=${uuid}`;
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📸 [RESULTADO] Upload completo!');
-    console.log(`📸 [RESULTADO] Arquivo original: ${file.name}`);
-    console.log(`📸 [RESULTADO] Nome no storage: ${fileName}`);
-    console.log(`📸 [RESULTADO] Path: ${filePath}`);
-    console.log(`📸 [RESULTADO] URL pública: ${publicUrl}`);
-    console.log(`📸 [RESULTADO] URL com cache-busting: ${cacheBustingUrl}`);
-    console.log(`📸 [RESULTADO] Hash original: ${hash}`);
-    console.log(`📸 [RESULTADO] Hash enviado: ${uploadHash}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`✅ [UPLOAD ${requestId}] Sucesso: ${finalUrl}`);
 
-    // Log de sucesso: upload realizado com sucesso
+    // Log de sucesso
     await logImageUpload({
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type,
-      imageUrl: cacheBustingUrl,
+      imageUrl: finalUrl,
       userEmail,
       status: 'success',
       ipAddress,
       userAgent,
     });
 
-    console.log(`✅ [REQUEST ${requestId}] Upload completo com sucesso!`);
-
     return new Response(JSON.stringify({
-      url: cacheBustingUrl,
+      url: finalUrl,
       path: filePath,
       fileName: fileName,
       optimized: true,
       originalSize: originalSize,
-      optimizedSize: finalBuffer.length,
-      savings: ((1 - finalBuffer.length / originalSize) * 100).toFixed(1) + '%',
-      requestId, // ID gerado pelo servidor
-      frontendRequestId: frontendRequestId || null, // ID enviado pelo frontend
-      frontendFileHash: frontendFileHash || null, // Hash enviado pelo frontend
-      serverFileHash: hash, // Hash calculado pelo servidor
+      optimizedSize: optimizedBuffer.length,
+      savings: ((1 - optimizedBuffer.length / originalSize) * 100).toFixed(1) + '%'
     }), {
       status: 200,
-      headers: responseHeaders,
+      headers: { 'Content-Type': 'application/json' },
     });
-  } catch (error: any) {
-    console.error(`❌ [REQUEST ${requestId}] Upload error:`, error);
 
-    // Log de erro: exceção não tratada
+  } catch (error: any) {
+    console.error(`❌ [UPLOAD ${requestId}] Erro:`, error);
+
     await logImageUpload({
       fileName: 'unknown',
       fileSize: 0,
@@ -433,25 +270,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       imageUrl: '',
       userEmail,
       status: 'error',
-      errorMessage: 'Exceção não tratada no upload',
-      errorDetails: {
-        error: error.message,
-        stack: error.stack,
-        requestId,
-      },
+      errorMessage: 'Exceção não tratada',
+      errorDetails: { error: error.message },
       ipAddress,
       userAgent,
     });
 
-    return new Response(JSON.stringify({ error: error.message, requestId }), {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: responseHeaders,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 };
 
 // DELETE - Deletar imagem(ns)
-export const DELETE: APIRoute = async ({ request, cookies, url }) => {
+export const DELETE: APIRoute = async ({ request, cookies }) => {
   const { userAgent, ipAddress } = getRequestInfo(request);
   const userEmail = await getUserEmail(cookies);
 
@@ -466,11 +299,7 @@ export const DELETE: APIRoute = async ({ request, cookies, url }) => {
     }
 
     const body = await request.json();
-
-    // Suporta tanto path único quanto array de paths
     const paths = body.paths || (body.path ? [body.path] : []);
-
-    // Verificar se deve pular logs (para limpeza de imagens temporárias)
     const skipLog = body.skipLog === true;
 
     if (!paths || paths.length === 0) {
@@ -486,7 +315,6 @@ export const DELETE: APIRoute = async ({ request, cookies, url }) => {
       .remove(paths);
 
     if (error) {
-      // Log de erro: falha ao remover imagem (apenas se não skipLog)
       if (!skipLog) {
         for (const path of paths) {
           const fileName = path.split('/').pop() || path;
@@ -495,17 +323,15 @@ export const DELETE: APIRoute = async ({ request, cookies, url }) => {
             imageUrl: path,
             userEmail,
             status: 'error',
-            errorMessage: 'Erro ao remover imagem do Storage',
+            errorMessage: 'Erro ao remover imagem',
             ipAddress,
             userAgent,
           });
         }
       }
-
       throw error;
     }
 
-    // Log de sucesso: imagens removidas (apenas se não skipLog)
     if (!skipLog) {
       for (const path of paths) {
         const fileName = path.split('/').pop() || path;
@@ -518,8 +344,6 @@ export const DELETE: APIRoute = async ({ request, cookies, url }) => {
           userAgent,
         });
       }
-    } else {
-      console.log(`🧹 ${paths.length} imagem(ns) temporária(s) removida(s) (sem log)`);
     }
 
     return new Response(JSON.stringify({
