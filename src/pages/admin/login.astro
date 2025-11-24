@@ -263,10 +263,11 @@ console.log('[Login Page SSR] Renderizando página de login');
         // Aguardar cookies serem salvos
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        console.log('🚀 [LOGIN] Redirecionando para /admin/dashboard...');
+        console.log('🚀 [LOGIN] Redirecionando para /admin/produtos...');
 
+        // FIX BUG 1.3: Unificar com redirect do middleware (/admin/produtos)
         // Forçar redirect completo
-        window.location.href = '/admin/dashboard';
+        window.location.href = '/admin/produtos';
       } catch (error: any) {
         console.error('═══════════════════════════════════════════════════');
         console.error('❌ [LOGIN] ERRO capturado:', error);

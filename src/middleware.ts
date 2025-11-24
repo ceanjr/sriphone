@@ -3,6 +3,31 @@ import { defineMiddleware } from 'astro:middleware';
 import { supabase } from './lib/supabase';
 import type { AstroCookies } from 'astro';
 
+// ============================================================================
+// CACHE DE USUÁRIO - FIX BUG 1.1
+// Previne race conditions em verificações simultâneas
+// ============================================================================
+
+interface CachedUser {
+  user: any;
+  timestamp: number;
+}
+
+const userCache = new Map<string, CachedUser>();
+const CACHE_TTL = 2000; // 2 segundos
+
+/**
+ * Limpa entradas expiradas do cache
+ */
+function cleanExpiredCache() {
+  const now = Date.now();
+  for (const [key, value] of userCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      userCache.delete(key);
+    }
+  }
+}
+
 /**
  * Extrai o access token do request (header Authorization ou cookies via Astro API)
  */
@@ -93,10 +118,22 @@ async function refreshSession(cookies: AstroCookies, refreshToken: string): Prom
 /**
  * Verifica se o token é válido e retorna o usuário
  * Se o token expirou, tenta fazer refresh automaticamente
+ *
+ * FIX BUG 1.1: Implementa cache de 2s para prevenir race conditions
  */
 async function verifyToken(accessToken: string, cookies: AstroCookies) {
   try {
-    console.log('[Middleware] Verificando token com Supabase...');
+    // Usar primeiros 20 caracteres do token como chave de cache
+    const cacheKey = accessToken.substring(0, 20);
+
+    // Verificar cache primeiro
+    const cached = userCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log('[Middleware] ✅ User from cache (prevented race condition)');
+      return { user: cached.user, error: null };
+    }
+
+    console.log('[Middleware] 🔍 Verificando token com Supabase...');
     const { data: { user }, error } = await supabase.auth.getUser(accessToken);
 
     if (error) {
@@ -119,7 +156,19 @@ async function verifyToken(accessToken: string, cookies: AstroCookies) {
       return { user: null, error: null };
     }
 
-    console.log('[Middleware] Usuário autenticado:', user.email);
+    console.log('[Middleware] ✅ Usuário autenticado:', user.email);
+
+    // Salvar no cache
+    userCache.set(cacheKey, {
+      user,
+      timestamp: Date.now()
+    });
+
+    // Limpar cache expirado periodicamente (quando ficar muito grande)
+    if (userCache.size > 100) {
+      cleanExpiredCache();
+    }
+
     return { user, error: null };
   } catch (error: any) {
     console.error('[Middleware] Exceção ao verificar token:', error.message);
@@ -171,24 +220,48 @@ export const onRequest = defineMiddleware(async ({ request, locals, redirect, co
 
   // Obter token uma única vez usando a API de cookies do Astro
   const accessToken = getAccessToken(request, cookies);
+  const refreshToken = cookies.get('sb-refresh-token')?.value;
+
+  // ============================================================================
+  // FIX BUG 1.2: Validar que AMBOS os cookies existem juntos
+  // Safari pode salvar apenas um dos cookies, causando falhas silenciosas
+  // ============================================================================
+  if ((accessToken && !refreshToken) || (!accessToken && refreshToken)) {
+    console.log('[Middleware] ⚠️ COOKIES INCOMPLETOS DETECTADOS');
+    console.log('[Middleware] Access token presente:', !!accessToken);
+    console.log('[Middleware] Refresh token presente:', !!refreshToken);
+    console.log('[Middleware] 🧹 Limpando TODOS os cookies de sessão...');
+
+    // Limpar TODOS os cookies de sessão
+    cookies.delete('sb-access-token', { path: '/' });
+    cookies.delete('sb-refresh-token', { path: '/' });
+    cookies.delete('sb-expires-at', { path: '/' });
+    cookies.delete('sb-auth-token', { path: '/' });
+
+    // Tratar como não autenticado
+    if (isAdminRoute) {
+      console.log('[Middleware] 🚫 Redirecionando para login (cookies incompletos)');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      const response = redirect('/admin/login');
+      response.headers.set('x-redirect-count', String(redirectCount + 1));
+      response.headers.set('x-redirect-reason', 'incomplete-cookies');
+      return response;
+    }
+
+    // Permitir acesso a rotas públicas
+    console.log('[Middleware] ➡️ Permitindo acesso a rota pública (cookies limpos)');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    return next();
+  }
 
   // Verificar autenticação se houver token
   let user = null;
-  if (accessToken) {
+  if (accessToken && refreshToken) {
     const result = await verifyToken(accessToken, cookies);
     user = result.user;
     console.log(`[Middleware] 👤 Usuário encontrado: ${user ? user.email : 'NENHUM'}`);
-  } else {
-    // Sem access token, tentar refresh token diretamente
-    const refreshToken = cookies.get('sb-refresh-token')?.value;
-    if (refreshToken) {
-      console.log('[Middleware] ⚠️ Sem access token, mas encontrado refresh token. Tentando refresh...');
-      const result = await refreshSession(cookies, refreshToken);
-      user = result.user;
-      console.log(`[Middleware] 👤 Usuário após refresh: ${user ? user.email : 'NENHUM'}`);
-    } else {
-      console.log('[Middleware] ⚠️ Nenhum token de acesso encontrado');
-    }
+  } else if (!accessToken && !refreshToken) {
+    console.log('[Middleware] ⚠️ Nenhum token de acesso encontrado (OK, usuário não logado)');
   }
 
   // Proteger rotas administrativas

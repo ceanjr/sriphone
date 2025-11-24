@@ -9,8 +9,8 @@ export default defineConfig({
   adapter: vercel({
     // ISR habilitado com cache reduzido para atualizações mais rápidas
     isr: {
-      // Cache de 10 segundos para páginas dinâmicas (atualização rápida)
-      expiration: 10,
+      // FIX BUG 5.1: Cache de 5 segundos (reduzido de 10s para melhor consistência)
+      expiration: 5,
       // Exclui rotas admin e API admin do ISR (sempre SSR puro sem cache)
       exclude: ['/api/admin', '/api/admin/*', '/admin', '/admin/*', '/admin/**/*'],
     },

@@ -18,6 +18,15 @@ const { title, description = 'Painel administrativo Sr. IPHONE VCA' } =
 // que pode causar problemas de redirecionamento
 console.log('[AdminLayout] Renderizando layout para:', Astro.url.pathname);
 console.log('[AdminLayout] Usuário autenticado via middleware:', !!Astro.locals.user);
+
+// FIX BUG 1.5: Headers anti-cache para TODAS as páginas admin
+// Previne cache de páginas autenticadas
+Astro.response.headers.set('Cache-Control', 'private, no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0');
+Astro.response.headers.set('Pragma', 'no-cache');
+Astro.response.headers.set('Expires', '0');
+Astro.response.headers.set('Surrogate-Control', 'no-store');
+Astro.response.headers.set('CDN-Cache-Control', 'no-store');
+Astro.response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
 ---
 
 <Layout title={title} description={description}>

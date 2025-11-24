@@ -354,9 +354,9 @@ const { data: produtos } = await supabaseAdmin
           if (result.success) {
             window.showToast('Produto deletado com sucesso!', 'success');
             setTimeout(() => {
-              // Forçar reload completo sem cache usando cache-busting
-              const timestamp = new Date().getTime();
-              window.location.href = `/admin/produtos?_t=${timestamp}`;
+              // FIX BUG 4.1: Usar reload() ao invés de redirect
+              // Força reload completo ignorando cache do browser
+              window.location.reload();
             }, 1000);
           } else {
             throw new Error(result.error || 'Erro ao deletar produto');

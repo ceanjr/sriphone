@@ -45,7 +45,8 @@ async function processOneImage(
   const imageId = `img${index}_${Date.now()}_${uuidv4().substring(0, 8)}`;
   console.log(`\n  [IMAGEM ${index + 1}] Processando: ${file.name}`);
 
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  // FIX BUG 2.3: Adicionar HEIC e HEIF (formatos do iPhone)
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
   if (!allowedTypes.includes(file.type)) {
     return { error: `Tipo não permitido: ${file.type}` };
   }

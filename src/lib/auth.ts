@@ -37,9 +37,9 @@ export async function verifyAuth(cookies: AstroCookies, authHeader?: string | nu
   try {
     console.log('[verifyAuth] 🔐 Verificando token com Supabase...');
 
-    // Adicionar timeout de 5 segundos
+    // FIX BUG 1.4: Aumentar timeout para 10s (redes lentas)
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 5000)
+      setTimeout(() => reject(new Error('Auth timeout')), 10000)
     );
 
     const authPromise = supabase.auth.getUser(accessToken);
