@@ -476,6 +476,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       const imagemPrincipal = getImageUrl(produto.imagens, 'medium', 0);
       const temBateria = produto.bateria && produto.bateria > 0;
 
+      // Preservar query params da URL atual (categoria)
+      const currentParams = new URLSearchParams(window.location.search);
+      const queryString = currentParams.toString();
+      const linkUrl = queryString
+        ? `/produto/${produto.id}?${queryString}`
+        : `/produto/${produto.id}`;
+
       const produtoEditData = JSON.stringify({
         id: produto.id,
         codigo: produto.codigo,
@@ -507,7 +514,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
       if (modo === 'lista') {
         return `
-            <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
+            <a href="${linkUrl}" class="produto-card" data-produto-id="${produto.id}">
               <div class="produto-info">
                 <div class="lista-left">
                   <h3>${utils.escapeHtml(produto.nome)}</h3>
@@ -525,7 +532,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       }
 
       return `
-          <a href="/produto/${produto.id}" class="produto-card" data-produto-id="${produto.id}">
+          <a href="${linkUrl}" class="produto-card" data-produto-id="${produto.id}">
             <div class="produto-image">
               ${
                 imagemPrincipal && imagemPrincipal !== '/placeholder.jpg'
@@ -891,6 +898,28 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         btnElement.dataset.view === initialMode,
       );
     });
+
+    // Restaurar categoria da URL se presente
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoriaUrl = urlParams.get('categoria');
+    if (categoriaUrl) {
+      console.log('🔍 Restaurando categoria da URL:', categoriaUrl);
+      updateState({ categoriaAtiva: categoriaUrl });
+
+      // Atualizar UI para refletir categoria ativa
+      document.querySelectorAll('.categoria-btn').forEach((btn) => {
+        const btnElement = btn as HTMLElement;
+        btnElement.classList.toggle(
+          'active',
+          btnElement.dataset.categoria === categoriaUrl,
+        );
+      });
+
+      // Atualizar select mobile
+      if (elementos.categoriaSelect) {
+        elementos.categoriaSelect.value = categoriaUrl;
+      }
+    }
 
     setupEventListeners();
 

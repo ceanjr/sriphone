@@ -21,19 +21,37 @@ export function createHandlers(elementos: any) {
     categoriaClick: (e: Event) => {
       const btn = e.currentTarget as HTMLElement;
       const categoriaId = btn.dataset.categoria || 'todos';
-      
+
       updateState({ categoriaAtiva: categoriaId });
       emitEvent(catalogEvents.CATEGORIA_CHANGED, { categoriaId });
-      
+
       document.querySelectorAll('.categoria-btn').forEach(b => {
         b.classList.toggle('active', b === btn);
       });
+
+      // Atualizar URL com query parameter para preservar filtro
+      const url = new URL(window.location.href);
+      if (categoriaId === 'todos') {
+        url.searchParams.delete('categoria');
+      } else {
+        url.searchParams.set('categoria', categoriaId);
+      }
+      window.history.pushState({}, '', url.toString());
     },
 
     categoriaSelectChange: (e: Event) => {
       const select = e.target as HTMLSelectElement;
       updateState({ categoriaAtiva: select.value });
       emitEvent(catalogEvents.CATEGORIA_CHANGED, { categoriaId: select.value });
+
+      // Atualizar URL com query parameter para preservar filtro
+      const url = new URL(window.location.href);
+      if (select.value === 'todos') {
+        url.searchParams.delete('categoria');
+      } else {
+        url.searchParams.set('categoria', select.value);
+      }
+      window.history.pushState({}, '', url.toString());
     },
 
     viewModeChange: (e: Event) => {
