@@ -404,51 +404,50 @@ const { data: categorias } = await supabaseAdmin
   console.log(`🔍 [BROWSER] Safari iOS: ${isSafariIOS}, UA: ${navigator.userAgent.substring(0, 100)}`);
 
   // ============================================================================
-  // FIX BUG 2.1: Função compressImage REMOVIDA
-  // Motivo: Canvas não respeita orientação EXIF de fotos mobile
-  // Solução: Deixar Sharp no servidor fazer todo o trabalho (já trata EXIF)
+  // FIX BUG 2.1 + FIX 413: Compressão que RESPEITA EXIF
+  // Biblioteca browser-image-compression respeita orientação EXIF e comprime eficientemente
   // ============================================================================
 
-  /* FUNÇÃO ORIGINAL COMENTADA - Causava rotação incorreta em fotos mobile
-  async function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<Blob> {
-    // Canvas não lê metadados EXIF, causando rotação incorreta!
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Erro ao criar contexto canvas'));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => {
-          if (blob) {
-            console.log(`   🗜️ Comprimido: ${file.size} -> ${blob.size} bytes (${Math.round(blob.size / file.size * 100)}%)`);
-            resolve(blob);
-          } else {
-            reject(new Error('Erro ao comprimir imagem'));
-          }
-        }, 'image/jpeg', quality);
-      };
-      img.onerror = () => reject(new Error('Erro ao carregar imagem'));
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
-      reader.readAsDataURL(file);
-    });
+  // Importar biblioteca que respeita EXIF
+  const imageCompression = (await import('browser-image-compression')).default;
+
+  /**
+   * Comprime imagem respeitando orientação EXIF (fotos mobile)
+   * Resolve erro 413 (Vercel 4.5MB limit) sem perder orientação correta
+   */
+  async function compressImage(file: File): Promise<File> {
+    console.log(`   📸 Original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+
+    const options = {
+      maxSizeMB: 3,              // Máximo 3MB após compressão (seguro para Vercel)
+      maxWidthOrHeight: 1920,    // Redimensionar se maior que 1920px
+      useWebWorker: true,        // Usar Web Worker para não bloquear UI
+      fileType: 'image/jpeg',    // Converter para JPEG
+      initialQuality: 0.85,      // Qualidade 85% (ótimo balanço)
+      alwaysKeepResolution: false,
+      exifOrientation: undefined, // AUTO - respeita EXIF automaticamente!
+    };
+
+    try {
+      const compressedFile = await imageCompression(file, options);
+      console.log(`   ✅ Comprimido: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (${Math.round(compressedFile.size / file.size * 100)}%)`);
+
+      // Validar que não ficou muito grande (Vercel limit)
+      if (compressedFile.size > 4 * 1024 * 1024) {
+        console.warn(`   ⚠️ Arquivo ainda muito grande após compressão, tentando compressão mais agressiva...`);
+        // Tentar compressão mais agressiva
+        const aggressiveOptions = { ...options, maxSizeMB: 2, initialQuality: 0.75 };
+        const recompressed = await imageCompression(compressedFile, aggressiveOptions);
+        console.log(`   ✅ Re-comprimido: ${(recompressed.size / 1024 / 1024).toFixed(2)}MB`);
+        return recompressed;
+      }
+
+      return compressedFile;
+    } catch (error: any) {
+      console.error(`   ❌ Erro ao comprimir:`, error);
+      throw new Error(`Falha ao comprimir imagem: ${error.message}`);
+    }
   }
-  */
 
   // Helper para parsear JSON de forma segura (Safari retorna erro genérico)
   async function safeJsonParse(response: Response): Promise<any> {
@@ -500,14 +499,22 @@ const { data: categorias } = await supabaseAdmin
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      // FIX BUG 2.1: Enviar arquivo original (Sharp no servidor trata EXIF corretamente)
       const fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-      console.log(`   📁 Processando ${i + 1}/${files.length}: ${file.name} (${file.size} bytes)`);
-      console.log(`   ✅ Enviando original (Sharp no servidor irá comprimir e corrigir EXIF)`);
+      console.log(`   📁 Processando ${i + 1}/${files.length}: ${file.name}`);
 
-      // Enviar arquivo ORIGINAL - Sharp no servidor faz compressão + correção EXIF
-      formData.append(`file${i}`, file, fileName);
+      try {
+        // FIX 413: Comprimir COM respeito a EXIF (biblioteca browser-image-compression)
+        const compressedFile = await compressImage(file);
+        formData.append(`file${i}`, compressedFile, fileName.replace(/\.[^.]+$/, '.jpg'));
+      } catch (compressError: any) {
+        console.error(`   ❌ Erro ao comprimir ${file.name}:`, compressError);
+        // Se compressão falhar, validar tamanho antes de enviar original
+        if (file.size > 4 * 1024 * 1024) {
+          throw new Error(`Imagem ${file.name} muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB.`);
+        }
+        formData.append(`file${i}`, file, fileName);
+      }
     }
 
     // UMA ÚNICA requisição para todas as imagens
