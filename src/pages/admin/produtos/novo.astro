@@ -142,35 +142,83 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // CORREÇÃO DEFINITIVA: Cache-busting + Preview correto
+  // CORREÇÃO DEFINITIVA: Cache-busting + Preview correto + DOM Ready Fix
   // ============================================================================
 
   const state = { urls: [] as string[], isUploading: false };
-  const elements = {
-    form: document.getElementById('product-form') as HTMLFormElement,
-    fileInput: document.getElementById('foto-upload') as HTMLInputElement,
-    uploadArea: document.getElementById('upload-area') as HTMLElement,
-    submitBtn: document.getElementById('submit-btn') as HTMLButtonElement,
-    submitText: document.getElementById('submit-text') as HTMLSpanElement,
-    finalImagesInput: document.getElementById(
-      'final-images-json'
-    ) as HTMLInputElement,
+
+  let elements: {
+    form: HTMLFormElement | null;
+    fileInput: HTMLInputElement | null;
+    uploadArea: HTMLElement | null;
+    submitBtn: HTMLButtonElement | null;
+    submitText: HTMLSpanElement | null;
+    finalImagesInput: HTMLInputElement | null;
   };
 
+  function initElements() {
+    elements = {
+      form: document.getElementById('product-form') as HTMLFormElement,
+      fileInput: document.getElementById('foto-upload') as HTMLInputElement,
+      uploadArea: document.getElementById('upload-area') as HTMLElement,
+      submitBtn: document.getElementById('submit-btn') as HTMLButtonElement,
+      submitText: document.getElementById('submit-text') as HTMLSpanElement,
+      finalImagesInput: document.getElementById(
+        'final-images-json'
+      ) as HTMLInputElement,
+    };
+  }
+
   function init() {
-    if (!elements.form) return;
+    console.log('[INIT] Iniciando sistema de upload...');
+
+    initElements();
+
+    console.log('[INIT] Elements:', {
+      form: !!elements.form,
+      fileInput: !!elements.fileInput,
+      uploadArea: !!elements.uploadArea,
+      submitBtn: !!elements.submitBtn,
+    });
+
+    if (!elements.form) {
+      console.error('[INIT] Formulário não encontrado!');
+      return;
+    }
+
+    if (!elements.fileInput) {
+      console.error('[INIT] Input de arquivo não encontrado!');
+      return;
+    }
+
+    if (!elements.uploadArea) {
+      console.error('[INIT] Área de upload não encontrada!');
+      return;
+    }
 
     // Hard reset
     state.urls = [];
     state.isUploading = false;
     syncState();
 
+    console.log('[INIT] Adicionando event listeners...');
+
     elements.fileInput.addEventListener('change', handleFileSelect);
+    console.log('[INIT] ✓ Listener de change adicionado');
+
     elements.uploadArea.addEventListener('click', () => {
-      if (!state.isUploading && state.urls.length < 5)
-        elements.fileInput.click();
+      console.log('[CLICK] Área de upload clicada');
+      if (!state.isUploading && state.urls.length < 5) {
+        console.log('[CLICK] Abrindo seletor de arquivos...');
+        elements.fileInput?.click();
+      } else {
+        console.log('[CLICK] Upload em andamento ou limite atingido');
+      }
     });
+    console.log('[INIT] ✓ Listener de click adicionado');
+
     elements.form.addEventListener('submit', handleSubmit);
+    console.log('[INIT] ✓ Listener de submit adicionado');
 
     (window as any).removeImage = (i: number) => {
       state.urls.splice(i, 1);
@@ -181,14 +229,20 @@ const { data: categorias } = await supabaseAdmin
         const [img] = state.urls.splice(i, 1);
         state.urls.unshift(img);
         syncState();
-        window.showToast('Imagem principal definida', 'success');
+        window.showToast?.('Imagem principal definida', 'success');
       }
     };
+
+    console.log('[INIT] ✅ Inicialização completa!');
   }
 
   async function handleFileSelect(e: Event) {
+    console.log('[FILE SELECT] Evento disparado!', e);
+
     const input = e.target as HTMLInputElement;
     const files = Array.from(input.files || []);
+
+    console.log(`[FILE SELECT] ${files.length} arquivo(s) selecionado(s)`);
 
     // CRÍTICO: Limpar input IMEDIATAMENTE para evitar cache do browser
     input.value = '';
@@ -295,12 +349,19 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function syncState() {
+    if (!elements.finalImagesInput) {
+      console.error('[SYNC] Input de imagens finais não encontrado');
+      return;
+    }
     elements.finalImagesInput.value = JSON.stringify(state.urls);
     renderPreviews();
   }
 
   function updateSubmitUI() {
-    if (!elements.submitBtn) return;
+    if (!elements.submitBtn || !elements.submitText) {
+      console.warn('[UPDATE UI] Botão de submit não encontrado');
+      return;
+    }
     elements.submitBtn.disabled = state.isUploading;
     elements.submitText.innerHTML = state.isUploading
       ? 'Enviando...'
@@ -308,6 +369,11 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function renderPlaceholder(id: string) {
+    if (!elements.uploadArea) {
+      console.error('[PLACEHOLDER] Upload area não encontrada');
+      return;
+    }
+
     let grid = elements.uploadArea.querySelector('.images-preview-grid');
     if (!grid) {
       elements.uploadArea.innerHTML = '<div class="images-preview-grid"></div>';
@@ -321,6 +387,11 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function renderPreviews() {
+    if (!elements.uploadArea) {
+      console.error('[RENDER] Upload area não encontrada');
+      return;
+    }
+
     const hasPlaceholders = elements.uploadArea.querySelector('.loading');
     if (state.urls.length === 0 && !hasPlaceholders) {
       elements.uploadArea.innerHTML = `
@@ -434,7 +505,25 @@ const { data: categorias } = await supabaseAdmin
     }
   }
 
-  init();
+  // Garantir que o código só execute após o DOM estar pronto
+  if (document.readyState === 'loading') {
+    console.log('[DOM] Aguardando DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('[DOM] DOMContentLoaded disparado');
+      try {
+        init();
+      } catch (error) {
+        console.error('[INIT ERROR]:', error);
+      }
+    });
+  } else {
+    console.log('[DOM] DOM já está pronto');
+    try {
+      init();
+    } catch (error) {
+      console.error('[INIT ERROR]:', error);
+    }
+  }
 </script>
 
 <style>
