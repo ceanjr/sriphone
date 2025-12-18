@@ -294,11 +294,11 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // 🔥 SOLUÇÃO DEFINITIVA - SEM DETECÇÃO DE DUPLICATAS
+  // 🔥 VERSÃO FINAL - COM CORREÇÃO DE IMAGENS REPETIDAS
   // ============================================================================
 
   const state = {
-    images: [] as Array<{ url: string; id: string }>, // Mudança: adicionar ID único
+    images: [] as Array<{ url: string; id: string; timestamp: number }>,
     uploading: false,
     uploadProgress: 0,
   };
@@ -338,7 +338,7 @@ const { data: categorias } = await supabaseAdmin
 
   function init() {
     console.log('[UPLOAD] ========================================');
-    console.log('[UPLOAD] Inicializando sistema DEFINITIVO...');
+    console.log('[UPLOAD] Inicializando sistema FINAL...');
 
     initElements();
 
@@ -423,7 +423,6 @@ const { data: categorias } = await supabaseAdmin
     const totalFiles = files.length;
     let successCount = 0;
 
-    // 🔥 SOLUÇÃO: Upload SEQUENCIAL com delay MAIOR
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`;
@@ -432,39 +431,32 @@ const { data: categorias } = await supabaseAdmin
         `[UPLOAD ${i + 1}/${totalFiles}] ========================================`
       );
       console.log(`[UPLOAD ${i + 1}/${totalFiles}] Arquivo: ${file.name}`);
-      console.log(
-        `[UPLOAD ${i + 1}/${totalFiles}] Tamanho: ${(file.size / 1024).toFixed(2)}KB`
-      );
 
       try {
         renderLoadingPlaceholder(tempId);
 
-        // Comprimir
         const compressedFile = await compressImage(file);
         console.log(
           `[UPLOAD ${i + 1}/${totalFiles}] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
         );
 
-        // 🔥 DELAY MAIOR: 500ms entre uploads
         if (i > 0) {
           console.log(`[UPLOAD ${i + 1}/${totalFiles}] ⏱️ Aguardando 500ms...`);
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
-        // Upload
         const result = await uploadToServer(compressedFile, file.name, i);
         console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ Upload OK`);
-        console.log(
-          `[UPLOAD ${i + 1}/${totalFiles}]    URL: ${result.url.substring(0, 80)}...`
-        );
 
-        // 🔥 SOLUÇÃO: Usar ID único ao invés de verificar URL duplicada
+        // 🔥 SOLUÇÃO: Adicionar timestamp único para cada imagem
         const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        const timestamp = Date.now() + i; // Garantir unicidade
 
         removeLoadingPlaceholder(tempId);
         state.images.push({
           url: result.url,
           id: imageId,
+          timestamp: timestamp, // ← Timestamp único para cache-busting
         });
         successCount++;
 
@@ -606,16 +598,20 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
+    // 🔥 SOLUÇÃO: Adicionar timestamp único a cada URL para forçar reload
     const imagesHtml = state.images
-      .map(
-        (image, index) => `
+      .map((image, index) => {
+        // Adicionar cache-busting único baseado no timestamp da imagem
+        const urlWithCacheBust = `${image.url}&preview=${image.timestamp}&idx=${index}`;
+
+        return `
       <div class="preview-card ${index === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${index})">
-        <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" data-id="${image.id}" />
+        <img src="${urlWithCacheBust}" alt="Foto ${index + 1}" loading="eager" data-id="${image.id}" />
         <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${index})">×</button>
         ${index === 0 ? '<span class="main-badge">Principal</span>' : ''}
       </div>
-    `
-      )
+    `;
+      })
       .join('');
 
     const addButtonHtml = canAddMore
@@ -660,8 +656,11 @@ const { data: categorias } = await supabaseAdmin
   function syncState() {
     if (!elements.finalImagesInput) return;
 
-    // Extrair apenas as URLs (sem o ID)
-    const urls = state.images.map((img) => img.url.split('?')[0]);
+    // Extrair apenas as URLs limpas (sem cache-busting)
+    const urls = state.images.map((img) => {
+      // Remover todos os parâmetros de query
+      return img.url.split('?')[0];
+    });
     elements.finalImagesInput.value = JSON.stringify(urls);
 
     console.log('[UPLOAD] Estado sincronizado:', urls.length, 'imagens');
