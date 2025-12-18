@@ -15,7 +15,7 @@ const ALLOWED_TYPES = [
   'image/heif',
 ];
 
-// Helper para gerar hash do conteúdo do arquivo
+// Helper melhorado para gerar hash do conteúdo do arquivo
 function simpleHash(buffer: Uint8Array): string {
   let hash = 0;
   const sampleSize = Math.min(buffer.length, 1024);
@@ -23,12 +23,14 @@ function simpleHash(buffer: Uint8Array): string {
     hash = (hash << 5) - hash + buffer[i];
     hash = hash & hash;
   }
-  return Math.abs(hash).toString(36).substring(0, 8);
+  // Adicionar timestamp ao hash para maior unicidade
+  const timeHash = Date.now().toString(36);
+  return Math.abs(hash).toString(36).substring(0, 8) + timeHash.substring(0, 4);
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const startTime = Date.now();
-  const requestId = crypto.randomUUID();
+  const requestId = crypto.randomUUID().substring(0, 8);
   console.log(
     `[API UPLOAD ${requestId}] ========================================`
   );
@@ -152,21 +154,40 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // 6. Gerar nome REALMENTE único
+    // 6. Gerar nome REALMENTE único - VERSÃO MELHORADA
     const timestamp = Date.now();
+    const microtime = performance.now().toString().replace('.', '');
     const uuid = crypto.randomUUID();
     const hashStr = simpleHash(buffer);
-    const nanotime = performance.now().toString().replace('.', '');
+    const randomSuffix = crypto.randomBytes(4).toString('hex');
+
+    // Extrair nome do arquivo sem extensão e sanitizar
+    const originalNameWithoutExt = file.name
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[^a-zA-Z0-9-]/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .substring(0, 20);
+
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
 
-    // CRÍTICO: Nome deve ser IMPOSSÍVEL de colidir
-    // Formato: timestamp-uuid-hash-nanotime.ext
-    const uniqueFileName = `${timestamp}-${uuid}-${hashStr}-${nanotime}.${fileExt}`;
+    // CRÍTICO: Múltiplas camadas de unicidade
+    // Formato: originalname-timestamp-microtime-uuid-hash-random.ext
+    const uniqueFileName = `${
+      originalNameWithoutExt || 'img'
+    }-${timestamp}-${microtime}-${uuid}-${hashStr}-${randomSuffix}.${fileExt}`;
 
     console.log(
       `[API UPLOAD ${requestId}] ✅ Nome único gerado:`,
       uniqueFileName
     );
+    console.log(`[API UPLOAD ${requestId}]    Componentes:`, {
+      original: originalNameWithoutExt,
+      timestamp,
+      microtime: microtime.substring(0, 10),
+      uuid: uuid.substring(0, 8),
+      hash: hashStr,
+      random: randomSuffix,
+    });
 
     // 7. Path no storage: produtos/uniqueFileName
     const filePath = `produtos/${uniqueFileName}`;
@@ -251,13 +272,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const cacheBust = `v=${timestamp}&u=${uuid.substring(
       0,
       8
-    )}&h=${hashStr}&n=${nanotime}`;
+    )}&h=${hashStr}&r=${randomSuffix}`;
     const finalUrl = `${urlData.publicUrl}?${cacheBust}`;
 
     const elapsed = Date.now() - startTime;
     console.log(
       `[API UPLOAD ${requestId}] ✅ Upload concluído em ${elapsed}ms`
     );
+    console.log(`[API UPLOAD ${requestId}] URL base: ${urlData.publicUrl}`);
     console.log(`[API UPLOAD ${requestId}] URL final: ${finalUrl}`);
 
     return new Response(
