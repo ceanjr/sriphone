@@ -147,19 +147,232 @@ const { data: categorias } = await supabaseAdmin
   </div>
 </AdminLayout>
 
+<style>
+  /* Upload Placeholder */
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #0a0a0a;
+    border-radius: 8px;
+    border: 2px dashed #333;
+    transition: all 0.2s;
+    min-height: 200px;
+  }
+  .upload-placeholder:hover {
+    border-color: #555;
+    background: #111;
+  }
+  .upload-placeholder svg {
+    color: #666;
+    margin-bottom: 16px;
+    width: 48px;
+    height: 48px;
+  }
+  .upload-placeholder p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #888;
+    margin: 0 0 4px 0;
+  }
+  .upload-placeholder small {
+    font-size: 12px;
+    color: #555;
+  }
+
+  /* Grid de Preview */
+  .images-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    padding: 12px;
+    background: #0a0a0a;
+    border-radius: 8px;
+    border: 1px solid #222;
+  }
+
+  /* Preview Card - TAMANHO FIXO */
+  .preview-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #333;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #000;
+  }
+  .preview-card.is-main {
+    border-color: #3b82f6;
+  }
+  .preview-card:hover {
+    border-color: #555;
+    transform: translateY(-2px);
+  }
+
+  /* Imagem - OBJECT-FIT COVER */
+  .preview-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  /* Loading State */
+  .preview-card.loading {
+    background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .preview-card .loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    border: 2px solid #444;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  /* Botões */
+  .remove-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s;
+    opacity: 0;
+  }
+  .preview-card:hover .remove-btn {
+    opacity: 1;
+  }
+  .remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+
+  .main-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(59, 130, 246, 0.95);
+    color: white;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    z-index: 5;
+  }
+
+  .add-more-btn {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    border: 2px dashed #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #0a0a0a;
+    color: #888;
+    transition: all 0.2s;
+  }
+  .add-more-btn:hover {
+    border-color: #666;
+    background: #151515;
+    color: #fff;
+  }
+  .add-more-btn svg {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 6px;
+  }
+  .add-more-btn span {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Progress */
+  .upload-progress {
+    position: relative;
+    height: 6px;
+    background: #222;
+    border-radius: 3px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .upload-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+    transition: width 0.3s;
+  }
+  .upload-progress-text {
+    position: absolute;
+    right: 8px;
+    top: -24px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #3b82f6;
+  }
+
+  .upload-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 12px;
+    text-align: center;
+  }
+</style>
+
 <script>
   // ============================================================================
-  // SISTEMA DE UPLOAD - VERSÃO FINAL (baseado no sistema Next.js)
+  // SISTEMA DE UPLOAD - VERSÃO DEFINITIVA (SEM CACHE)
   // ============================================================================
 
-  // Estado global
   const state = {
     images: [] as string[],
     uploading: false,
     uploadProgress: 0,
   };
 
-  // Elementos (inicializados após DOM ready)
   let elements: {
     form: HTMLFormElement;
     fileInput: HTMLInputElement;
@@ -169,19 +382,9 @@ const { data: categorias } = await supabaseAdmin
     finalImagesInput: HTMLInputElement;
   };
 
-  // Configurações
   const CONFIG = {
     maxImages: 5,
-    maxFileSize: 10 * 1024 * 1024, // 10MB
-    allowedTypes: [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/webp',
-      'image/gif',
-      'image/heic',
-      'image/heif',
-    ],
+    maxFileSize: 10 * 1024 * 1024,
     compressionOptions: {
       maxSizeMB: 1.5,
       maxWidthOrHeight: 1920,
@@ -189,10 +392,6 @@ const { data: categorias } = await supabaseAdmin
       initialQuality: 0.8,
     },
   };
-
-  // ============================================================================
-  // FUNÇÕES DE INICIALIZAÇÃO
-  // ============================================================================
 
   function initElements() {
     elements = {
@@ -208,57 +407,46 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function init() {
-    console.log('[UPLOAD] Inicializando sistema...');
-    console.log('[UPLOAD] User Agent:', navigator.userAgent);
-    console.log('[UPLOAD] Touch:', 'ontouchstart' in window);
+    console.log('[UPLOAD] ========================================');
+    console.log('[UPLOAD] Inicializando...');
 
     initElements();
 
-    // Verificar elementos
     if (!elements.form || !elements.fileInput || !elements.uploadArea) {
       console.error('[UPLOAD] Elementos não encontrados!');
       return;
     }
 
-    // Estado inicial
     state.images = [];
     state.uploading = false;
     state.uploadProgress = 0;
 
-    // Renderizar UI inicial
     renderUploadArea();
 
-    // Event Listeners
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.form.addEventListener('submit', handleSubmit);
 
-    // Funções globais para botões
     (window as any).removeImage = removeImage;
     (window as any).setMainImage = setMainImage;
     (window as any).triggerFileInput = () => elements.fileInput?.click();
 
     console.log('[UPLOAD] ✅ Sistema inicializado');
+    console.log('[UPLOAD] ========================================');
   }
 
-  // ============================================================================
-  // MANIPULAÇÃO DE ARQUIVOS
-  // ============================================================================
-
   async function handleFileSelect(e: Event) {
-    console.log('[UPLOAD] ========================================');
-    console.log('[UPLOAD] Seleção de arquivos iniciada');
+    console.log('[UPLOAD] ======== NOVO UPLOAD ========');
 
     const input = e.target as HTMLInputElement;
     const files = input.files;
 
     if (!files || files.length === 0) {
-      console.warn('[UPLOAD] Nenhum arquivo selecionado');
+      console.warn('[UPLOAD] Nenhum arquivo');
       return;
     }
 
     console.log(`[UPLOAD] ${files.length} arquivo(s) selecionado(s)`);
 
-    // Validar quantidade
     const remainingSlots = CONFIG.maxImages - state.images.length;
     if (remainingSlots === 0) {
       window.showToast?.('Máximo de 5 imagens atingido', 'warning');
@@ -266,62 +454,39 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
-    // Converter FileList para Array
     const filesArray = Array.from(files);
     const filesToProcess = filesArray.slice(0, remainingSlots);
 
-    if (filesToProcess.length < filesArray.length) {
-      window.showToast?.(
-        `Processando apenas ${filesToProcess.length} de ${filesArray.length} imagens`,
-        'info'
-      );
-    }
-
-    // Validar arquivos
     const validFiles: File[] = [];
     for (const file of filesToProcess) {
-      console.log(
-        `[UPLOAD] Validando: ${file.name} (${(file.size / 1024).toFixed(2)}KB, ${file.type})`
-      );
-
       if (!file.type.startsWith('image/')) {
-        window.showToast?.(`${file.name} não é uma imagem válida`, 'error');
+        window.showToast?.(`${file.name} não é uma imagem`, 'error');
         continue;
       }
-
       if (file.size > CONFIG.maxFileSize) {
-        window.showToast?.(`${file.name} é muito grande (máx 10MB)`, 'error');
+        window.showToast?.(`${file.name} é muito grande`, 'error');
         continue;
       }
-
       validFiles.push(file);
     }
 
     if (validFiles.length === 0) {
-      console.warn('[UPLOAD] Nenhum arquivo válido');
       input.value = '';
       return;
     }
 
-    console.log(`[UPLOAD] ${validFiles.length} arquivo(s) válido(s)`);
-
-    // Iniciar upload
     state.uploading = true;
     state.uploadProgress = 0;
     updateUploadUI();
-
-    // Limpar input após capturar arquivos
     input.value = '';
 
-    // Processar uploads
     await processUploads(validFiles);
 
-    // Finalizar
     state.uploading = false;
     state.uploadProgress = 0;
     updateUploadUI();
 
-    console.log('[UPLOAD] ========================================');
+    console.log('[UPLOAD] ======== FIM ========');
   }
 
   async function processUploads(files: File[]) {
@@ -330,46 +495,48 @@ const { data: categorias } = await supabaseAdmin
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      const tempId = `temp-${Date.now()}-${i}`;
+
       console.log(
-        `[UPLOAD ${i + 1}/${totalFiles}] Processando ${file.name}...`
+        `[UPLOAD ${i + 1}/${totalFiles}] ${file.name} (${(file.size / 1024).toFixed(2)}KB)`
       );
 
       try {
-        // Comprimir imagem
+        renderLoadingPlaceholder(tempId);
+
         const compressedFile = await compressImage(file);
         console.log(
-          `[UPLOAD ${i + 1}/${totalFiles}] Compressão: ${(file.size / 1024).toFixed(2)}KB → ${(compressedFile.size / 1024).toFixed(2)}KB`
+          `[UPLOAD ${i + 1}/${totalFiles}] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
         );
 
-        // Upload para servidor
         const url = await uploadToServer(compressedFile, file.name);
-        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ Success: ${url}`);
+        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ URL: ${url}`);
 
+        removeLoadingPlaceholder(tempId);
         uploadedUrls.push(url);
+        state.images.push(url);
+
         state.uploadProgress = Math.round(((i + 1) / totalFiles) * 100);
         updateUploadUI();
+        renderUploadArea();
       } catch (error: any) {
         console.error(`[UPLOAD ${i + 1}/${totalFiles}] ❌ Erro:`, error);
-        window.showToast?.(
-          `Erro ao enviar ${file.name}: ${error.message}`,
-          'error'
-        );
+        removeLoadingPlaceholder(tempId);
+        window.showToast?.(`Erro: ${file.name}`, 'error');
       }
     }
 
+    syncState();
+
     if (uploadedUrls.length > 0) {
-      state.images.push(...uploadedUrls);
-      syncState();
-      renderUploadArea();
       window.showToast?.(
-        `${uploadedUrls.length} imagem(ns) enviada(s) com sucesso!`,
+        `${uploadedUrls.length} imagem(ns) enviada(s)!`,
         'success'
       );
     }
   }
 
   async function compressImage(file: File): Promise<File> {
-    // Se o arquivo já é pequeno, não comprimir
     if (file.size <= 2 * 1024 * 1024) {
       return file;
     }
@@ -379,7 +546,7 @@ const { data: categorias } = await supabaseAdmin
         .default;
       return await imageCompression(file, CONFIG.compressionOptions);
     } catch (error) {
-      console.warn('[UPLOAD] Erro na compressão, usando original:', error);
+      console.warn('[UPLOAD] Erro na compressão:', error);
       return file;
     }
   }
@@ -389,19 +556,23 @@ const { data: categorias } = await supabaseAdmin
     originalName: string
   ): Promise<string> {
     const formData = new FormData();
-    const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${safeName}`;
+    formData.append('file', file, originalName);
 
-    formData.append('file', file, uniqueName);
+    // CRÍTICO: Adicionar timestamp na requisição para evitar cache
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
 
-    const response = await fetch(`/api/admin/upload?t=${Date.now()}`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        Pragma: 'no-cache',
-      },
-    });
+    const response = await fetch(
+      `/api/admin/upload?t=${timestamp}&r=${randomId}`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response
@@ -416,13 +587,22 @@ const { data: categorias } = await supabaseAdmin
       throw new Error('URL não retornada pelo servidor');
     }
 
-    // Adicionar cache-busting
-    return `${data.urls[0]}?v=${Date.now()}`;
+    // CRÍTICO: Adicionar cache-busting na URL APENAS para display
+    // O backend já garante nomes únicos
+    return `${data.urls[0]}?v=${timestamp}`;
   }
 
-  // ============================================================================
-  // MANIPULAÇÃO DE IMAGENS
-  // ============================================================================
+  function renderLoadingPlaceholder(id: string) {
+    const placeholder = document.createElement('div');
+    placeholder.id = id;
+    placeholder.className = 'preview-card loading';
+    placeholder.innerHTML = '<div class="loading-spinner"></div>';
+    elements.uploadArea.appendChild(placeholder);
+  }
+
+  function removeLoadingPlaceholder(id: string) {
+    document.getElementById(id)?.remove();
+  }
 
   function removeImage(index: number) {
     console.log(`[UPLOAD] Removendo imagem ${index}`);
@@ -443,10 +623,6 @@ const { data: categorias } = await supabaseAdmin
     window.showToast?.('Foto principal atualizada', 'success');
   }
 
-  // ============================================================================
-  // RENDERIZAÇÃO
-  // ============================================================================
-
   function renderUploadArea() {
     if (!elements.uploadArea) return;
 
@@ -460,7 +636,7 @@ const { data: categorias } = await supabaseAdmin
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
           <p>Clique para adicionar fotos</p>
-          <small>PNG, JPG, WEBP • Máximo ${CONFIG.maxImages} fotos • Até 10MB por foto</small>
+          <small>PNG, JPG, WEBP • Máximo 5 fotos • Até 10MB</small>
         </div>
       `;
       return;
@@ -504,7 +680,7 @@ const { data: categorias } = await supabaseAdmin
         ${imagesHtml}
         ${addButtonHtml}
       </div>
-      ${hasImages ? '<p class="upload-hint">💡 A primeira foto é a principal. Clique em uma foto para torná-la principal.</p>' : ''}
+      ${hasImages ? '<p class="upload-hint">💡 Clique em uma foto para torná-la principal</p>' : ''}
     `;
   }
 
@@ -520,20 +696,15 @@ const { data: categorias } = await supabaseAdmin
   function syncState() {
     if (!elements.finalImagesInput) return;
 
-    // Remover cache-busting antes de salvar
+    // CRÍTICO: Remover cache-busting antes de salvar no banco
     const cleanUrls = state.images.map((url) => url.split('?')[0]);
     elements.finalImagesInput.value = JSON.stringify(cleanUrls);
 
     console.log('[UPLOAD] Estado sincronizado:', cleanUrls.length, 'imagens');
   }
 
-  // ============================================================================
-  // SUBMIT DO FORMULÁRIO
-  // ============================================================================
-
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    console.log('[SUBMIT] Enviando formulário...');
 
     if (state.images.length === 0) {
       window.showToast?.('Adicione pelo menos uma foto', 'warning');
@@ -552,7 +723,6 @@ const { data: categorias } = await supabaseAdmin
     try {
       const formData = new FormData(elements.form);
 
-      // Limpar URLs (remover cache-busting)
       const cleanUrls = state.images.map((url) => url.split('?')[0]);
 
       const payload = {
@@ -569,8 +739,6 @@ const { data: categorias } = await supabaseAdmin
         imagens: cleanUrls,
       };
 
-      console.log('[SUBMIT] Payload:', payload);
-
       const response = await fetch('/api/admin/produtos', {
         method: 'POST',
         headers: {
@@ -585,23 +753,18 @@ const { data: categorias } = await supabaseAdmin
         throw new Error(errorData.error || 'Erro ao salvar produto');
       }
 
-      console.log('[SUBMIT] ✅ Produto criado com sucesso');
       window.showToast?.('Produto criado com sucesso!', 'success');
 
       setTimeout(() => {
         window.location.href = '/admin/produtos';
       }, 500);
     } catch (error: any) {
-      console.error('[SUBMIT] ❌ Erro:', error);
+      console.error('[SUBMIT] Erro:', error);
       window.showToast?.(error.message, 'error');
       elements.submitBtn.disabled = false;
       elements.submitText.textContent = 'Adicionar Produto';
     }
   }
-
-  // ============================================================================
-  // INICIALIZAÇÃO
-  // ============================================================================
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
@@ -609,172 +772,3 @@ const { data: categorias } = await supabaseAdmin
     init();
   }
 </script>
-
-<style>
-  /* Upload Placeholder */
-  .upload-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    background: #0a0a0a;
-    border-radius: 8px;
-    border: 2px dashed #333;
-    transition: all 0.2s;
-  }
-  .upload-placeholder:hover {
-    border-color: #555;
-    background: #111;
-  }
-  .upload-placeholder svg {
-    color: #666;
-    margin-bottom: 16px;
-  }
-  .upload-placeholder p {
-    font-size: 14px;
-    font-weight: 500;
-    color: #888;
-    margin-bottom: 4px;
-  }
-  .upload-placeholder small {
-    font-size: 12px;
-    color: #555;
-  }
-
-  /* Preview Grid */
-  .images-preview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    padding: 12px;
-    background: #111;
-    border-radius: 8px;
-    border: 1px solid #333;
-  }
-
-  /* Preview Card */
-  .preview-card {
-    position: relative;
-    aspect-ratio: 1;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid #333;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: #000;
-  }
-  .preview-card.is-main {
-    border-color: #3b82f6;
-  }
-  .preview-card:hover {
-    border-color: #555;
-    transform: translateY(-2px);
-  }
-  .preview-card.is-main:hover {
-    border-color: #2563eb;
-  }
-  .preview-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  /* Botões */
-  .remove-btn {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(239, 68, 68, 0.95);
-    color: white;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    cursor: pointer;
-    z-index: 10;
-    transition: all 0.2s;
-  }
-  .remove-btn:hover {
-    background: #dc2626;
-    transform: scale(1.1);
-  }
-
-  .main-badge {
-    position: absolute;
-    bottom: 4px;
-    left: 4px;
-    background: rgba(59, 130, 246, 0.95);
-    color: white;
-    font-size: 10px;
-    padding: 3px 6px;
-    border-radius: 4px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .add-more-btn {
-    aspect-ratio: 1;
-    border-radius: 6px;
-    border: 2px dashed #444;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: #151515;
-    color: #888;
-    transition: all 0.2s;
-  }
-  .add-more-btn:hover {
-    border-color: #666;
-    background: #222;
-    color: #fff;
-    transform: translateY(-2px);
-  }
-  .add-more-btn svg {
-    margin-bottom: 4px;
-  }
-  .add-more-btn span {
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  /* Progress */
-  .upload-progress {
-    position: relative;
-    height: 4px;
-    background: #222;
-    border-radius: 2px;
-    margin-bottom: 12px;
-    overflow: hidden;
-  }
-  .upload-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #2563eb);
-    transition: width 0.3s ease;
-  }
-  .upload-progress-text {
-    position: absolute;
-    right: 8px;
-    top: -20px;
-    font-size: 11px;
-    color: #888;
-  }
-
-  /* Hint */
-  .upload-hint {
-    font-size: 11px;
-    color: #666;
-    margin-top: 8px;
-    text-align: center;
-  }
-</style>
