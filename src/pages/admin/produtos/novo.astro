@@ -429,24 +429,44 @@ const { data: categorias } = await supabaseAdmin
     const totalFiles = files.length;
     const uploadedUrls: string[] = [];
 
+    // CRÍTICO: Processar SEQUENCIALMENTE, não em paralelo
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const tempId = `temp-${Date.now()}-${i}`;
+      const tempId = `temp-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
 
       console.log(
-        `[UPLOAD ${i + 1}/${totalFiles}] ${file.name} (${(file.size / 1024).toFixed(2)}KB)`
+        `[UPLOAD ${i + 1}/${totalFiles}] ========================================`
+      );
+      console.log(`[UPLOAD ${i + 1}/${totalFiles}] Arquivo: ${file.name}`);
+      console.log(
+        `[UPLOAD ${i + 1}/${totalFiles}] Tamanho: ${(file.size / 1024).toFixed(2)}KB`
       );
 
       try {
         renderLoadingPlaceholder(tempId);
 
+        // Comprimir
         const compressedFile = await compressImage(file);
         console.log(
           `[UPLOAD ${i + 1}/${totalFiles}] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
         );
 
-        const url = await uploadToServer(compressedFile, file.name);
-        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ URL: ${url}`);
+        // CRÍTICO: Aguardar um pouco entre uploads para evitar colisão
+        if (i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
+        // Upload com índice único
+        const url = await uploadToServer(compressedFile, file.name, i);
+        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ URL recebida: ${url}`);
+
+        // VERIFICAÇÃO: Garantir que a URL é única
+        if (state.images.includes(url)) {
+          console.error(
+            `[UPLOAD ${i + 1}/${totalFiles}] ❌ URL DUPLICADA DETECTADA!`
+          );
+          throw new Error('URL duplicada detectada');
+        }
 
         removeLoadingPlaceholder(tempId);
         uploadedUrls.push(url);
@@ -455,6 +475,11 @@ const { data: categorias } = await supabaseAdmin
         state.uploadProgress = Math.round(((i + 1) / totalFiles) * 100);
         updateUploadUI();
         renderUploadArea();
+
+        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ Adicionado ao estado`);
+        console.log(
+          `[UPLOAD ${i + 1}/${totalFiles}] Total de imagens: ${state.images.length}`
+        );
       } catch (error: any) {
         console.error(`[UPLOAD ${i + 1}/${totalFiles}] ❌ Erro:`, error);
         removeLoadingPlaceholder(tempId);
@@ -463,6 +488,10 @@ const { data: categorias } = await supabaseAdmin
     }
 
     syncState();
+
+    console.log('[UPLOAD COMPLETE] ========================================');
+    console.log('[UPLOAD COMPLETE] URLs finais:', state.images);
+    console.log('[UPLOAD COMPLETE] Total:', state.images.length);
 
     if (uploadedUrls.length > 0) {
       window.showToast?.(
@@ -489,23 +518,37 @@ const { data: categorias } = await supabaseAdmin
 
   async function uploadToServer(
     file: File,
-    originalName: string
+    originalName: string,
+    uploadIndex: number // NOVO: índice do upload
   ): Promise<string> {
     const formData = new FormData();
-    formData.append('file', file, originalName);
 
-    // CRÍTICO: Adicionar timestamp na requisição para evitar cache
+    // CRÍTICO: Nome super único com múltiplos fatores de diferenciação
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
+    const randomId2 = Math.random().toString(36).substring(2, 15);
+    const microtime = performance.now().toString().replace('.', '');
 
+    // Extensão do arquivo
+    const ext = originalName.split('.').pop() || 'jpg';
+
+    // Nome final: timestamp_microtime_random1_random2_index.ext
+    const uniqueName = `${timestamp}_${microtime}_${randomId}_${randomId2}_${uploadIndex}.${ext}`;
+
+    console.log(`[UPLOAD ${uploadIndex}] Nome único gerado: ${uniqueName}`);
+
+    formData.append('file', file, uniqueName);
+
+    // Adicionar mais parâmetros únicos na URL
     const response = await fetch(
-      `/api/admin/upload?t=${timestamp}&r=${randomId}`,
+      `/api/admin/upload?t=${timestamp}&r=${randomId}&i=${uploadIndex}&m=${microtime}`,
       {
         method: 'POST',
         body: formData,
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           Pragma: 'no-cache',
+          Expires: '0',
         },
       }
     );
@@ -523,9 +566,12 @@ const { data: categorias } = await supabaseAdmin
       throw new Error('URL não retornada pelo servidor');
     }
 
-    // CRÍTICO: Adicionar cache-busting na URL APENAS para display
-    // O backend já garante nomes únicos
-    return `${data.urls[0]}?v=${timestamp}`;
+    // CRÍTICO: Adicionar parâmetros únicos na URL final para evitar cache
+    const finalUrl = `${data.urls[0]}?v=${timestamp}&i=${uploadIndex}&r=${randomId}`;
+
+    console.log(`[UPLOAD ${uploadIndex}] URL final: ${finalUrl}`);
+
+    return finalUrl;
   }
 
   function renderLoadingPlaceholder(id: string) {

@@ -398,21 +398,16 @@ const { data: categorias } = await supabaseAdmin
 
     let successCount = 0;
 
+    // CRÍTICO: Processar SEQUENCIALMENTE
     for (let i = 0; i < filesToProcess.length; i++) {
       const file = filesToProcess[i];
-      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const tempId = `temp-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
 
       console.log(
         `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] ============================`
       );
       console.log(
         `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] Arquivo: ${file.name}`
-      );
-      console.log(
-        `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] Tamanho: ${(file.size / 1024).toFixed(2)}KB`
-      );
-      console.log(
-        `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] Tipo: ${file.type}`
       );
 
       try {
@@ -422,10 +417,22 @@ const { data: categorias } = await supabaseAdmin
         renderLoadingPlaceholder(tempId);
 
         const compressed = await compressImage(file);
-        const url = await uploadImage(compressed, file.name);
 
-        // CRÍTICO: Adicionar cache-busting
-        const urlWithCacheBust = `${url}?v=${Date.now()}`;
+        // CRÍTICO: Delay entre uploads
+        if (i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
+        const url = await uploadImage(compressed, file.name, i);
+
+        // VERIFICAÇÃO: URL única
+        const allUrls = [...existingImageUrls, ...newUploadedUrls];
+        if (allUrls.includes(url)) {
+          console.error(`[EDIT UPLOAD ${i + 1}] ❌ URL DUPLICADA!`);
+          throw new Error('URL duplicada detectada');
+        }
+
+        const urlWithCacheBust = `${url}`; // Já tem cache-bust do uploadImage
 
         console.log(
           `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] ✅ SUCCESS!`
@@ -450,20 +457,6 @@ const { data: categorias } = await supabaseAdmin
         removeLoadingPlaceholder(tempId);
       }
     }
-
-    isUploading = false;
-    updateSubmitButton();
-
-    console.log(
-      '[EDIT UPLOAD COMPLETE] Total de novas imagens:',
-      newUploadedUrls.length
-    );
-
-    if (successCount > 0) {
-      window.showToast(`${successCount} imagem(ns) adicionada(s)`, 'success');
-    }
-
-    console.log('[EDIT FILE SELECT] ========================================');
   }
 
   // --- Image Processing ---
@@ -484,14 +477,26 @@ const { data: categorias } = await supabaseAdmin
 
   async function uploadImage(
     file: File,
-    originalName: string
+    originalName: string,
+    uploadIndex: number = 0 // NOVO
   ): Promise<string> {
     const formData = new FormData();
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${originalName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+
+    // Nome super único
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const randomId2 = Math.random().toString(36).substring(2, 15);
+    const microtime = performance.now().toString().replace('.', '');
+    const ext = originalName.split('.').pop() || 'jpg';
+
+    const uniqueName = `${timestamp}_${microtime}_${randomId}_${randomId2}_${uploadIndex}.${ext}`;
+
+    console.log(`[EDIT UPLOAD ${uploadIndex}] Nome único: ${uniqueName}`);
+
     formData.append('file', file, uniqueName);
 
-    const uploadUrl = `/api/admin/upload?t=${Date.now()}&r=${Math.random()}`;
-    console.log(`[FETCH] POST ${uploadUrl}`);
+    const uploadUrl = `/api/admin/upload?t=${timestamp}&r=${randomId}&i=${uploadIndex}&m=${microtime}`;
+    console.log(`[EDIT UPLOAD ${uploadIndex}] POST ${uploadUrl}`);
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
@@ -499,23 +504,26 @@ const { data: categorias } = await supabaseAdmin
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         Pragma: 'no-cache',
+        Expires: '0',
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[UPLOAD RESPONSE ERROR]:', errorText);
+      console.error(`[EDIT UPLOAD ${uploadIndex}] Erro:`, errorText);
       throw new Error('Falha no upload');
     }
 
     const data = await response.json();
-    console.log('[UPLOAD RESPONSE]:', data);
 
     if (!data.urls || !data.urls[0]) {
       throw new Error('Nenhuma URL retornada');
     }
 
-    return data.urls[0];
+    const finalUrl = `${data.urls[0]}?v=${timestamp}&i=${uploadIndex}&r=${randomId}`;
+    console.log(`[EDIT UPLOAD ${uploadIndex}] URL final: ${finalUrl}`);
+
+    return finalUrl;
   }
 
   // --- Rendering ---
