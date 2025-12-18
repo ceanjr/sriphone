@@ -126,11 +126,11 @@ const { data: categorias } = await supabaseAdmin
 </AdminLayout>
 
 <script>
-  // ============================================================================
-  // REFACTOR: ATOMIC UPLOAD SYSTEM (Inspirado no UPLOAD.md)
-  // ============================================================================
+  // ============================================================================ 
+  // REFACTOR: ATOMIC UPLOAD SYSTEM (Inspirado no UPLOAD.md) 
+  // ============================================================================ 
 
-  // Local State (Encapsulado para evitar poluição global entre páginas)
+  // Local State (Encapsulado para evitar poluição global entre páginas) 
   let state = {
     uploadedUrls: [] as string[],
     isUploading: false
@@ -336,7 +336,7 @@ const { data: categorias } = await supabaseAdmin
     padding: 40px; text-align: center; cursor: pointer; background: #0A0A0A;
     border-radius: 8px; border: 2px dashed #333; transition: 0.2s;
   }
-  .upload-placeholder:hover { border-color: #555; background: #111; }
+  .upload-placeholder:hover { border-color: #555; background: #111; } 
   .upload-placeholder svg { color: #666; margin-bottom: 12px; }
   .upload-placeholder p { font-size: 14px; color: #888; }
 </style>
