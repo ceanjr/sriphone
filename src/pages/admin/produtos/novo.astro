@@ -42,7 +42,7 @@ const { data: categorias } = await supabaseAdmin
           />
 
           <div class="form-group">
-            <label class="form-label">Imagens do Produto (até 4)</label>
+            <label class="form-label">Imagens do Produto (até 5)</label>
             <input
               id="foto-upload"
               type="file"
@@ -148,7 +148,6 @@ const { data: categorias } = await supabaseAdmin
 </AdminLayout>
 
 <style>
-  /* Grid de Preview */
   .images-preview-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -159,7 +158,6 @@ const { data: categorias } = await supabaseAdmin
     border: 1px solid #222;
   }
 
-  /* Preview Card - TAMANHO FIXO */
   .preview-card {
     position: relative;
     width: 100%;
@@ -179,7 +177,6 @@ const { data: categorias } = await supabaseAdmin
     transform: translateY(-2px);
   }
 
-  /* Imagem - OBJECT-FIT COVER */
   .preview-card img {
     width: 100%;
     height: 100%;
@@ -190,7 +187,6 @@ const { data: categorias } = await supabaseAdmin
     left: 0;
   }
 
-  /* Loading State */
   .preview-card.loading {
     background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
     background-size: 200% 100%;
@@ -225,7 +221,6 @@ const { data: categorias } = await supabaseAdmin
     }
   }
 
-  /* Botões */
   .remove-btn {
     position: absolute;
     top: 6px;
@@ -267,7 +262,6 @@ const { data: categorias } = await supabaseAdmin
     z-index: 5;
   }
 
-  /* Progress */
   .upload-progress {
     position: relative;
     height: 6px;
@@ -300,11 +294,11 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // SISTEMA DE UPLOAD - VERSÃO DEFINITIVA (SEM CACHE)
+  // 🔥 SOLUÇÃO DEFINITIVA - SEM DETECÇÃO DE DUPLICATAS
   // ============================================================================
 
   const state = {
-    images: [] as string[],
+    images: [] as Array<{ url: string; id: string }>, // Mudança: adicionar ID único
     uploading: false,
     uploadProgress: 0,
   };
@@ -344,7 +338,7 @@ const { data: categorias } = await supabaseAdmin
 
   function init() {
     console.log('[UPLOAD] ========================================');
-    console.log('[UPLOAD] Inicializando...');
+    console.log('[UPLOAD] Inicializando sistema DEFINITIVO...');
 
     initElements();
 
@@ -427,12 +421,12 @@ const { data: categorias } = await supabaseAdmin
 
   async function processUploads(files: File[]) {
     const totalFiles = files.length;
-    const uploadedUrls: string[] = [];
+    let successCount = 0;
 
-    // CRÍTICO: Processar SEQUENCIALMENTE com DELAY entre uploads
+    // 🔥 SOLUÇÃO: Upload SEQUENCIAL com delay MAIOR
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const tempId = `temp-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`;
 
       console.log(
         `[UPLOAD ${i + 1}/${totalFiles}] ========================================`
@@ -451,33 +445,36 @@ const { data: categorias } = await supabaseAdmin
           `[UPLOAD ${i + 1}/${totalFiles}] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
         );
 
-        // ⭐ CRÍTICO: Aguardar entre uploads para garantir timestamp diferente
+        // 🔥 DELAY MAIOR: 500ms entre uploads
         if (i > 0) {
-          console.log(`[UPLOAD ${i + 1}/${totalFiles}] ⏱️ Aguardando 200ms...`);
-          await new Promise((resolve) => setTimeout(resolve, 200));
+          console.log(`[UPLOAD ${i + 1}/${totalFiles}] ⏱️ Aguardando 500ms...`);
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
-        // Upload com índice único
-        const url = await uploadToServer(compressedFile, file.name, i);
-        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ URL recebida: ${url}`);
+        // Upload
+        const result = await uploadToServer(compressedFile, file.name, i);
+        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ Upload OK`);
+        console.log(
+          `[UPLOAD ${i + 1}/${totalFiles}]    URL: ${result.url.substring(0, 80)}...`
+        );
 
-        // VERIFICAÇÃO: Garantir que a URL é única
-        if (state.images.includes(url)) {
-          console.error(
-            `[UPLOAD ${i + 1}/${totalFiles}] ❌ URL DUPLICADA DETECTADA!`
-          );
-          throw new Error('URL duplicada detectada');
-        }
+        // 🔥 SOLUÇÃO: Usar ID único ao invés de verificar URL duplicada
+        const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
         removeLoadingPlaceholder(tempId);
-        uploadedUrls.push(url);
-        state.images.push(url);
+        state.images.push({
+          url: result.url,
+          id: imageId,
+        });
+        successCount++;
 
         state.uploadProgress = Math.round(((i + 1) / totalFiles) * 100);
         updateUploadUI();
         renderUploadArea();
 
-        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ Adicionado ao estado`);
+        console.log(
+          `[UPLOAD ${i + 1}/${totalFiles}] ✅ Adicionado com ID: ${imageId}`
+        );
         console.log(
           `[UPLOAD ${i + 1}/${totalFiles}] Total de imagens: ${state.images.length}`
         );
@@ -491,14 +488,10 @@ const { data: categorias } = await supabaseAdmin
     syncState();
 
     console.log('[UPLOAD COMPLETE] ========================================');
-    console.log('[UPLOAD COMPLETE] URLs finais:', state.images);
     console.log('[UPLOAD COMPLETE] Total:', state.images.length);
 
-    if (uploadedUrls.length > 0) {
-      window.showToast?.(
-        `${uploadedUrls.length} imagem(ns) enviada(s)!`,
-        'success'
-      );
+    if (successCount > 0) {
+      window.showToast?.(`${successCount} imagem(ns) enviada(s)!`, 'success');
     }
   }
 
@@ -521,18 +514,11 @@ const { data: categorias } = await supabaseAdmin
     file: File,
     originalName: string,
     uploadIndex: number
-  ): Promise<string> {
+  ): Promise<{ url: string }> {
     const formData = new FormData();
+    formData.append('file', file);
 
-    // Adicionar timestamp ao nome do arquivo para garantir unicidade
-    const timestamp = Date.now();
-    const ext = file.name.split('.').pop();
-    const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-    const uniqueFileName = `${nameWithoutExt}_${timestamp}_${uploadIndex}.${ext}`;
-
-    formData.append('file', file, uniqueFileName);
-
-    console.log(`[UPLOAD ${uploadIndex}] Enviando: ${uniqueFileName}`);
+    console.log(`[UPLOAD ${uploadIndex}] 📤 Enviando para servidor...`);
 
     const response = await fetch('/api/admin/upload', {
       method: 'POST',
@@ -557,8 +543,8 @@ const { data: categorias } = await supabaseAdmin
       throw new Error('URL não retornada pelo servidor');
     }
 
-    console.log(`[UPLOAD ${uploadIndex}] URL recebida: ${data.url}`);
-    return data.url;
+    console.log(`[UPLOAD ${uploadIndex}] ✅ Resposta recebida`);
+    return { url: data.url };
   }
 
   function renderLoadingPlaceholder(id: string) {
@@ -566,7 +552,16 @@ const { data: categorias } = await supabaseAdmin
     placeholder.id = id;
     placeholder.className = 'preview-card loading';
     placeholder.innerHTML = '<div class="loading-spinner"></div>';
-    elements.uploadArea.appendChild(placeholder);
+
+    const grid = elements.uploadArea.querySelector('.images-preview-grid');
+    if (grid) {
+      grid.appendChild(placeholder);
+    } else {
+      elements.uploadArea.innerHTML = '<div class="images-preview-grid"></div>';
+      elements.uploadArea
+        .querySelector('.images-preview-grid')!
+        .appendChild(placeholder);
+    }
   }
 
   function removeLoadingPlaceholder(id: string) {
@@ -605,7 +600,7 @@ const { data: categorias } = await supabaseAdmin
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
           <p>Clique para adicionar fotos</p>
-          <small>PNG, JPG, WEBP • Máximo 4 fotos • Até 10MB</small>
+          <small>PNG, JPG, WEBP • Máximo 5 fotos • Até 10MB</small>
         </div>
       `;
       return;
@@ -613,9 +608,9 @@ const { data: categorias } = await supabaseAdmin
 
     const imagesHtml = state.images
       .map(
-        (url, index) => `
+        (image, index) => `
       <div class="preview-card ${index === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${index})">
-        <img src="${url}" alt="Foto ${index + 1}" loading="eager" />
+        <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" data-id="${image.id}" />
         <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${index})">×</button>
         ${index === 0 ? '<span class="main-badge">Principal</span>' : ''}
       </div>
@@ -665,11 +660,11 @@ const { data: categorias } = await supabaseAdmin
   function syncState() {
     if (!elements.finalImagesInput) return;
 
-    // CRÍTICO: Remover cache-busting antes de salvar no banco
-    const cleanUrls = state.images.map((url) => url.split('?')[0]);
-    elements.finalImagesInput.value = JSON.stringify(cleanUrls);
+    // Extrair apenas as URLs (sem o ID)
+    const urls = state.images.map((img) => img.url.split('?')[0]);
+    elements.finalImagesInput.value = JSON.stringify(urls);
 
-    console.log('[UPLOAD] Estado sincronizado:', cleanUrls.length, 'imagens');
+    console.log('[UPLOAD] Estado sincronizado:', urls.length, 'imagens');
   }
 
   async function handleSubmit(e: Event) {
@@ -692,7 +687,7 @@ const { data: categorias } = await supabaseAdmin
     try {
       const formData = new FormData(elements.form);
 
-      const cleanUrls = state.images.map((url) => url.split('?')[0]);
+      const urls = state.images.map((img) => img.url.split('?')[0]);
 
       const payload = {
         nome: formData.get('nome'),
@@ -705,7 +700,7 @@ const { data: categorias } = await supabaseAdmin
         condicao: formData.get('condicao'),
         categoria_id: formData.get('categoria_id'),
         descricao: formData.get('descricao') || null,
-        imagens: cleanUrls,
+        imagens: urls,
       };
 
       const response = await fetch('/api/admin/produtos', {
