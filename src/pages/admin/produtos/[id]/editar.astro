@@ -502,8 +502,12 @@ const { data: categorias } = await supabaseAdmin
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       formData.append('file0', compressed, safeName);
 
-      const response = await fetch('/api/admin/upload', {
+      // FIX: Add timestamp to prevent caching of POST requests (Ghosting issue)
+      const response = await fetch(`/api/admin/upload?t=${Date.now()}`, {
         method: 'POST',
+        headers: {
+          'Cache-Control': 'no-cache, no-store'
+        },
         body: formData,
         credentials: 'include'
       });
@@ -515,6 +519,7 @@ const { data: categorias } = await supabaseAdmin
 
       const result = await response.json();
       if (result.urls && result.urls.length > 0) {
+        console.log(`✅ Upload success for ${safeName}:`, result.urls[0]);
         return result.urls[0];
       }
       throw new Error('Nenhuma URL retornada');

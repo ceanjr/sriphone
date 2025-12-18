@@ -216,7 +216,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       errors: errors.length > 0 ? errors : undefined,
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
     });
 
   } catch (error: any) {
