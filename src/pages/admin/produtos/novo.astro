@@ -315,7 +315,7 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // 🎯 VERSÃO FINAL CORRIGIDA - Preview Funcionando
+  // 🔥 SOLUÇÃO FINAL - CACHE HTTP DESABILITADO
   // ============================================================================
 
   const state = {
@@ -471,9 +471,8 @@ const { data: categorias } = await supabaseAdmin
 
         removeLoadingPlaceholder(tempId);
 
-        // 🔥 CRÍTICO: Salvar URL SEM modificações
         state.images.push({
-          url: result.url, // URL exata retornada pela API
+          url: result.url,
           id: imageId,
         });
         successCount++;
@@ -528,16 +527,23 @@ const { data: categorias } = await supabaseAdmin
     const formData = new FormData();
     formData.append('file', file);
 
-    console.log(`[UPLOAD ${uploadIndex}] 📤 Enviando para servidor...`);
+    // 🔥 SOLUÇÃO: Adicionar timestamp único na URL para evitar cache HTTP
+    const cacheBuster = `t=${Date.now()}&idx=${uploadIndex}&r=${Math.random()}`;
+    const uploadUrl = `/api/admin/upload?${cacheBuster}`;
 
-    const response = await fetch('/api/admin/upload', {
+    console.log(`[UPLOAD ${uploadIndex}] 📤 Enviando para: ${uploadUrl}`);
+
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
+      // 🔥 CRÍTICO: Headers anti-cache máximo
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         Pragma: 'no-cache',
         Expires: '0',
       },
+      // 🔥 CRÍTICO: Desabilitar cache no fetch
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -554,6 +560,10 @@ const { data: categorias } = await supabaseAdmin
     }
 
     console.log(`[UPLOAD ${uploadIndex}] ✅ Resposta recebida`);
+    console.log(
+      `[UPLOAD ${uploadIndex}]    URL: ${data.url.substring(0, 80)}...`
+    );
+
     return { url: data.url };
   }
 
@@ -616,7 +626,6 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
-    // 🔥 RENDERIZAR IMAGENS SEM MODIFICAR URL
     const imagesHtml = state.images
       .map(
         (image, index) => `
