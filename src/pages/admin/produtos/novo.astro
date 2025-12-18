@@ -46,8 +46,9 @@ const { data: categorias } = await supabaseAdmin
             <input
               id="foto-upload"
               type="file"
-              accept="image/*"
+              accept="image/*,image/heic,image/heif"
               multiple
+              capture="environment"
               style="display: none;"
             />
             <div class="form-image-upload" id="upload-area"></div>
@@ -171,6 +172,8 @@ const { data: categorias } = await supabaseAdmin
 
   function init() {
     console.log('[INIT] Iniciando sistema de upload...');
+    console.log('[INIT] User Agent:', navigator.userAgent);
+    console.log('[INIT] Touch device:', 'ontouchstart' in window);
 
     initElements();
 
@@ -203,14 +206,59 @@ const { data: categorias } = await supabaseAdmin
 
     console.log('[INIT] Adicionando event listeners...');
 
-    elements.fileInput.addEventListener('change', handleFileSelect);
+    // CORREÇÃO MOBILE: Adicionar múltiplos eventos para garantir captura
+    elements.fileInput.addEventListener('change', handleFileSelect, {
+      passive: false,
+    });
     console.log('[INIT] ✓ Listener de change adicionado');
 
+    // Evento adicional para iOS/Android
+    elements.fileInput.addEventListener(
+      'input',
+      (e) => {
+        console.log('[INIT] Input event disparado (mobile fallback)');
+        handleFileSelect(e);
+      },
+      { passive: false }
+    );
+    console.log('[INIT] ✓ Listener de input adicionado (mobile)');
+
+    // Backup para quando o input perde foco após seleção
+    let lastFocusTime = 0;
+    elements.fileInput.addEventListener('blur', () => {
+      const now = Date.now();
+      if (now - lastFocusTime > 500) {
+        // Evitar múltiplos triggers
+        console.log('[INIT] Blur event - verificando files...');
+        const files = elements.fileInput?.files;
+        if (files && files.length > 0) {
+          console.log('[INIT] Blur detectou arquivos, processando...');
+          handleFileSelect({ target: elements.fileInput } as any);
+        }
+      }
+      lastFocusTime = now;
+    });
+    console.log('[INIT] ✓ Listener de blur adicionado (mobile backup)');
+
+    // Click handler com verificação posterior
+    let clickTime = 0;
     elements.uploadArea.addEventListener('click', () => {
       console.log('[CLICK] Área de upload clicada');
       if (!state.isUploading && state.urls.length < 5) {
         console.log('[CLICK] Abrindo seletor de arquivos...');
+        clickTime = Date.now();
         elements.fileInput?.click();
+
+        // CORREÇÃO MOBILE: Verificar após 3 segundos se há arquivos
+        setTimeout(() => {
+          const files = elements.fileInput?.files;
+          if (files && files.length > 0 && !state.isUploading) {
+            console.log(
+              '[MOBILE FALLBACK] Detectados arquivos após timeout, processando...'
+            );
+            handleFileSelect({ target: elements.fileInput } as any);
+          }
+        }, 3000);
       } else {
         console.log('[CLICK] Upload em andamento ou limite atingido');
       }
@@ -237,26 +285,54 @@ const { data: categorias } = await supabaseAdmin
   }
 
   async function handleFileSelect(e: Event) {
-    console.log('[FILE SELECT] Evento disparado!', e);
+    console.log('[FILE SELECT] ========================================');
+    console.log('[FILE SELECT] Evento disparado!', e.type);
 
     const input = e.target as HTMLInputElement;
-    const files = Array.from(input.files || []);
+    const files = input.files;
 
-    console.log(`[FILE SELECT] ${files.length} arquivo(s) selecionado(s)`);
+    console.log('[FILE SELECT] Input:', input);
+    console.log('[FILE SELECT] Files object:', files);
+    console.log('[FILE SELECT] Files length:', files?.length || 0);
 
-    // CRÍTICO: Limpar input IMEDIATAMENTE para evitar cache do browser
-    input.value = '';
-
-    const toUpload = files.slice(0, 5 - state.urls.length);
-    if (toUpload.length === 0) {
-      window.showToast('Máximo de 5 imagens atingido', 'warning');
+    if (!files || files.length === 0) {
+      console.warn('[FILE SELECT] Nenhum arquivo selecionado!');
       return;
     }
 
+    const filesArray = Array.from(files);
+    console.log(
+      `[FILE SELECT] ${filesArray.length} arquivo(s) selecionado(s):`,
+      filesArray.map((f) => ({ name: f.name, size: f.size, type: f.type }))
+    );
+
+    // IMPORTANTE: Não limpar imediatamente no mobile para evitar perda de referência
+    // Vamos limpar apenas após começar o processamento
+
+    const toUpload = filesArray.slice(0, 5 - state.urls.length);
+
+    if (toUpload.length === 0) {
+      console.warn('[FILE SELECT] Limite de 5 imagens já atingido');
+      window.showToast('Máximo de 5 imagens atingido', 'warning');
+      input.value = ''; // Limpar aqui é seguro pois não vamos processar
+      return;
+    }
+
+    if (toUpload.length < filesArray.length) {
+      console.warn(
+        `[FILE SELECT] Limite: processando apenas ${toUpload.length} de ${filesArray.length} arquivos`
+      );
+    }
+
+    // Marcar como em upload ANTES de limpar o input
     state.isUploading = true;
     updateSubmitUI();
 
-    console.log(`[UPLOAD START] ${toUpload.length} arquivo(s)`);
+    // Agora sim podemos limpar o input
+    input.value = '';
+    console.log('[FILE SELECT] Input limpo após captura dos arquivos');
+
+    console.log(`[UPLOAD START] Processando ${toUpload.length} arquivo(s)...`);
 
     // Usar índice explícito para evitar bug de referência
     for (let i = 0; i < toUpload.length; i++) {
@@ -264,8 +340,13 @@ const { data: categorias } = await supabaseAdmin
       const tempId = `up-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       console.log(
-        `[UPLOAD ${i + 1}/${toUpload.length}] Arquivo: ${file.name}, Tamanho: ${(file.size / 1024).toFixed(2)}KB`
+        `[UPLOAD ${i + 1}/${toUpload.length}] ============================`
       );
+      console.log(`[UPLOAD ${i + 1}/${toUpload.length}] Arquivo: ${file.name}`);
+      console.log(
+        `[UPLOAD ${i + 1}/${toUpload.length}] Tamanho: ${(file.size / 1024).toFixed(2)}KB`
+      );
+      console.log(`[UPLOAD ${i + 1}/${toUpload.length}] Tipo: ${file.type}`);
 
       try {
         renderPlaceholder(tempId);
@@ -274,13 +355,16 @@ const { data: categorias } = await supabaseAdmin
         // CRÍTICO: Adicionar cache-busting na URL
         const urlWithCacheBust = `${url}?v=${Date.now()}`;
 
-        console.log(`[UPLOAD SUCCESS] URL: ${urlWithCacheBust}`);
+        console.log(`[UPLOAD ${i + 1}/${toUpload.length}] ✅ SUCCESS!`);
+        console.log(
+          `[UPLOAD ${i + 1}/${toUpload.length}] URL: ${urlWithCacheBust}`
+        );
 
         document.getElementById(tempId)?.remove();
         state.urls.push(urlWithCacheBust);
         syncState();
       } catch (err: any) {
-        console.error(`[UPLOAD ERROR] ${file.name}:`, err);
+        console.error(`[UPLOAD ${i + 1}/${toUpload.length}] ❌ ERROR:`, err);
         document.getElementById(tempId)?.remove();
         window.showToast(
           `Erro ao enviar ${file.name}: ${err.message}`,
@@ -292,12 +376,16 @@ const { data: categorias } = await supabaseAdmin
     state.isUploading = false;
     updateSubmitUI();
 
+    console.log('[UPLOAD COMPLETE] Total de imagens:', state.urls.length);
+
     if (state.urls.length > 0) {
       window.showToast(
-        `${state.urls.length} imagem(ns) adicionada(s)`,
+        `${toUpload.length} imagem(ns) adicionada(s)`,
         'success'
       );
     }
+
+    console.log('[FILE SELECT] ========================================');
   }
 
   async function processAndUpload(file: File): Promise<string> {

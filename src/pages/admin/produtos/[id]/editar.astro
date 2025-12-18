@@ -61,8 +61,9 @@ const { data: categorias } = await supabaseAdmin
             <input
               id="foto-upload"
               type="file"
-              accept="image/*"
+              accept="image/*,image/heic,image/heif"
               multiple
+              capture="environment"
               style="display: none;"
             />
             <div class="form-image-upload" id="upload-area">
@@ -245,6 +246,8 @@ const { data: categorias } = await supabaseAdmin
 
   function init() {
     console.log('[EDIT INIT] Iniciando sistema de upload...');
+    console.log('[EDIT INIT] User Agent:', navigator.userAgent);
+    console.log('[EDIT INIT] Touch device:', 'ontouchstart' in window);
 
     initElements();
 
@@ -276,8 +279,36 @@ const { data: categorias } = await supabaseAdmin
     // Event Listeners
     console.log('[EDIT INIT] Adicionando event listeners...');
 
-    fileInput?.addEventListener('change', handleFileSelect);
+    // CORREÇÃO MOBILE: Múltiplos eventos
+    fileInput?.addEventListener('change', handleFileSelect, { passive: false });
     console.log('[EDIT INIT] ✓ Listener de change adicionado');
+
+    // Evento adicional para iOS/Android
+    fileInput?.addEventListener(
+      'input',
+      (e) => {
+        console.log('[EDIT INIT] Input event disparado (mobile fallback)');
+        handleFileSelect(e);
+      },
+      { passive: false }
+    );
+    console.log('[EDIT INIT] ✓ Listener de input adicionado (mobile)');
+
+    // Backup para blur
+    let lastFocusTime = 0;
+    fileInput?.addEventListener('blur', () => {
+      const now = Date.now();
+      if (now - lastFocusTime > 500) {
+        console.log('[EDIT INIT] Blur event - verificando files...');
+        const files = fileInput?.files;
+        if (files && files.length > 0) {
+          console.log('[EDIT INIT] Blur detectou arquivos, processando...');
+          handleFileSelect({ target: fileInput } as any);
+        }
+      }
+      lastFocusTime = now;
+    });
+    console.log('[EDIT INIT] ✓ Listener de blur adicionado (mobile backup)');
 
     uploadArea?.addEventListener('click', handleAreaClick);
     console.log('[EDIT INIT] ✓ Listener de click adicionado');
@@ -315,29 +346,55 @@ const { data: categorias } = await supabaseAdmin
   }
 
   async function handleFileSelect(e: Event) {
-    console.log('[EDIT FILE SELECT] Evento disparado!', e);
+    console.log('[EDIT FILE SELECT] ========================================');
+    console.log('[EDIT FILE SELECT] Evento disparado!', e.type);
 
     const input = e.target as HTMLInputElement;
-    const files = Array.from(input.files || []);
+    const files = input.files;
 
-    console.log(`[EDIT FILE SELECT] ${files.length} arquivo(s) selecionado(s)`);
+    console.log('[EDIT FILE SELECT] Input:', input);
+    console.log('[EDIT FILE SELECT] Files object:', files);
+    console.log('[EDIT FILE SELECT] Files length:', files?.length || 0);
 
-    // CRÍTICO: Limpar input IMEDIATAMENTE
-    input.value = '';
-
-    const currentTotal = existingImageUrls.length + newUploadedUrls.length;
-    const remainingSlots = MAX_IMAGES - currentTotal;
-    const filesToProcess = files.slice(0, remainingSlots);
-
-    if (filesToProcess.length === 0) {
-      window.showToast(`Limite de ${MAX_IMAGES} imagens atingido`, 'warning');
+    if (!files || files.length === 0) {
+      console.warn('[EDIT FILE SELECT] Nenhum arquivo selecionado!');
       return;
     }
 
+    const filesArray = Array.from(files);
+    console.log(
+      `[EDIT FILE SELECT] ${filesArray.length} arquivo(s) selecionado(s):`,
+      filesArray.map((f) => ({ name: f.name, size: f.size, type: f.type }))
+    );
+
+    const currentTotal = existingImageUrls.length + newUploadedUrls.length;
+    const remainingSlots = MAX_IMAGES - currentTotal;
+    const filesToProcess = filesArray.slice(0, remainingSlots);
+
+    if (filesToProcess.length === 0) {
+      console.warn('[EDIT FILE SELECT] Limite já atingido');
+      window.showToast(`Limite de ${MAX_IMAGES} imagens atingido`, 'warning');
+      input.value = '';
+      return;
+    }
+
+    if (filesToProcess.length < filesArray.length) {
+      console.warn(
+        `[EDIT FILE SELECT] Limite: processando apenas ${filesToProcess.length} de ${filesArray.length} arquivos`
+      );
+    }
+
+    // Marcar como em upload ANTES de limpar o input
     isUploading = true;
     updateSubmitButton();
 
-    console.log(`[EDIT UPLOAD START] ${filesToProcess.length} arquivo(s)`);
+    // Agora limpar o input
+    input.value = '';
+    console.log('[EDIT FILE SELECT] Input limpo após captura dos arquivos');
+
+    console.log(
+      `[EDIT UPLOAD START] Processando ${filesToProcess.length} arquivo(s)...`
+    );
 
     let successCount = 0;
 
@@ -346,7 +403,16 @@ const { data: categorias } = await supabaseAdmin
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       console.log(
-        `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] Arquivo: ${file.name}, Tamanho: ${(file.size / 1024).toFixed(2)}KB`
+        `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] ============================`
+      );
+      console.log(
+        `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] Arquivo: ${file.name}`
+      );
+      console.log(
+        `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] Tamanho: ${(file.size / 1024).toFixed(2)}KB`
+      );
+      console.log(
+        `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] Tipo: ${file.type}`
       );
 
       try {
@@ -361,14 +427,22 @@ const { data: categorias } = await supabaseAdmin
         // CRÍTICO: Adicionar cache-busting
         const urlWithCacheBust = `${url}?v=${Date.now()}`;
 
-        console.log(`[EDIT UPLOAD SUCCESS] URL: ${urlWithCacheBust}`);
+        console.log(
+          `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] ✅ SUCCESS!`
+        );
+        console.log(
+          `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] URL: ${urlWithCacheBust}`
+        );
 
         removeLoadingPlaceholder(tempId);
         newUploadedUrls.push(urlWithCacheBust);
         successCount++;
         renderPreviews();
       } catch (error: any) {
-        console.error(`[EDIT UPLOAD ERROR] ${file.name}:`, error);
+        console.error(
+          `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] ❌ ERROR:`,
+          error
+        );
         window.showToast(
           `Erro ao enviar ${file.name}: ${error.message}`,
           'error'
@@ -380,9 +454,16 @@ const { data: categorias } = await supabaseAdmin
     isUploading = false;
     updateSubmitButton();
 
+    console.log(
+      '[EDIT UPLOAD COMPLETE] Total de novas imagens:',
+      newUploadedUrls.length
+    );
+
     if (successCount > 0) {
       window.showToast(`${successCount} imagem(ns) adicionada(s)`, 'success');
     }
+
+    console.log('[EDIT FILE SELECT] ========================================');
   }
 
   // --- Image Processing ---
