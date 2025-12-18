@@ -315,7 +315,7 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // 🔥 SOLUÇÃO FINAL - CACHE HTTP DESABILITADO
+  // 🔥 SOLUÇÃO DEFINITIVA - FormData único por requisição
   // ============================================================================
 
   const state = {
@@ -524,26 +524,36 @@ const { data: categorias } = await supabaseAdmin
     originalName: string,
     uploadIndex: number
   ): Promise<{ url: string }> {
+    // 🔥 SOLUÇÃO: Criar FormData NOVO para cada requisição
     const formData = new FormData();
-    formData.append('file', file);
 
-    // 🔥 SOLUÇÃO: Adicionar timestamp único na URL para evitar cache HTTP
+    // 🔥 CRÍTICO: Adicionar campos únicos para evitar deduplicação
+    const uniqueId = `${Date.now()}-${uploadIndex}-${Math.random().toString(36).substring(2)}`;
+    formData.append('file', file);
+    formData.append('uploadId', uniqueId); // Campo único
+    formData.append('timestamp', Date.now().toString()); // Timestamp único
+    formData.append('index', uploadIndex.toString()); // Índice
+
+    // URL única
     const cacheBuster = `t=${Date.now()}&idx=${uploadIndex}&r=${Math.random()}`;
     const uploadUrl = `/api/admin/upload?${cacheBuster}`;
 
-    console.log(`[UPLOAD ${uploadIndex}] 📤 Enviando para: ${uploadUrl}`);
+    console.log(`[UPLOAD ${uploadIndex}] 📤 Enviando (ID: ${uniqueId})`);
+    console.log(`[UPLOAD ${uploadIndex}]    URL: ${uploadUrl}`);
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
-      // 🔥 CRÍTICO: Headers anti-cache máximo
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         Pragma: 'no-cache',
         Expires: '0',
+        // 🔥 Adicionar header único
+        'X-Upload-Id': uniqueId,
       },
-      // 🔥 CRÍTICO: Desabilitar cache no fetch
       cache: 'no-store',
+      // 🔥 CRÍTICO: Desabilitar keep-alive para forçar nova conexão
+      keepalive: false,
     });
 
     if (!response.ok) {
@@ -559,7 +569,9 @@ const { data: categorias } = await supabaseAdmin
       throw new Error('URL não retornada pelo servidor');
     }
 
-    console.log(`[UPLOAD ${uploadIndex}] ✅ Resposta recebida`);
+    console.log(
+      `[UPLOAD ${uploadIndex}] ✅ Resposta recebida (ID: ${uniqueId})`
+    );
     console.log(
       `[UPLOAD ${uploadIndex}]    URL: ${data.url.substring(0, 80)}...`
     );
