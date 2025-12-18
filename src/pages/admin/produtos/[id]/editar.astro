@@ -602,7 +602,10 @@ const { data: categorias } = await supabaseAdmin
       }
     }
 
-    const url = `/api/admin/upload?batch=${batchId}`;
+    // UMA ÚNICA requisição para todas as imagens
+    // Adicionado _t (timestamp) extra para GARANTIR que o browser não use cache
+    // Alterado para rota dinâmica [id] para bust de cache definitivo (path caching)
+    const url = `/api/admin/upload/${batchId}?_t=${Date.now()}`;
     console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
 
     let response: Response;
@@ -692,18 +695,19 @@ const { data: categorias } = await supabaseAdmin
 
       window.showToast('Produto atualizado com sucesso!', 'success');
 
-      // Limpar cache do service worker
-      if ('caches' in window) {
-        caches.keys().then((names) => {
-          names.forEach((name) => caches.delete(name));
-        });
+      // Forçar redirecionamento imediato usando replace para evitar problemas de histórico
+      console.log('🔄 [SUBMIT] Redirecionando para lista de produtos...');
+      const redirectUrl = `/admin/produtos?_t=${Date.now()}`;
+      
+      try {
+        isSubmitting = false; // Resetar flag para evitar bloqueio do beforeunload
+        window.location.replace(redirectUrl);
+      } catch (e) {
+        console.error('❌ [SUBMIT] Erro no redirecionamento:', e);
+        // Fallback
+        window.location.href = redirectUrl;
       }
 
-      // Redirecionar para lista de produtos com cache-busting
-      setTimeout(() => {
-        const timestamp = new Date().getTime();
-        window.location.href = `/admin/produtos?_t=${timestamp}`;
-      }, 1000);
     } catch (error: any) {
       console.error('❌ Erro ao salvar produto:', error);
       window.showToast(error.message || 'Erro ao salvar produto', 'error');
@@ -759,6 +763,8 @@ const { data: categorias } = await supabaseAdmin
   // Renderizar estado inicial
   renderPreviews();
 </script>
+
+<script src="/debug-upload.js" is:inline></script>
 
 <style is:global>
   /* Forçar display block no container quando há grid */

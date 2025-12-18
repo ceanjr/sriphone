@@ -191,7 +191,7 @@ const { data: categorias } = await supabaseAdmin
   // VERSÃO SIMPLIFICADA - Upload no Submit (não imediato)
   // ============================================================================
 
-  console.log('✅ [NOVO PRODUTO] Script iniciado - versão simplificada');
+  console.log('✅ [NOVO PRODUTO] Script iniciado - versão simplificada v2');
 
   const form = document.getElementById('product-form') as HTMLFormElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
@@ -199,17 +199,25 @@ const { data: categorias } = await supabaseAdmin
   const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
   const uploadArea = document.getElementById('upload-area');
 
+  // Configurar form para não autocompletar (evitar cache de inputs)
+  if (form) form.setAttribute('autocomplete', 'off');
+
   const MAX_IMAGES = 5;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-  // Array SIMPLES de arquivos selecionados
+  // Estado GLOBAL - Inicializado limpo
   let selectedFiles: File[] = [];
+  let uploadedUrls: string[] = []; // Variável global para rastreio e cleanup
+  let blobUrls: string[] = []; 
+  let formDirty = false;
+  let isSubmitting = false;
 
   function resetCompleteState() {
     console.log('🧹 [RESET] Iniciando reset completo do estado');
 
     // 1. Limpar arrays
     selectedFiles = [];
+    uploadedUrls = []; // Garantir que URLs também sejam limpas
     cleanupBlobUrls();
     blobUrls = [];
 
@@ -244,15 +252,9 @@ const { data: categorias } = await supabaseAdmin
     console.log('✅ [RESET] Estado completamente resetado');
   }
 
-  // Estado do formulário
-  let formDirty = false;
-  let isSubmitting = false;
-
   // ============================================================================
   // GESTÃO DE BLOB URLs
   // ============================================================================
-
-  let blobUrls: string[] = []; // Precisa ser 'let' para poder limpar (blobUrls = [])
 
   function cleanupBlobUrls() {
     console.log(`🧹 [CLEANUP] Limpando ${blobUrls.length} Blob URLs`);
@@ -379,6 +381,7 @@ const { data: categorias } = await supabaseAdmin
     if (target.closest('button')) return;
 
     if (selectedFiles.length < MAX_IMAGES) {
+      if (fileInput) fileInput.value = '';
       fileInput?.click();
     } else {
       window.showToast(`Máximo de ${MAX_IMAGES} imagens`, 'warning');
@@ -397,24 +400,29 @@ const { data: categorias } = await supabaseAdmin
     const remainingSlots = MAX_IMAGES - selectedFiles.length;
     const filesToAdd = Array.from(files).slice(0, remainingSlots);
 
-    for (const file of filesToAdd) {
-      console.log(
-        `  📄 ${file.name}: ${(file.size / 1024).toFixed(1)}KB, tipo: ${file.type}`
-      );
+    // Se for a primeira seleção após reset, crie novo array
+    if (selectedFiles.length === 0) {
+      selectedFiles = [...filesToAdd];
+    } else {
+      for (const file of filesToAdd) {
+        console.log(
+          `  📄 ${file.name}: ${(file.size / 1024).toFixed(1)}KB, tipo: ${file.type}`
+        );
 
-      // Validar tamanho
-      if (file.size > MAX_FILE_SIZE) {
-        window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
-        continue;
+        // Validar tamanho
+        if (file.size > MAX_FILE_SIZE) {
+          window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
+          continue;
+        }
+
+        // Validar tipo
+        if (!file.type.startsWith('image/')) {
+          window.showToast(`${file.name} não é uma imagem`, 'error');
+          continue;
+        }
+
+        selectedFiles.push(file);
       }
-
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        window.showToast(`${file.name} não é uma imagem`, 'error');
-        continue;
-      }
-
-      selectedFiles.push(file);
     }
 
     console.log(
@@ -551,7 +559,7 @@ const { data: categorias } = await supabaseAdmin
     }
   }
 
-  let uploadAllImages = async function (files: File[]): Promise<string[]> {
+  async function uploadAllImages(files: File[]): Promise<string[]> {
     const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -587,7 +595,9 @@ const { data: categorias } = await supabaseAdmin
     }
 
     // UMA ÚNICA requisição para todas as imagens
-    const url = `/api/admin/upload?batch=${batchId}`;
+    // Adicionado _t (timestamp) extra para GARANTIR que o browser não use cache
+    // Alterado para rota dinâmica [id] para bust de cache definitivo (path caching)
+    const url = `/api/admin/upload/${batchId}?_t=${Date.now()}`;
     console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
 
     let response: Response;
@@ -615,6 +625,10 @@ const { data: categorias } = await supabaseAdmin
 
     console.log(`✅ [BATCH UPLOAD] Sucesso!`);
     console.log(`   ${result.count} imagens processadas`);
+    
+    // Atualizar variável global para permitir cleanup se necessário
+    uploadedUrls = result.urls;
+
     result.urls.forEach((url: string, i: number) => {
       console.log(`   URL ${i + 1}: ${url}`);
     });
@@ -649,15 +663,17 @@ const { data: categorias } = await supabaseAdmin
       console.log('💾 [SUBMIT] Iniciando salvamento');
       console.log(`📸 [SUBMIT] ${selectedFiles.length} imagens para enviar`);
 
-      // Upload de TODAS as imagens em UMA requisição
-      let uploadedUrls = await uploadAllImages(selectedFiles);
+      let newProductImageUrls = await uploadAllImages(selectedFiles);
 
-      if (uploadedUrls.length === 0) {
-        throw new Error('Nenhuma imagem foi enviada com sucesso');
+      // Se o uploadAllImages retornar menos URLs do que arquivos enviados, houve erro
+      if (!newProductImageUrls || newProductImageUrls.length !== selectedFiles.length) {
+        throw new Error(
+          'Erro no upload de imagem: nem todas as imagens foram enviadas com sucesso.'
+        );
       }
 
       console.log(
-        `✅ [SUBMIT] ${uploadedUrls.length} imagens enviadas com sucesso`
+        `✅ [SUBMIT] ${newProductImageUrls.length} imagens enviadas com sucesso`
       );
 
       // Preparar dados do produto
@@ -681,7 +697,7 @@ const { data: categorias } = await supabaseAdmin
         condicao: formData.get('condicao'),
         categoria_id: formData.get('categoria_id'),
         descricao: formData.get('descricao') || null,
-        imagens: uploadedUrls,
+        imagens: newProductImageUrls,
       };
 
       console.log('📦 [SUBMIT] Salvando produto:', produto);
@@ -706,16 +722,33 @@ const { data: categorias } = await supabaseAdmin
       // ============================================================================
       console.log('🧹 [SUBMIT] Executando limpeza completa...');
 
-      // Chamar função de reset completo
-      resetCompleteState();
+      // IMPORTANTE: Limpar a variável GLOBAL uploadedUrls para evitar que o evento
+      // pagehide delete as imagens que acabamos de salvar com sucesso!
       uploadedUrls = [];
+
+      // Limpar arrays e input file explicitamente
+      selectedFiles = [];
+      if (fileInput) fileInput.value = '';
+      
+      cleanupBlobUrls();
+      blobUrls = [];
+      resetCompleteState();
 
       window.showToast('Produto adicionado com sucesso!', 'success');
 
-      // Delay para garantir limpeza completa antes de redirecionar
-      setTimeout(() => {
-        window.location.href = `/admin/produtos?_t=${Date.now()}`;
-      }, 500); // Aumentado de 100ms para 500ms
+      // Forçar redirecionamento imediato usando replace para evitar problemas de histórico
+      console.log('🔄 [SUBMIT] Redirecionando para lista de produtos...');
+      const redirectUrl = `/admin/produtos?_t=${Date.now()}`;
+      
+      try {
+        isSubmitting = false; // Resetar flag para evitar bloqueio do beforeunload (redundante mas seguro)
+        window.location.replace(redirectUrl);
+      } catch (e) {
+        console.error('❌ [SUBMIT] Erro no redirecionamento:', e);
+        // Fallback
+        window.location.href = redirectUrl;
+      }
+
     } catch (error: any) {
       console.error('❌ [SUBMIT] Erro:', error);
       const errorMsg = error.message || 'Erro ao salvar produto';
@@ -742,38 +775,6 @@ const { data: categorias } = await supabaseAdmin
     }
   });
 
-  // ============================================================================
-  // PROTEÇÃO CONTRA RELOAD
-  // ============================================================================
-
-  form?.addEventListener('input', () => {
-    formDirty = true;
-  });
-
-  // FIX BUG 3.3: Limpar estado ao sair da página
-  window.addEventListener('beforeunload', (e) => {
-    // Limpar estado sempre ao sair
-    console.log('🧹 [CLEANUP] beforeunload - Limpando estado');
-    resetCompleteState();
-
-    // Avisar sobre alterações não salvas
-    if ((formDirty || selectedFiles.length > 0) && !isSubmitting) {
-      e.preventDefault();
-      e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
-      return e.returnValue;
-    }
-  });
-
-  // Limpeza automática de imagens órfãs do Supabase ao sair da página
-  let uploadedUrls: string[] = [];
-  // Intercepta o resultado do upload para capturar as URLs
-  const originalUploadAllImages = uploadAllImages;
-  uploadAllImages = async function (files) {
-    const urls = await originalUploadAllImages(files);
-    uploadedUrls = urls;
-    return urls;
-  };
-
   async function cleanupSupabaseImages() {
     if (uploadedUrls && uploadedUrls.length > 0) {
       try {
@@ -798,6 +799,9 @@ const { data: categorias } = await supabaseAdmin
 
   // Limpar ao sair (pagehide é mais confiável que unload)
   window.addEventListener('pagehide', async () => {
+    // Se isSubmitting for true, não limpa (pois está salvando)
+    // Mas se o usuário sair sem salvar (ex: click voltar), limpa.
+    // O submit handler limpa uploadedUrls no sucesso, então isso aqui só pega órfãos
     await cleanupSupabaseImages();
     resetCompleteState();
     cleanupBlobUrls();
@@ -808,6 +812,8 @@ const { data: categorias } = await supabaseAdmin
   // Renderizar estado inicial
   renderPreviews();
 </script>
+
+<script src="/debug-upload.js" is:inline></script>
 
 <style>
   .upload-placeholder {

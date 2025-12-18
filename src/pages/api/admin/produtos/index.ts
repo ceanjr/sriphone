@@ -210,6 +210,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         codigo: data.codigo,
         preco: data.preco,
         categoria_id: data.categoria_id,
+        imagens: data.imagens, // Adicionando as URLs das imagens ao log
       },
       ipAddress,
       userAgent,
