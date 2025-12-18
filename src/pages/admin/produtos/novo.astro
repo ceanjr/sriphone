@@ -42,7 +42,7 @@ const { data: categorias } = await supabaseAdmin
           />
 
           <div class="form-group">
-            <label class="form-label">Imagens do Produto (até 5)</label>
+            <label class="form-label">Imagens do Produto (até 4)</label>
             <input
               id="foto-upload"
               type="file"
@@ -148,42 +148,6 @@ const { data: categorias } = await supabaseAdmin
 </AdminLayout>
 
 <style>
-  /* Upload Placeholder */
-  .upload-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    background: #0a0a0a;
-    border-radius: 8px;
-    border: 2px dashed #333;
-    transition: all 0.2s;
-    min-height: 200px;
-  }
-  .upload-placeholder:hover {
-    border-color: #555;
-    background: #111;
-  }
-  .upload-placeholder svg {
-    color: #666;
-    margin-bottom: 16px;
-    width: 48px;
-    height: 48px;
-  }
-  .upload-placeholder p {
-    font-size: 14px;
-    font-weight: 500;
-    color: #888;
-    margin: 0 0 4px 0;
-  }
-  .upload-placeholder small {
-    font-size: 12px;
-    color: #555;
-  }
-
   /* Grid de Preview */
   .images-preview-grid {
     display: grid;
@@ -301,34 +265,6 @@ const { data: categorias } = await supabaseAdmin
     font-weight: 600;
     text-transform: uppercase;
     z-index: 5;
-  }
-
-  .add-more-btn {
-    aspect-ratio: 1;
-    border-radius: 6px;
-    border: 2px dashed #444;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background: #0a0a0a;
-    color: #888;
-    transition: all 0.2s;
-  }
-  .add-more-btn:hover {
-    border-color: #666;
-    background: #151515;
-    color: #fff;
-  }
-  .add-more-btn svg {
-    width: 28px;
-    height: 28px;
-    margin-bottom: 6px;
-  }
-  .add-more-btn span {
-    font-size: 12px;
-    font-weight: 500;
   }
 
   /* Progress */
@@ -636,7 +572,7 @@ const { data: categorias } = await supabaseAdmin
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
           <p>Clique para adicionar fotos</p>
-          <small>PNG, JPG, WEBP • Máximo 5 fotos • Até 10MB</small>
+          <small>PNG, JPG, WEBP • Máximo 4 fotos • Até 10MB</small>
         </div>
       `;
       return;
