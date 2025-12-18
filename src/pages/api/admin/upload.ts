@@ -15,19 +15,6 @@ const ALLOWED_TYPES = [
   'image/heif',
 ];
 
-// Helper melhorado para gerar hash do conteúdo do arquivo
-function simpleHash(buffer: Uint8Array): string {
-  let hash = 0;
-  const sampleSize = Math.min(buffer.length, 1024);
-  for (let i = 0; i < sampleSize; i++) {
-    hash = (hash << 5) - hash + buffer[i];
-    hash = hash & hash;
-  }
-  // Adicionar timestamp ao hash para maior unicidade
-  const timeHash = Date.now().toString(36);
-  return Math.abs(hash).toString(36).substring(0, 8) + timeHash.substring(0, 4);
-}
-
 export const POST: APIRoute = async ({ request, cookies }) => {
   const startTime = Date.now();
   const requestId = crypto.randomUUID().substring(0, 8);
@@ -154,51 +141,52 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // 6. Gerar nome REALMENTE único - VERSÃO MELHORADA
-    const timestamp = Date.now();
-    const microtime = performance.now().toString().replace('.', '');
+    // 6. ⭐ SOLUÇÃO DEFINITIVA: Gerar nome com MÁXIMA unicidade
+    const now = Date.now();
     const uuid = crypto.randomUUID();
-    const hashStr = simpleHash(buffer);
-    const randomSuffix = crypto.randomBytes(4).toString('hex');
+    const random1 = crypto.randomBytes(8).toString('hex');
+    const random2 = Math.random().toString(36).substring(2, 15);
+    const microtime = performance.now().toString().replace('.', '');
 
-    // Extrair nome do arquivo sem extensão e sanitizar
-    const originalNameWithoutExt = file.name
-      .replace(/\.[^/.]+$/, '')
-      .replace(/[^a-zA-Z0-9-]/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .substring(0, 20);
+    // Hash do conteúdo do arquivo
+    const hash = crypto
+      .createHash('sha256')
+      .update(buffer)
+      .digest('hex')
+      .substring(0, 12);
 
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
 
-    // CRÍTICO: Múltiplas camadas de unicidade
-    // Formato: originalname-timestamp-microtime-uuid-hash-random.ext
-    const uniqueFileName = `${
-      originalNameWithoutExt || 'img'
-    }-${timestamp}-${microtime}-${uuid}-${hashStr}-${randomSuffix}.${fileExt}`;
-
-    console.log(
-      `[API UPLOAD ${requestId}] ✅ Nome único gerado:`,
-      uniqueFileName
-    );
-    console.log(`[API UPLOAD ${requestId}]    Componentes:`, {
-      original: originalNameWithoutExt,
-      timestamp,
-      microtime: microtime.substring(0, 10),
-      uuid: uuid.substring(0, 8),
-      hash: hashStr,
-      random: randomSuffix,
-    });
-
-    // 7. Path no storage: produtos/uniqueFileName
+    // ⭐ CRÍTICO: Nome impossível de colidir
+    // Formato: produtos/UUID-TIMESTAMP-MICROTIME-HASH-RANDOM1-RANDOM2.ext
+    const uniqueFileName = `${uuid}-${now}-${microtime}-${hash}-${random1}-${random2}.${fileExt}`;
     const filePath = `produtos/${uniqueFileName}`;
 
-    console.log(`[API UPLOAD ${requestId}] Iniciando upload para Supabase...`);
-    console.log(`[API UPLOAD ${requestId}]   - Bucket: imagens`);
-    console.log(`[API UPLOAD ${requestId}]   - Path: ${filePath}`);
+    console.log(`[API UPLOAD ${requestId}] ✅ Gerando nome único:`);
+    console.log(
+      `[API UPLOAD ${requestId}]    UUID: ${uuid.substring(0, 13)}...`
+    );
+    console.log(`[API UPLOAD ${requestId}]    Timestamp: ${now}`);
+    console.log(
+      `[API UPLOAD ${requestId}]    Microtime: ${microtime.substring(0, 15)}...`
+    );
+    console.log(`[API UPLOAD ${requestId}]    Hash: ${hash}`);
+    console.log(
+      `[API UPLOAD ${requestId}]    Random1: ${random1.substring(0, 10)}...`
+    );
+    console.log(`[API UPLOAD ${requestId}]    Random2: ${random2}`);
+    console.log(
+      `[API UPLOAD ${requestId}]    Path final: ${filePath.substring(0, 80)}...`
+    );
 
-    // 8. Upload usando SUPABASE ADMIN
+    // 7. Upload usando SUPABASE ADMIN
+    console.log(
+      `[API UPLOAD ${requestId}] 📤 Iniciando upload para Supabase...`
+    );
+
     let uploadData;
     let uploadError;
+
     try {
       const result = await supabaseAdmin.storage
         .from('imagens')
@@ -246,13 +234,35 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     console.log(`[API UPLOAD ${requestId}] ✅ Upload bem-sucedido`);
     console.log(
-      `[API UPLOAD ${requestId}]   - Path salvo: ${uploadData?.path}`
+      `[API UPLOAD ${requestId}]    Path retornado: ${uploadData?.path}`
     );
 
-    // 9. Obter URL pública usando o path correto
+    // 8. ⭐ VERIFICAÇÃO: Confirmar que o arquivo foi salvo
+    if (!uploadData || !uploadData.path) {
+      console.error(`[API UPLOAD ${requestId}] ❌ Upload retornou sem path!`);
+      return new Response(
+        JSON.stringify({
+          error: 'Upload falhou - sem path retornado',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // 9. ⭐ SOLUÇÃO: Usar o path retornado pelo upload (não o que geramos)
+    // Isso garante que estamos pegando a URL do arquivo que foi REALMENTE salvo
+    const actualPath = uploadData.path;
+
+    console.log(`[API UPLOAD ${requestId}] 🔍 Verificando paths:`);
+    console.log(`[API UPLOAD ${requestId}]    Path enviado: ${filePath}`);
+    console.log(`[API UPLOAD ${requestId}]    Path retornado: ${actualPath}`);
+
+    // 10. Obter URL pública usando o path RETORNADO pelo upload
     const { data: urlData } = supabaseAdmin.storage
       .from('imagens')
-      .getPublicUrl(filePath);
+      .getPublicUrl(actualPath);
 
     if (!urlData || !urlData.publicUrl) {
       console.error(`[API UPLOAD ${requestId}] ❌ URL pública não retornada`);
@@ -267,28 +277,39 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // 10. CRÍTICO: Adicionar cache-busting único POR ARQUIVO
-    // Usar múltiplos parâmetros para evitar qualquer cache
-    const cacheBust = `v=${timestamp}&u=${uuid.substring(
+    // 11. ⭐ Cache-busting usando TODOS os identificadores únicos
+    const cacheBust = `t=${now}&u=${uuid.substring(
       0,
       8
-    )}&h=${hashStr}&r=${randomSuffix}`;
+    )}&h=${hash}&r1=${random1.substring(0, 8)}&r2=${random2}`;
     const finalUrl = `${urlData.publicUrl}?${cacheBust}`;
 
     const elapsed = Date.now() - startTime;
+
     console.log(
       `[API UPLOAD ${requestId}] ✅ Upload concluído em ${elapsed}ms`
     );
-    console.log(`[API UPLOAD ${requestId}] URL base: ${urlData.publicUrl}`);
-    console.log(`[API UPLOAD ${requestId}] URL final: ${finalUrl}`);
+    console.log(`[API UPLOAD ${requestId}] 📍 URL base: ${urlData.publicUrl}`);
+    console.log(
+      `[API UPLOAD ${requestId}] 🔗 URL final: ${finalUrl.substring(0, 120)}...`
+    );
+    console.log(
+      `[API UPLOAD ${requestId}] ========================================`
+    );
 
     return new Response(
       JSON.stringify({
         success: true,
         url: finalUrl,
-        path: filePath,
-        timestamp: timestamp,
+        path: actualPath,
+        timestamp: now,
         elapsedMs: elapsed,
+        debug: {
+          requestId,
+          pathSent: filePath.substring(0, 60),
+          pathReturned: actualPath.substring(0, 60),
+          urlBase: urlData.publicUrl.substring(0, 80),
+        },
       }),
       {
         status: 200,
