@@ -205,6 +205,45 @@ const { data: categorias } = await supabaseAdmin
   // Array SIMPLES de arquivos selecionados
   let selectedFiles: File[] = [];
 
+  function resetCompleteState() {
+    console.log('🧹 [RESET] Iniciando reset completo do estado');
+
+    // 1. Limpar arrays
+    selectedFiles = [];
+    cleanupBlobUrls();
+    blobUrls = [];
+
+    // 2. Limpar DOM
+    if (uploadArea) {
+      uploadArea.innerHTML = `
+      <div class="upload-placeholder">
+        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+          </path>
+        </svg>
+        <p>Clique para adicionar imagens</p>
+        <small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>
+      </div>
+    `;
+    }
+
+    // 3. Resetar input file
+    if (fileInput) {
+      fileInput.value = '';
+    }
+
+    // 4. Limpar funções globais
+    if ((window as any).removeImageAt) {
+      delete (window as any).removeImageAt;
+    }
+    if ((window as any).setMainImage) {
+      delete (window as any).setMainImage;
+    }
+
+    console.log('✅ [RESET] Estado completamente resetado');
+  }
+
   // Estado do formulário
   let formDirty = false;
   let isSubmitting = false;
@@ -216,8 +255,13 @@ const { data: categorias } = await supabaseAdmin
   let blobUrls: string[] = []; // Precisa ser 'let' para poder limpar (blobUrls = [])
 
   function cleanupBlobUrls() {
-    blobUrls.forEach((url) => URL.revokeObjectURL(url));
+    console.log(`🧹 [CLEANUP] Limpando ${blobUrls.length} Blob URLs`);
+    blobUrls.forEach((url, index) => {
+      console.log(`   ${index + 1}. Revogando: ${url.substring(0, 50)}...`);
+      URL.revokeObjectURL(url);
+    });
     blobUrls.length = 0;
+    console.log('✅ [CLEANUP] Todas as Blob URLs foram revogadas');
   }
 
   // ============================================================================
@@ -397,11 +441,14 @@ const { data: categorias } = await supabaseAdmin
   // ============================================================================
 
   // Detectar Safari iOS
-  const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-                      !('MSStream' in window) &&
-                      /Safari/.test(navigator.userAgent);
+  const isSafariIOS =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+    !('MSStream' in window) &&
+    /Safari/.test(navigator.userAgent);
 
-  console.log(`🔍 [BROWSER] Safari iOS: ${isSafariIOS}, UA: ${navigator.userAgent.substring(0, 100)}`);
+  console.log(
+    `🔍 [BROWSER] Safari iOS: ${isSafariIOS}, UA: ${navigator.userAgent.substring(0, 100)}`
+  );
 
   // ============================================================================
   // FIX BUG 2.1 + FIX 413: Compressão que RESPEITA EXIF
@@ -419,26 +466,39 @@ const { data: categorias } = await supabaseAdmin
     console.log(`   📸 Original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
 
     const options = {
-      maxSizeMB: 3,              // Máximo 3MB após compressão (seguro para Vercel)
-      maxWidthOrHeight: 1920,    // Redimensionar se maior que 1920px
-      useWebWorker: true,        // Usar Web Worker para não bloquear UI
-      fileType: 'image/jpeg',    // Converter para JPEG
-      initialQuality: 0.85,      // Qualidade 85% (ótimo balanço)
+      maxSizeMB: 3, // Máximo 3MB após compressão (seguro para Vercel)
+      maxWidthOrHeight: 1920, // Redimensionar se maior que 1920px
+      useWebWorker: true, // Usar Web Worker para não bloquear UI
+      fileType: 'image/jpeg', // Converter para JPEG
+      initialQuality: 0.85, // Qualidade 85% (ótimo balanço)
       alwaysKeepResolution: false,
       exifOrientation: undefined, // AUTO - respeita EXIF automaticamente!
     };
 
     try {
       const compressedFile = await imageCompression(file, options);
-      console.log(`   ✅ Comprimido: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (${Math.round(compressedFile.size / file.size * 100)}%)`);
+      console.log(
+        `   ✅ Comprimido: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (${Math.round((compressedFile.size / file.size) * 100)}%)`
+      );
 
       // Validar que não ficou muito grande (Vercel limit)
       if (compressedFile.size > 4 * 1024 * 1024) {
-        console.warn(`   ⚠️ Arquivo ainda muito grande após compressão, tentando compressão mais agressiva...`);
+        console.warn(
+          `   ⚠️ Arquivo ainda muito grande após compressão, tentando compressão mais agressiva...`
+        );
         // Tentar compressão mais agressiva
-        const aggressiveOptions = { ...options, maxSizeMB: 2, initialQuality: 0.75 };
-        const recompressed = await imageCompression(compressedFile, aggressiveOptions);
-        console.log(`   ✅ Re-comprimido: ${(recompressed.size / 1024 / 1024).toFixed(2)}MB`);
+        const aggressiveOptions = {
+          ...options,
+          maxSizeMB: 2,
+          initialQuality: 0.75,
+        };
+        const recompressed = await imageCompression(
+          compressedFile,
+          aggressiveOptions
+        );
+        console.log(
+          `   ✅ Re-comprimido: ${(recompressed.size / 1024 / 1024).toFixed(2)}MB`
+        );
         return recompressed;
       }
 
@@ -459,7 +519,9 @@ const { data: categorias } = await supabaseAdmin
       throw new Error(`Erro ao ler resposta: ${readError.message}`);
     }
 
-    console.log(`📥 [RESPONSE] Status: ${response.status}, Tamanho: ${text.length} chars`);
+    console.log(
+      `📥 [RESPONSE] Status: ${response.status}, Tamanho: ${text.length} chars`
+    );
 
     // Se a resposta estiver vazia, retornar erro claro
     if (!text || text.trim() === '') {
@@ -469,7 +531,10 @@ const { data: categorias } = await supabaseAdmin
 
     // Verificar se parece HTML (erro de servidor)
     if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
-      console.error('❌ Servidor retornou HTML em vez de JSON:', text.substring(0, 300));
+      console.error(
+        '❌ Servidor retornou HTML em vez de JSON:',
+        text.substring(0, 300)
+      );
       // Tentar extrair mensagem de erro do HTML
       const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
       const errorMsg = titleMatch ? titleMatch[1] : 'Erro no servidor';
@@ -506,12 +571,16 @@ const { data: categorias } = await supabaseAdmin
       try {
         // FIX 413: Comprimir COM respeito a EXIF (biblioteca browser-image-compression)
         const compressedFile = await compressImage(file);
-        formData.append(`file${i}`, compressedFile, fileName.replace(/\.[^.]+$/, '.jpg'));
+        const uniqueFileName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}_${fileName.replace(/\.[^.]+$/, '.jpg')}`;
+        console.log(`   📝 Nome único gerado: ${uniqueFileName}`);
+        formData.append(`file${i}`, compressedFile, uniqueFileName);
       } catch (compressError: any) {
         console.error(`   ❌ Erro ao comprimir ${file.name}:`, compressError);
         // Se compressão falhar, validar tamanho antes de enviar original
         if (file.size > 4 * 1024 * 1024) {
-          throw new Error(`Imagem ${file.name} muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB.`);
+          throw new Error(
+            `Imagem ${file.name} muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB.`
+          );
         }
         formData.append(`file${i}`, file, fileName);
       }
@@ -528,7 +597,9 @@ const { data: categorias } = await supabaseAdmin
         body: formData,
         credentials: 'include', // Importante para Safari iOS enviar cookies
       });
-      console.log(`📥 [BATCH UPLOAD] Resposta recebida: ${response.status} ${response.statusText}`);
+      console.log(
+        `📥 [BATCH UPLOAD] Resposta recebida: ${response.status} ${response.statusText}`
+      );
     } catch (fetchError: any) {
       console.error('❌ [BATCH UPLOAD] Erro de rede:', fetchError.message);
       throw new Error(`Erro de conexão: ${fetchError.message}`);
@@ -596,7 +667,10 @@ const { data: categorias } = await supabaseAdmin
       const formData = new FormData(form);
 
       // Converter vírgula para ponto no preço (compatibilidade com locale BR)
-      const precoStr = (formData.get('preco') as string || '').replace(',', '.');
+      const precoStr = ((formData.get('preco') as string) || '').replace(
+        ',',
+        '.'
+      );
       const bateriaStr = formData.get('bateria') as string;
 
       const produto = {
@@ -626,6 +700,22 @@ const { data: categorias } = await supabaseAdmin
       }
 
       console.log('✅ [SUBMIT] Produto salvo com sucesso!');
+
+      // ============================================================================
+      // FIX BUG CRÍTICO: Limpar TODO o estado ANTES de redirecionar
+      // ============================================================================
+      console.log('🧹 [SUBMIT] Executando limpeza completa...');
+
+      // Chamar função de reset completo
+      resetCompleteState();
+
+      window.showToast('Produto adicionado com sucesso!', 'success');
+
+      // Delay para garantir limpeza completa antes de redirecionar
+      setTimeout(() => {
+        window.location.href = `/admin/produtos?_t=${Date.now()}`;
+      }, 500); // Aumentado de 100ms para 500ms
+
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       window.showToast('Produto adicionado com sucesso!', 'success');
@@ -650,22 +740,20 @@ const { data: categorias } = await supabaseAdmin
       console.error('❌ [SUBMIT] Erro:', error);
       const errorMsg = error.message || 'Erro ao salvar produto';
 
-      // FIX BUG 3.2: Limpar estado também em caso de ERRO
-      console.log('🧹 [SUBMIT] Limpando estado após erro...');
-      selectedFiles = [];
+      // ============================================================================
+      // FIX BUG: Limpar Blob URLs mas MANTER dados do form
+      // ============================================================================
+      console.log(
+        '🧹 [SUBMIT] Limpando Blob URLs após erro (mantendo form)...'
+      );
+
+      // Apenas limpar Blob URLs antigas
       cleanupBlobUrls();
       blobUrls = [];
 
-      // Limpar preview do DOM
-      const previewContainer = document.getElementById('imagens-preview');
-      if (previewContainer) {
-        previewContainer.innerHTML = '';
-      }
-
-      // Em produção no Safari iOS, mostrar alert para debug
-      if (isSafariIOS) {
-        alert(`ERRO DEBUG:\n${errorMsg}`);
-      }
+      // Re-renderizar preview com novas Blob URLs
+      // (selectedFiles é mantido para o usuário poder tentar novamente)
+      renderPreviews();
 
       window.showToast(errorMsg, 'error');
       isSubmitting = false;
@@ -685,15 +773,8 @@ const { data: categorias } = await supabaseAdmin
   // FIX BUG 3.3: Limpar estado ao sair da página
   window.addEventListener('beforeunload', (e) => {
     // Limpar estado sempre ao sair
-    console.log('🧹 [CLEANUP] Limpando estado antes de sair da página');
-    selectedFiles = [];
-    cleanupBlobUrls();
-    blobUrls = [];
-
-    // Limpar funções globais
-    if ((window as any).removeImageAt) {
-      delete (window as any).removeImageAt;
-    }
+    console.log('🧹 [CLEANUP] beforeunload - Limpando estado');
+    resetCompleteState();
 
     // Avisar sobre alterações não salvas
     if ((formDirty || selectedFiles.length > 0) && !isSubmitting) {
@@ -701,6 +782,12 @@ const { data: categorias } = await supabaseAdmin
       e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
       return e.returnValue;
     }
+  });
+
+  // Limpar ao sair (pagehide é mais confiável que unload)
+  window.addEventListener('pagehide', () => {
+    console.log('🧹 [CLEANUP] pagehide - Limpando estado');
+    resetCompleteState();
   });
 
   // Limpar blob URLs ao sair (pagehide é mais confiável que unload)
