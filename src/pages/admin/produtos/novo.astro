@@ -26,7 +26,7 @@ const { data: categorias } = await supabaseAdmin
               stroke-width="2"
               d="M15 19l-7-7 7-7"></path>
           </svg>
-          Voltar para Produtos
+          Voltar
         </a>
         <h1 class="form-title">Novo Produto</h1>
         <p class="form-subtitle">Preencha as informações do produto</p>
@@ -34,50 +34,31 @@ const { data: categorias } = await supabaseAdmin
 
       <div class="form-card">
         <form id="product-form">
-          <!-- Image Upload -->
+          <!-- Imagens -->
           <div class="form-group">
             <label class="form-label">Imagens do Produto (até 5)</label>
             <input
-              id="foto-upload"
+              id="file-input"
               type="file"
               accept="image/*"
               multiple
               style="display: none;"
             />
-            <div class="form-image-upload" id="upload-area">
-              <div class="upload-placeholder">
-                <svg
-                  width="48"
-                  height="48"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                <p>Clique para adicionar imagens</p>
-                <small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>
-              </div>
+            <div id="upload-area" class="upload-area">
+              <!-- Conteúdo dinâmico -->
             </div>
           </div>
 
           <!-- Nome -->
           <div class="form-group">
             <label class="form-label" for="nome">
-              Nome do Produto
-              <span class="form-label-required">*</span>
+              Nome <span class="form-label-required">*</span>
             </label>
             <input
               id="nome"
               name="nome"
               type="text"
               class="form-input"
-              placeholder="Ex: iPhone 13 Pro Max 256GB"
               required
             />
           </div>
@@ -86,27 +67,18 @@ const { data: categorias } = await supabaseAdmin
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="codigo">Código</label>
-              <input
-                id="codigo"
-                name="codigo"
-                type="text"
-                class="form-input"
-                placeholder="Ex: IP13PM256"
-              />
+              <input id="codigo" name="codigo" type="text" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label" for="preco">
-                Preço
-                <span class="form-label-required">*</span>
+                Preço <span class="form-label-required">*</span>
               </label>
               <input
                 id="preco"
                 name="preco"
                 type="text"
                 inputmode="decimal"
-                pattern="[0-9]*[.,]?[0-9]*"
                 class="form-input"
-                placeholder="0.00"
                 required
               />
             </div>
@@ -116,8 +88,7 @@ const { data: categorias } = await supabaseAdmin
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="categoria_id">
-                Categoria
-                <span class="form-label-required">*</span>
+                Categoria <span class="form-label-required">*</span>
               </label>
               <select
                 id="categoria_id"
@@ -125,12 +96,8 @@ const { data: categorias } = await supabaseAdmin
                 class="form-select"
                 required
               >
-                <option value="">Selecione uma categoria</option>
-                {
-                  categorias?.map((categoria) => (
-                    <option value={categoria.id}>{categoria.nome}</option>
-                  ))
-                }
+                <option value="">Selecione</option>
+                {categorias?.map((c) => <option value={c.id}>{c.nome}</option>)}
               </select>
             </div>
             <div class="form-group">
@@ -150,20 +117,14 @@ const { data: categorias } = await supabaseAdmin
               name="bateria"
               type="text"
               inputmode="numeric"
-              pattern="[0-9]*"
               class="form-input"
-              placeholder="Ex: 80"
             />
           </div>
 
           <!-- Descrição -->
           <div class="form-group">
             <label class="form-label" for="descricao">Descrição</label>
-            <textarea
-              id="descricao"
-              name="descricao"
-              class="form-textarea"
-              placeholder="Descreva o produto, suas características e estado..."
+            <textarea id="descricao" name="descricao" class="form-textarea"
             ></textarea>
           </div>
 
@@ -186,581 +147,570 @@ const { data: categorias } = await supabaseAdmin
   </div>
 </AdminLayout>
 
-<script>
-  // ============================================================================
-  // VERSÃO SIMPLIFICADA - Upload no Submit (não imediato)
-  // ============================================================================
-
-  console.log('✅ [NOVO PRODUTO] Script iniciado - versão simplificada');
-
-  const form = document.getElementById('product-form') as HTMLFormElement;
-  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const submitText = document.getElementById('submit-text') as HTMLSpanElement;
-  const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
-  const uploadArea = document.getElementById('upload-area');
-
-  const MAX_IMAGES = 5;
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-  // Array SIMPLES de arquivos selecionados
-  let selectedFiles: File[] = [];
-
-  // Estado do formulário
-  let formDirty = false;
-  let isSubmitting = false;
-
-  // ============================================================================
-  // GESTÃO DE BLOB URLs
-  // ============================================================================
-
-  let blobUrls: string[] = []; // Precisa ser 'let' para poder limpar (blobUrls = [])
-
-  function cleanupBlobUrls() {
-    blobUrls.forEach((url) => URL.revokeObjectURL(url));
-    blobUrls.length = 0;
+<style>
+  .upload-area {
+    min-height: 200px;
+    border: 2px dashed #444;
+    border-radius: 8px;
+    background: #0a0a0a;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
   }
 
+  .upload-area:hover {
+    border-color: #666;
+    background: #111;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .upload-placeholder svg {
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  .upload-placeholder p {
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .upload-placeholder small {
+    color: #555;
+    font-size: 12px;
+  }
+
+  .images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .image-card {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #333;
+    background: #000;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .image-card:hover {
+    border-color: #555;
+    transform: translateY(-2px);
+  }
+
+  .image-card.is-main {
+    border-color: #3b82f6;
+  }
+
+  .image-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-card .remove-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0;
+    transition: all 0.2s;
+  }
+
+  .image-card:hover .remove-btn {
+    opacity: 1;
+  }
+
+  .image-card .remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+
+  .image-card .main-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(59, 130, 246, 0.95);
+    color: white;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .add-image-btn {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px dashed #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #151515;
+    color: #888;
+    transition: all 0.2s;
+  }
+
+  .add-image-btn:hover {
+    border-color: #666;
+    background: #222;
+    color: #fff;
+  }
+
+  .add-image-btn svg {
+    margin-bottom: 4px;
+  }
+
+  .add-image-btn span {
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .loading-card {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #444;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<script>
   // ============================================================================
-  // RENDERIZAÇÃO DE PREVIEW (Blob URLs locais - SEM upload)
+  // SISTEMA DE UPLOAD SIMPLIFICADO E ROBUSTO
   // ============================================================================
 
-  function renderPreviews() {
-    if (!uploadArea) return;
+  interface UploadState {
+    images: string[];
+    uploading: boolean;
+  }
 
-    // Limpar URLs antigas
-    cleanupBlobUrls();
+  const state: UploadState = {
+    images: [],
+    uploading: false,
+  };
 
-    console.log(`🖼️ [PREVIEW] Renderizando ${selectedFiles.length} imagens`);
+  const MAX_IMAGES = 5;
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-    if (selectedFiles.length === 0) {
-      uploadArea.innerHTML = `
-        <div class="upload-placeholder">
-          <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-            </path>
-          </svg>
-          <p>Clique para adicionar imagens</p>
-          <small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>
-        </div>
-      `;
+  let fileInput: HTMLInputElement;
+  let uploadArea: HTMLElement;
+  let form: HTMLFormElement;
+  let submitBtn: HTMLButtonElement;
+  let submitText: HTMLSpanElement;
+
+  // ============================================================================
+  // INICIALIZAÇÃO
+  // ============================================================================
+
+  function init() {
+    console.log('[UPLOAD] Inicializando...');
+
+    fileInput = document.getElementById('file-input') as HTMLInputElement;
+    uploadArea = document.getElementById('upload-area') as HTMLElement;
+    form = document.getElementById('product-form') as HTMLFormElement;
+    submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    submitText = document.getElementById('submit-text') as HTMLSpanElement;
+
+    if (!fileInput || !uploadArea || !form) {
+      console.error('[UPLOAD] Elementos não encontrados!');
       return;
     }
 
-    // Criar HTML para cada imagem
-    const imagesHTML = selectedFiles
-      .map((file, index) => {
-        // CRIAR BLOB URL NOVO para cada arquivo
-        const blobUrl = URL.createObjectURL(file);
-        blobUrls.push(blobUrl);
+    // Event listeners
+    fileInput.addEventListener('change', handleFileSelect);
+    uploadArea.addEventListener('click', handleUploadAreaClick);
+    form.addEventListener('submit', handleSubmit);
 
-        console.log(
-          `  📸 [${index + 1}] ${file.name} - ${(file.size / 1024).toFixed(1)}KB - URL: ${blobUrl}`
-        );
+    // Funções globais
+    (window as any).removeImage = removeImage;
+    (window as any).setAsMain = setAsMain;
+    (window as any).openFileDialog = () => fileInput.click();
 
-        const isMain = index === 0;
-
-        return `
-        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${isMain ? '#3b82f6' : '#e5e7eb'}; background: #1a1a1a; cursor: ${isMain ? 'default' : 'pointer'}; transition: all 0.2s;"
-          ${!isMain ? `onclick="event.stopPropagation(); window.setMainImage(${index})"` : ''}
-          title="${isMain ? 'Imagem principal' : 'Clique para tornar principal'}"
-        >
-          <img
-            src="${blobUrl}"
-            alt="${file.name}"
-            style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="event.stopPropagation(); event.preventDefault(); window.removeImageAt(${index})"
-            style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; z-index: 10;"
-            title="Remover imagem"
-          >×</button>
-          ${isMain ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
-        </div>
-      `;
-      })
-      .join('');
-
-    // Botão de adicionar mais
-    const addButtonHTML =
-      selectedFiles.length < MAX_IMAGES
-        ? `
-      <div style="aspect-ratio: 1 / 1; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #0A0A0A; transition: all 0.2s;"
-        onmouseover="this.style.borderColor='#f9fafb'; this.style.background='#121212'"
-        onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#0A0A0A'"
-      >
-        <svg style="width: 32px; height: 32px; color: #f9fafb; margin-bottom: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        <span style="font-size: 12px; color: #f9fafb; font-weight: 500;">Adicionar</span>
-      </div>
-    `
-        : '';
-
-    uploadArea.innerHTML = `
-      <div class="images-preview-grid">
-        ${imagesHTML}
-        ${addButtonHTML}
-      </div>
-    `;
+    renderUploadArea();
+    console.log('[UPLOAD] ✅ Inicializado');
   }
 
   // ============================================================================
-  // HANDLERS
+  // UPLOAD DE ARQUIVOS
   // ============================================================================
 
-  (window as any).removeImageAt = (index: number) => {
-    console.log(
-      `🗑️ [REMOVE] Removendo imagem ${index + 1}: ${selectedFiles[index]?.name}`
-    );
-    selectedFiles.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
-  };
-
-  (window as any).setMainImage = (index: number) => {
-    if (index === 0) return;
-    console.log(`⭐ [MAIN] Tornando imagem ${index + 1} como principal`);
-    const [selected] = selectedFiles.splice(index, 1);
-    selectedFiles.unshift(selected);
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
-  };
-
-  // Click na área de upload
-  uploadArea?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('button')) return;
-
-    if (selectedFiles.length < MAX_IMAGES) {
-      fileInput?.click();
-    } else {
-      window.showToast(`Máximo de ${MAX_IMAGES} imagens`, 'warning');
-    }
-  });
-
-  // Seleção de arquivos
-  fileInput?.addEventListener('change', (e) => {
+  async function handleFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
     const files = input.files;
-    if (!files || files.length === 0) return;
 
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📁 [SELEÇÃO] ${files.length} arquivo(s) selecionado(s)`);
-
-    const remainingSlots = MAX_IMAGES - selectedFiles.length;
-    const filesToAdd = Array.from(files).slice(0, remainingSlots);
-
-    for (const file of filesToAdd) {
-      console.log(
-        `  📄 ${file.name}: ${(file.size / 1024).toFixed(1)}KB, tipo: ${file.type}`
-      );
-
-      // Validar tamanho
-      if (file.size > MAX_FILE_SIZE) {
-        window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
-        continue;
-      }
-
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        window.showToast(`${file.name} não é uma imagem`, 'error');
-        continue;
-      }
-
-      selectedFiles.push(file);
+    if (!files || files.length === 0) {
+      return;
     }
 
     console.log(
-      `📁 [SELEÇÃO] Total após adicionar: ${selectedFiles.length} imagens`
+      `\n[UPLOAD] ======== ${files.length} arquivo(s) selecionado(s) ========`
     );
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    // Limpar input para permitir selecionar mesmo arquivo novamente
+    // Limpar input
     input.value = '';
 
-    renderPreviews();
+    // Verificar limite
+    const remaining = MAX_IMAGES - state.images.length;
+    if (remaining === 0) {
+      window.showToast('Máximo de 5 imagens atingido', 'warning');
+      return;
+    }
 
-    if (filesToAdd.length > 0) {
+    // Pegar apenas os que cabem
+    const filesToUpload = Array.from(files).slice(0, remaining);
+
+    if (filesToUpload.length < files.length) {
       window.showToast(
-        `${filesToAdd.length} imagem(ns) adicionada(s)`,
-        'success'
+        `Enviando apenas ${filesToUpload.length} de ${files.length} imagens`,
+        'warning'
       );
     }
-  });
 
-  // ============================================================================
-  // FUNÇÃO DE UPLOAD - TODAS AS IMAGENS EM UMA REQUISIÇÃO
-  // Safari iOS compatible version
-  // ============================================================================
-
-  // Detectar Safari iOS
-  const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-                      !('MSStream' in window) &&
-                      /Safari/.test(navigator.userAgent);
-
-  console.log(`🔍 [BROWSER] Safari iOS: ${isSafariIOS}, UA: ${navigator.userAgent.substring(0, 100)}`);
-
-  // ============================================================================
-  // FIX BUG 2.1 + FIX 413: Compressão que RESPEITA EXIF
-  // Biblioteca browser-image-compression respeita orientação EXIF e comprime eficientemente
-  // ============================================================================
-
-  // Importar biblioteca que respeita EXIF
-  const imageCompression = (await import('browser-image-compression')).default;
-
-  /**
-   * Comprime imagem respeitando orientação EXIF (fotos mobile)
-   * Resolve erro 413 (Vercel 4.5MB limit) sem perder orientação correta
-   */
-  async function compressImage(file: File): Promise<File> {
-    console.log(`   📸 Original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-
-    const options = {
-      maxSizeMB: 3,              // Máximo 3MB após compressão (seguro para Vercel)
-      maxWidthOrHeight: 1920,    // Redimensionar se maior que 1920px
-      useWebWorker: true,        // Usar Web Worker para não bloquear UI
-      fileType: 'image/jpeg',    // Converter para JPEG
-      initialQuality: 0.85,      // Qualidade 85% (ótimo balanço)
-      alwaysKeepResolution: false,
-      exifOrientation: undefined, // AUTO - respeita EXIF automaticamente!
-    };
-
-    try {
-      const compressedFile = await imageCompression(file, options);
-      console.log(`   ✅ Comprimido: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (${Math.round(compressedFile.size / file.size * 100)}%)`);
-
-      // Validar que não ficou muito grande (Vercel limit)
-      if (compressedFile.size > 4 * 1024 * 1024) {
-        console.warn(`   ⚠️ Arquivo ainda muito grande após compressão, tentando compressão mais agressiva...`);
-        // Tentar compressão mais agressiva
-        const aggressiveOptions = { ...options, maxSizeMB: 2, initialQuality: 0.75 };
-        const recompressed = await imageCompression(compressedFile, aggressiveOptions);
-        console.log(`   ✅ Re-comprimido: ${(recompressed.size / 1024 / 1024).toFixed(2)}MB`);
-        return recompressed;
+    // Validar todos os arquivos primeiro
+    for (const file of filesToUpload) {
+      if (!file.type.startsWith('image/')) {
+        window.showToast(`${file.name} não é uma imagem`, 'error');
+        return;
       }
-
-      return compressedFile;
-    } catch (error: any) {
-      console.error(`   ❌ Erro ao comprimir:`, error);
-      throw new Error(`Falha ao comprimir imagem: ${error.message}`);
-    }
-  }
-
-  // Helper para parsear JSON de forma segura (Safari retorna erro genérico)
-  async function safeJsonParse(response: Response): Promise<any> {
-    let text = '';
-    try {
-      text = await response.text();
-    } catch (readError: any) {
-      console.error('❌ Erro ao ler resposta:', readError.message);
-      throw new Error(`Erro ao ler resposta: ${readError.message}`);
+      if (file.size > MAX_FILE_SIZE) {
+        window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
+        return;
+      }
     }
 
-    console.log(`📥 [RESPONSE] Status: ${response.status}, Tamanho: ${text.length} chars`);
+    state.uploading = true;
+    updateSubmitButton();
 
-    // Se a resposta estiver vazia, retornar erro claro
-    if (!text || text.trim() === '') {
-      console.error('❌ Resposta vazia do servidor. Status:', response.status);
-      throw new Error(`Erro ${response.status}: resposta vazia`);
-    }
+    let successCount = 0;
 
-    // Verificar se parece HTML (erro de servidor)
-    if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
-      console.error('❌ Servidor retornou HTML em vez de JSON:', text.substring(0, 300));
-      // Tentar extrair mensagem de erro do HTML
-      const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
-      const errorMsg = titleMatch ? titleMatch[1] : 'Erro no servidor';
-      throw new Error(`${response.status}: ${errorMsg}`);
-    }
+    // Upload sequencial com delay
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
 
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      console.error('❌ Erro ao parsear JSON:', text.substring(0, 500));
-      // Mostrar parte da resposta no erro para debug
-      const preview = text.substring(0, 100).replace(/\s+/g, ' ');
-      throw new Error(`Erro ${response.status}: ${preview}...`);
-    }
-  }
-
-  async function uploadAllImages(files: File[]): Promise<string[]> {
-    const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📤 [BATCH UPLOAD] ID: ${batchId}`);
-    console.log(`📤 [BATCH UPLOAD] ${files.length} arquivos para enviar`);
-    console.log(`📤 [BATCH UPLOAD] Safari iOS: ${isSafariIOS}`);
-
-    // Criar FormData com TODOS os arquivos
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-
-      console.log(`   📁 Processando ${i + 1}/${files.length}: ${file.name}`);
+      console.log(`\n[UPLOAD ${i + 1}/${filesToUpload.length}] ${file.name}`);
 
       try {
-        // FIX 413: Comprimir COM respeito a EXIF (biblioteca browser-image-compression)
-        const compressedFile = await compressImage(file);
-        formData.append(`file${i}`, compressedFile, fileName.replace(/\.[^.]+$/, '.jpg'));
-      } catch (compressError: any) {
-        console.error(`   ❌ Erro ao comprimir ${file.name}:`, compressError);
-        // Se compressão falhar, validar tamanho antes de enviar original
-        if (file.size > 4 * 1024 * 1024) {
-          throw new Error(`Imagem ${file.name} muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB.`);
+        // Delay entre uploads (exceto o primeiro)
+        if (i > 0) {
+          console.log(`[UPLOAD ${i + 1}] ⏱️  Aguardando 500ms...`);
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
-        formData.append(`file${i}`, file, fileName);
+
+        const url = await uploadSingleFile(file, i);
+
+        if (url) {
+          // Verificar duplicata
+          if (state.images.includes(url)) {
+            console.warn(`[UPLOAD ${i + 1}] ⚠️  URL duplicada, ignorando`);
+            continue;
+          }
+
+          state.images.push(url);
+          successCount++;
+          renderUploadArea();
+          console.log(`[UPLOAD ${i + 1}] ✅ Sucesso`);
+        }
+      } catch (error) {
+        console.error(`[UPLOAD ${i + 1}] ❌ Erro:`, error);
+        window.showToast(`Erro ao enviar ${file.name}`, 'error');
       }
     }
 
-    // UMA ÚNICA requisição para todas as imagens
-    const url = `/api/admin/upload?batch=${batchId}`;
-    console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
+    state.uploading = false;
+    updateSubmitButton();
 
-    let response: Response;
+    if (successCount > 0) {
+      window.showToast(`${successCount} imagem(ns) enviada(s)!`, 'success');
+    }
+
+    console.log('[UPLOAD] ======== FIM ========\n');
+  }
+
+  async function uploadSingleFile(
+    file: File,
+    index: number
+  ): Promise<string | null> {
+    // Mostrar loading
+    const loadingId = `loading-${Date.now()}-${index}`;
+    addLoadingCard(loadingId);
+
     try {
-      response = await fetch(url, {
+      // Comprimir se necessário
+      let fileToUpload = file;
+
+      if (file.size > 2 * 1024 * 1024) {
+        console.log(`[UPLOAD] Comprimindo ${file.name}...`);
+        const imageCompression = (await import('browser-image-compression'))
+          .default;
+        fileToUpload = await imageCompression(file, {
+          maxSizeMB: 1.5,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          initialQuality: 0.8,
+        });
+        console.log(
+          `[UPLOAD] Comprimido: ${(file.size / 1024).toFixed(0)}KB → ${(fileToUpload.size / 1024).toFixed(0)}KB`
+        );
+      }
+
+      // Upload
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
+
+      console.log(`[UPLOAD] 📤 Enviando...`);
+
+      const response = await fetch('/api/admin/upload', {
         method: 'POST',
         body: formData,
-        credentials: 'include', // Importante para Safari iOS enviar cookies
       });
-      console.log(`📥 [BATCH UPLOAD] Resposta recebida: ${response.status} ${response.statusText}`);
-    } catch (fetchError: any) {
-      console.error('❌ [BATCH UPLOAD] Erro de rede:', fetchError.message);
-      throw new Error(`Erro de conexão: ${fetchError.message}`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro no upload');
+      }
+
+      const data = await response.json();
+
+      if (!data.url) {
+        throw new Error('URL não retornada');
+      }
+
+      console.log(`[UPLOAD] ✅ URL: ${data.url.substring(0, 60)}...`);
+
+      removeLoadingCard(loadingId);
+      return data.url;
+    } catch (error: any) {
+      console.error('[UPLOAD] Erro:', error);
+      removeLoadingCard(loadingId);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // GERENCIAMENTO DE IMAGENS
+  // ============================================================================
+
+  function removeImage(index: number) {
+    console.log(`[UPLOAD] Removendo imagem ${index}`);
+    state.images.splice(index, 1);
+    renderUploadArea();
+    window.showToast('Imagem removida', 'success');
+  }
+
+  function setAsMain(index: number) {
+    if (index === 0) return;
+    console.log(`[UPLOAD] Definindo imagem ${index} como principal`);
+    const [image] = state.images.splice(index, 1);
+    state.images.unshift(image);
+    renderUploadArea();
+    window.showToast('Imagem principal atualizada', 'success');
+  }
+
+  // ============================================================================
+  // RENDERIZAÇÃO
+  // ============================================================================
+
+  function handleUploadAreaClick(e: Event) {
+    const target = e.target as HTMLElement;
+
+    // Não abrir se clicar em botão ou imagem
+    if (target.closest('button') || target.closest('.image-card')) {
+      return;
     }
 
-    if (!response.ok) {
-      console.error(`❌ [BATCH UPLOAD] Resposta não OK: ${response.status}`);
-      const error = await safeJsonParse(response);
-      throw new Error(error.error || `Erro no upload (${response.status})`);
+    if (state.images.length < MAX_IMAGES) {
+      fileInput.click();
+    }
+  }
+
+  function renderUploadArea() {
+    if (!uploadArea) return;
+
+    const hasImages = state.images.length > 0;
+    const canAddMore = state.images.length < MAX_IMAGES;
+
+    if (!hasImages) {
+      uploadArea.innerHTML = `
+      <div class="upload-placeholder">
+        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <p>Clique para adicionar fotos</p>
+        <small>Selecione até 5 fotos de uma vez • Máximo 10MB cada</small>
+      </div>
+    `;
+      return;
     }
 
-    const result = await safeJsonParse(response);
+    const imagesHtml = state.images
+      .map(
+        (url, i) => `
+    <div class="image-card ${i === 0 ? 'is-main' : ''}" onclick="window.setAsMain(${i})">
+      <img src="${url}" alt="Foto ${i + 1}" loading="lazy" />
+      <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${i})">×</button>
+      ${i === 0 ? '<span class="main-badge">Principal</span>' : ''}
+    </div>
+  `
+      )
+      .join('');
 
-    console.log(`✅ [BATCH UPLOAD] Sucesso!`);
-    console.log(`   ${result.count} imagens processadas`);
-    result.urls.forEach((url: string, i: number) => {
-      console.log(`   URL ${i + 1}: ${url}`);
-    });
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    const addButtonHtml = canAddMore
+      ? `
+    <div class="add-image-btn" onclick="window.openFileDialog()">
+      <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>Adicionar</span>
+    </div>
+  `
+      : '';
 
-    if (result.errors && result.errors.length > 0) {
-      console.warn('⚠️ Alguns erros:', result.errors);
+    uploadArea.innerHTML = `
+    <div class="images-grid">
+      ${imagesHtml}
+      ${addButtonHtml}
+    </div>
+  `;
+  }
+
+  function addLoadingCard(id: string) {
+    const grid = uploadArea.querySelector('.images-grid');
+    if (!grid) {
+      uploadArea.innerHTML = '<div class="images-grid"></div>';
+      return addLoadingCard(id);
     }
 
-    return result.urls;
+    const loading = document.createElement('div');
+    loading.id = id;
+    loading.className = 'loading-card';
+    loading.innerHTML = '<div class="spinner"></div>';
+
+    grid.appendChild(loading);
+  }
+
+  function removeLoadingCard(id: string) {
+    document.getElementById(id)?.remove();
+  }
+
+  function updateSubmitButton() {
+    if (!submitBtn || !submitText) return;
+    submitBtn.disabled = state.uploading;
+    submitText.textContent = state.uploading
+      ? 'Aguarde...'
+      : 'Adicionar Produto';
   }
 
   // ============================================================================
   // SUBMIT DO FORMULÁRIO
   // ============================================================================
 
-  form?.addEventListener('submit', async (e) => {
+  async function handleSubmit(e: Event) {
     e.preventDefault();
 
-    if (selectedFiles.length === 0) {
-      window.showToast('Adicione pelo menos uma imagem', 'warning');
+    if (state.images.length === 0) {
+      window.showToast('Adicione pelo menos uma foto', 'warning');
       return;
     }
 
-    isSubmitting = true;
+    if (state.uploading) {
+      window.showToast('Aguarde o upload finalizar', 'warning');
+      return;
+    }
+
     submitBtn.disabled = true;
-    submitText.innerHTML =
-      '<div class="form-spinner"></div> Enviando imagens...';
+    submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('💾 [SUBMIT] Iniciando salvamento');
-      console.log(`📸 [SUBMIT] ${selectedFiles.length} imagens para enviar`);
-
-      // Upload de TODAS as imagens em UMA requisição
-      const uploadedUrls = await uploadAllImages(selectedFiles);
-
-      if (uploadedUrls.length === 0) {
-        throw new Error('Nenhuma imagem foi enviada com sucesso');
-      }
-
-      console.log(
-        `✅ [SUBMIT] ${uploadedUrls.length} imagens enviadas com sucesso`
-      );
-
-      // Preparar dados do produto
-      submitText.innerHTML =
-        '<div class="form-spinner"></div> Salvando produto...';
-
       const formData = new FormData(form);
 
-      // Converter vírgula para ponto no preço (compatibilidade com locale BR)
-      const precoStr = (formData.get('preco') as string || '').replace(',', '.');
-      const bateriaStr = formData.get('bateria') as string;
-
-      const produto = {
+      const payload = {
         nome: formData.get('nome'),
         codigo: formData.get('codigo') || null,
-        preco: parseFloat(precoStr) || 0,
-        bateria: bateriaStr ? parseInt(bateriaStr, 10) : null,
+        preco:
+          parseFloat((formData.get('preco') as string).replace(',', '.')) || 0,
+        bateria: formData.get('bateria')
+          ? parseInt(formData.get('bateria') as string)
+          : null,
         condicao: formData.get('condicao'),
         categoria_id: formData.get('categoria_id'),
         descricao: formData.get('descricao') || null,
-        imagens: uploadedUrls,
+        imagens: state.images,
       };
 
-      console.log('📦 [SUBMIT] Salvando produto:', produto);
+      console.log('[SUBMIT] Payload:', payload);
 
-      // Salvar produto
       const response = await fetch('/api/admin/produtos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(produto),
-        credentials: 'include', // Importante para Safari iOS enviar cookies
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const error = await safeJsonParse(response);
-        throw new Error(error.error || 'Erro ao salvar produto');
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao salvar');
       }
 
-      console.log('✅ [SUBMIT] Produto salvo com sucesso!');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-      window.showToast('Produto adicionado com sucesso!', 'success');
-
-      // FIX BUG 3.1: Limpar estado ANTES de redirecionar
-      console.log('🧹 [SUBMIT] Limpando estado de imagens...');
-      selectedFiles = [];
-      cleanupBlobUrls();
-      blobUrls = [];
-
-      // Limpar preview do DOM
-      const previewContainer = document.getElementById('imagens-preview');
-      if (previewContainer) {
-        previewContainer.innerHTML = '';
-      }
-
-      // Pequeno delay para garantir que limpeza foi feita
-      setTimeout(() => {
-        window.location.href = `/admin/produtos?_t=${Date.now()}`;
-      }, 100);
+      window.showToast('Produto criado com sucesso!', 'success');
+      setTimeout(() => (window.location.href = '/admin/produtos'), 500);
     } catch (error: any) {
-      console.error('❌ [SUBMIT] Erro:', error);
-      const errorMsg = error.message || 'Erro ao salvar produto';
-
-      // FIX BUG 3.2: Limpar estado também em caso de ERRO
-      console.log('🧹 [SUBMIT] Limpando estado após erro...');
-      selectedFiles = [];
-      cleanupBlobUrls();
-      blobUrls = [];
-
-      // Limpar preview do DOM
-      const previewContainer = document.getElementById('imagens-preview');
-      if (previewContainer) {
-        previewContainer.innerHTML = '';
-      }
-
-      // Em produção no Safari iOS, mostrar alert para debug
-      if (isSafariIOS) {
-        alert(`ERRO DEBUG:\n${errorMsg}`);
-      }
-
-      window.showToast(errorMsg, 'error');
-      isSubmitting = false;
+      console.error('[SUBMIT] Erro:', error);
+      window.showToast(error.message, 'error');
       submitBtn.disabled = false;
       submitText.textContent = 'Adicionar Produto';
     }
-  });
+  }
 
   // ============================================================================
-  // PROTEÇÃO CONTRA RELOAD
+  // INIT
   // ============================================================================
 
-  form?.addEventListener('input', () => {
-    formDirty = true;
-  });
-
-  // FIX BUG 3.3: Limpar estado ao sair da página
-  window.addEventListener('beforeunload', (e) => {
-    // Limpar estado sempre ao sair
-    console.log('🧹 [CLEANUP] Limpando estado antes de sair da página');
-    selectedFiles = [];
-    cleanupBlobUrls();
-    blobUrls = [];
-
-    // Limpar funções globais
-    if ((window as any).removeImageAt) {
-      delete (window as any).removeImageAt;
-    }
-
-    // Avisar sobre alterações não salvas
-    if ((formDirty || selectedFiles.length > 0) && !isSubmitting) {
-      e.preventDefault();
-      e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
-      return e.returnValue;
-    }
-  });
-
-  // Limpar blob URLs ao sair (pagehide é mais confiável que unload)
-  window.addEventListener('pagehide', () => {
-    cleanupBlobUrls();
-    selectedFiles = [];
-    blobUrls = [];
-  });
-
-  // Renderizar estado inicial
-  renderPreviews();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 </script>
-
-<style>
-  .upload-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-  }
-
-  .upload-placeholder svg {
-    color: #9ca3af;
-    margin-bottom: 16px;
-  }
-
-  .upload-placeholder p {
-    font-size: 14px;
-    font-weight: 500;
-    color: #6b7280;
-    margin-bottom: 4px;
-  }
-
-  .upload-placeholder small {
-    font-size: 12px;
-    color: #9ca3af;
-  }
-</style>
-
-<style is:global>
-  #upload-area:has(.images-preview-grid),
-  .form-image-upload:has(.images-preview-grid) {
-    display: block !important;
-    min-height: auto !important;
-    padding: 0 !important;
-  }
-
-  .images-preview-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  @media (min-width: 768px) {
-    .images-preview-grid {
-      grid-template-columns: repeat(5, 1fr) !important;
-    }
-  }
-</style>

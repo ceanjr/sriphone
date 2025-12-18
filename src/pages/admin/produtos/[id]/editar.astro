@@ -3,7 +3,7 @@ import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import '../../../../styles/admin-form.css';
 
-export const prerender = false; // Força SSR sem cache para admin
+export const prerender = false;
 
 const { id } = Astro.params;
 
@@ -35,53 +35,45 @@ const { data: categorias } = await supabaseAdmin
               stroke-width="2"
               d="M15 19l-7-7 7-7"></path>
           </svg>
-          Voltar para Produtos
+          Voltar
         </a>
         <h1 class="form-title">Editar Produto</h1>
         <p class="form-subtitle">Atualize as informações do produto</p>
       </div>
 
       <div class="form-card">
-        <form id="product-form">
+        <form id="product-form" data-produto-id={produto.id}>
           <input
             type="hidden"
-            id="produto_id"
-            name="produto_id"
-            value={produto.id}
-          />
-          <input
-            type="hidden"
-            id="existing-images-json"
+            id="existing-images"
             value={JSON.stringify(produto.imagens || [])}
           />
 
-          <!-- Image Upload -->
+          <!-- Imagens -->
           <div class="form-group">
             <label class="form-label">Imagens do Produto (até 5)</label>
             <input
-              id="foto-upload"
+              id="file-input"
               type="file"
               accept="image/*"
               multiple
               style="display: none;"
             />
-            <div class="form-image-upload" id="upload-area">
-              <!-- Conteúdo dinâmico: placeholder ou grid de imagens -->
+            <div id="upload-area" class="upload-area">
+              <!-- Conteúdo dinâmico -->
             </div>
           </div>
 
           <!-- Nome -->
           <div class="form-group">
             <label class="form-label" for="nome">
-              Nome do Produto
-              <span class="form-label-required">*</span>
+              Nome <span class="form-label-required">*</span>
             </label>
             <input
               id="nome"
               name="nome"
               type="text"
               class="form-input"
-              placeholder="Ex: iPhone 13 Pro Max 256GB"
               value={produto.nome}
               required
             />
@@ -96,23 +88,19 @@ const { data: categorias } = await supabaseAdmin
                 name="codigo"
                 type="text"
                 class="form-input"
-                placeholder="Ex: IP13PM256"
                 value={produto.codigo || ''}
               />
             </div>
             <div class="form-group">
               <label class="form-label" for="preco">
-                Preço
-                <span class="form-label-required">*</span>
+                Preço <span class="form-label-required">*</span>
               </label>
               <input
                 id="preco"
                 name="preco"
                 type="text"
                 inputmode="decimal"
-                pattern="[0-9]*[.,]?[0-9]*"
                 class="form-input"
-                placeholder="0.00"
                 value={produto.preco}
                 required
               />
@@ -123,8 +111,7 @@ const { data: categorias } = await supabaseAdmin
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="categoria_id">
-                Categoria
-                <span class="form-label-required">*</span>
+                Categoria <span class="form-label-required">*</span>
               </label>
               <select
                 id="categoria_id"
@@ -132,14 +119,14 @@ const { data: categorias } = await supabaseAdmin
                 class="form-select"
                 required
               >
-                <option value="">Selecione uma categoria</option>
+                <option value="">Selecione</option>
                 {
-                  categorias?.map((categoria) => (
+                  categorias?.map((c) => (
                     <option
-                      value={categoria.id}
-                      selected={categoria.id === produto.categoria_id}
+                      value={c.id}
+                      selected={c.id === produto.categoria_id}
                     >
-                      {categoria.nome}
+                      {c.nome}
                     </option>
                   ))
                 }
@@ -152,8 +139,8 @@ const { data: categorias } = await supabaseAdmin
                   >Novo</option
                 >
                 <option
-                  value="Semi-novo"
-                  selected={produto.condicao === 'Semi-novo'}>Semi-novo</option
+                  value="Seminovo"
+                  selected={produto.condicao === 'Seminovo'}>Seminovo</option
                 >
                 <option value="Usado" selected={produto.condicao === 'Usado'}
                   >Usado</option
@@ -170,9 +157,7 @@ const { data: categorias } = await supabaseAdmin
               name="bateria"
               type="text"
               inputmode="numeric"
-              pattern="[0-9]*"
               class="form-input"
-              placeholder="Ex: 80"
               value={produto.bateria || ''}
             />
           </div>
@@ -180,11 +165,7 @@ const { data: categorias } = await supabaseAdmin
           <!-- Descrição -->
           <div class="form-group">
             <label class="form-label" for="descricao">Descrição</label>
-            <textarea
-              id="descricao"
-              name="descricao"
-              class="form-textarea"
-              placeholder="Descreva o produto, suas características e estado..."
+            <textarea id="descricao" name="descricao" class="form-textarea"
               >{produto.descricao || ''}</textarea
             >
           </div>
@@ -208,577 +189,650 @@ const { data: categorias } = await supabaseAdmin
   </div>
 </AdminLayout>
 
+<style>
+  .upload-area {
+    min-height: 200px;
+    border: 2px dashed #444;
+    border-radius: 8px;
+    background: #0a0a0a;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .upload-area:hover {
+    border-color: #666;
+    background: #111;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .upload-placeholder svg {
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  .upload-placeholder p {
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .upload-placeholder small {
+    color: #555;
+    font-size: 12px;
+  }
+
+  .images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .image-card {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #333;
+    background: #000;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .image-card:hover {
+    border-color: #555;
+    transform: translateY(-2px);
+  }
+
+  .image-card.is-main {
+    border-color: #3b82f6;
+  }
+
+  .image-card.is-new {
+    border-color: #22c55e;
+  }
+
+  .image-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-card .remove-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0;
+    transition: all 0.2s;
+  }
+
+  .image-card:hover .remove-btn {
+    opacity: 1;
+  }
+
+  .image-card .remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+
+  .image-card .main-badge {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(59, 130, 246, 0.95);
+    color: white;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .image-card .new-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: rgba(34, 197, 94, 0.95);
+    color: white;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .add-image-btn {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px dashed #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #151515;
+    color: #888;
+    transition: all 0.2s;
+  }
+
+  .add-image-btn:hover {
+    border-color: #666;
+    background: #222;
+    color: #fff;
+  }
+
+  .add-image-btn svg {
+    margin-bottom: 4px;
+  }
+
+  .add-image-btn span {
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .loading-card {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #444;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
 <script>
-  const form = document.getElementById('product-form') as HTMLFormElement;
-  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const submitText = document.getElementById('submit-text') as HTMLSpanElement;
-  const produtoIdInput = document.getElementById(
-    'produto_id'
-  ) as HTMLInputElement;
-  const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
-  const uploadArea = document.getElementById('upload-area');
-  const existingImagesInput = document.getElementById(
-    'existing-images-json'
-  ) as HTMLInputElement;
+  // ============================================================================
+  // SISTEMA DE UPLOAD SIMPLIFICADO - EDIÇÃO
+  // ============================================================================
+
+  interface UploadState {
+    existingImages: string[];
+    newImages: string[];
+    uploading: boolean;
+  }
+
+  const state: UploadState = {
+    existingImages: [],
+    newImages: [],
+    uploading: false,
+  };
 
   const MAX_IMAGES = 5;
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-  // Estado das imagens:
-  // - existingImageUrls: URLs das imagens já salvas no produto (strings)
-  // - newImageFiles: Novos arquivos selecionados mas ainda não enviados (File objects)
-  let existingImageUrls: string[] = [];
-  let newImageFiles: File[] = [];
-
-  // Estado do formulário para prevenir reload acidental
-  let formDirty = false;
-  let isSubmitting = false;
+  let fileInput: HTMLInputElement;
+  let uploadArea: HTMLElement;
+  let form: HTMLFormElement;
+  let submitBtn: HTMLButtonElement;
+  let submitText: HTMLSpanElement;
+  let produtoId: string;
 
   // ============================================================================
-  // GESTÃO DE MEMÓRIA - Blob URLs
+  // INICIALIZAÇÃO
   // ============================================================================
 
-  // Armazenar URLs criadas para limpar depois
-  const blobUrls: string[] = [];
+  function init() {
+    console.log('[EDIT UPLOAD] Inicializando...');
 
-  // Função para limpar URLs antigas
-  function cleanupBlobUrls() {
-    blobUrls.forEach((url) => {
-      URL.revokeObjectURL(url);
-    });
-    blobUrls.length = 0;
-    console.log('🧹 [MEMORY] Blob URLs limpas');
-  }
+    fileInput = document.getElementById('file-input') as HTMLInputElement;
+    uploadArea = document.getElementById('upload-area') as HTMLElement;
+    form = document.getElementById('product-form') as HTMLFormElement;
+    submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    submitText = document.getElementById('submit-text') as HTMLSpanElement;
+    produtoId = form.dataset.produtoId || '';
 
-  // Carregar imagens existentes do produto
-  try {
-    existingImageUrls = JSON.parse(existingImagesInput.value || '[]');
-    console.log('📸 Imagens existentes carregadas:', existingImageUrls.length);
-  } catch (e) {
-    console.error('❌ Erro ao parsear imagens existentes:', e);
-  }
-
-  // Click na área de upload abre o file input
-  uploadArea?.addEventListener('click', (e) => {
-    // Não abrir file input se clicar em botão de remover
-    if ((e.target as HTMLElement).closest('button')) return;
-
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-    if (totalImages < MAX_IMAGES) {
-      fileInput?.click();
-    } else {
-      window.showToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning');
-    }
-  });
-
-  // Renderizar preview das imagens
-  function renderPreviews() {
-    if (!uploadArea) return;
-
-    // Limpar blob URLs antigas antes de criar novas
-    cleanupBlobUrls();
-
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-
-    if (totalImages === 0) {
-      // Placeholder quando não há imagens
-      uploadArea.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px;">
-          <svg
-            style="width: 48px; height: 48px; color: #9ca3af; margin-bottom: 16px;"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            ></path>
-          </svg>
-          <p style="font-size: 14px; font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-            Clique para adicionar imagens
-          </p>
-          <small style="font-size: 12px; color: #9ca3af;">JPG, PNG até 10MB cada (máximo 5 imagens)</small>
-        </div>
-      `;
+    if (!fileInput || !uploadArea || !form) {
+      console.error('[EDIT UPLOAD] Elementos não encontrados!');
       return;
     }
 
-    // Grid de imagens: primeiro as existentes, depois as novas - Layout responsivo
-    const existingImagesHtml = existingImageUrls
-      .map((url, index) => {
-        const isPrincipal = index === 0 && newImageFiles.length === 0;
-        return `
-        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; cursor: ${isPrincipal ? 'default' : 'pointer'}; transition: all 0.2s;"
-          onclick="${isPrincipal ? '' : `event.stopPropagation(); window.setMainExistingImage(${index})`}"
-          onmouseover="${isPrincipal ? '' : `this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)'`}"
-          onmouseout="${isPrincipal ? '' : `this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'`}"
-          title="${isPrincipal ? 'Imagem principal' : 'Clique para tornar principal'}"
-        >
-          <img
-            src="${url}"
-            alt="Imagem ${index + 1}"
-            style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="event.stopPropagation(); event.preventDefault(); window.removeExistingImage(${index})"
-            style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
-            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.15)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-            title="Remover imagem"
-          >
-            ×
-          </button>
-          ${isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
-        </div>
-      `;
-      })
-      .join('');
+    // Carregar imagens existentes
+    const existingInput = document.getElementById(
+      'existing-images'
+    ) as HTMLInputElement;
+    try {
+      state.existingImages = JSON.parse(existingInput.value || '[]');
+      console.log(
+        `[EDIT UPLOAD] ${state.existingImages.length} imagens existentes carregadas`
+      );
+    } catch (e) {
+      console.error('[EDIT UPLOAD] Erro ao carregar imagens:', e);
+      state.existingImages = [];
+    }
 
-    const newImagesHtml = newImageFiles
-      .map((file, index) => {
-        const url = URL.createObjectURL(file); // Blob URL local
-        blobUrls.push(url); // Rastrear para limpeza posterior
-        const globalIndex = existingImageUrls.length + index;
-        const isPrincipal = globalIndex === 0;
-        return `
-        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; cursor: ${isPrincipal ? 'default' : 'pointer'}; transition: all 0.2s;"
-          onclick="${isPrincipal ? '' : `event.stopPropagation(); window.setMainNewImage(${index})`}"
-          onmouseover="${isPrincipal ? '' : `this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)'`}"
-          onmouseout="${isPrincipal ? '' : `this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'`}"
-          title="${isPrincipal ? 'Imagem principal' : 'Clique para tornar principal'}"
-        >
-          <img
-            src="${url}"
-            alt="${file.name}"
-            style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="event.stopPropagation(); event.preventDefault(); window.removeNewImage(${index})"
-            style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
-            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.15)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-            title="Remover imagem"
-          >
-            ×
-          </button>
-          ${isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
-          <span style="position: absolute; top: 6px; left: 6px; background: rgba(34, 197, 94, 0.95); color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; z-index: 5;">Nova</span>
-        </div>
-      `;
-      })
-      .join('');
+    // Event listeners
+    fileInput.addEventListener('change', handleFileSelect);
+    uploadArea.addEventListener('click', handleUploadAreaClick);
+    form.addEventListener('submit', handleSubmit);
 
-    const addButtonHtml =
-      totalImages < MAX_IMAGES
-        ? `
-          <div style="aspect-ratio: 1 / 1; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #0A0A0A; transition: all 0.2s;"
-            onmouseover="this.style.borderColor='#f9fafb'; this.style.background='#121212'"
-            onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#0A0A0A'"
-          >
-            <svg style="width: 32px; height: 32px; color: #f9fafb; margin-bottom: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span style="font-size: 12px; color: #f9fafb; font-weight: 500;">Adicionar</span>
-          </div>
-      `
-        : '';
+    // Funções globais
+    (window as any).removeExisting = removeExisting;
+    (window as any).removeNew = removeNew;
+    (window as any).setAsMain = setAsMain;
+    (window as any).openFileDialog = () => fileInput.click();
 
-    uploadArea.innerHTML = `
-      <div class="images-preview-grid">
-        ${existingImagesHtml}
-        ${newImagesHtml}
-        ${addButtonHtml}
-      </div>
-    `;
+    renderUploadArea();
+    console.log('[EDIT UPLOAD] ✅ Inicializado');
   }
 
-  // Funções globais para remover imagens
-  (window as any).removeExistingImage = (index: number) => {
-    existingImageUrls.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
-  };
+  // ============================================================================
+  // UPLOAD DE ARQUIVOS
+  // ============================================================================
 
-  (window as any).removeNewImage = (index: number) => {
-    newImageFiles.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
-  };
+  async function handleFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const files = input.files;
 
-  // Funções para tornar imagem principal
-  (window as any).setMainExistingImage = (index: number) => {
-    if (index === 0 && newImageFiles.length === 0) return; // Já é a principal
-    console.log(`⭐ [PREVIEW] Tornando imagem existente ${index + 1} como principal`);
-    // Mover a imagem clicada para a primeira posição
-    const [selectedImage] = existingImageUrls.splice(index, 1);
-    existingImageUrls.unshift(selectedImage);
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
-  };
+    if (!files || files.length === 0) {
+      return;
+    }
 
-  (window as any).setMainNewImage = (index: number) => {
-    console.log(`⭐ [PREVIEW] Tornando nova imagem ${index + 1} como principal`);
-    // Mover a nova imagem para o início de existingImageUrls
-    const [selectedImage] = newImageFiles.splice(index, 1);
-    existingImageUrls.unshift(selectedImage.name); // Adicionar placeholder
-    // Re-adicionar na primeira posição de newImageFiles
-    newImageFiles.unshift(selectedImage);
-    // Remover o placeholder
-    existingImageUrls.shift();
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
-  };
+    console.log(
+      `\n[EDIT UPLOAD] ======== ${files.length} arquivo(s) selecionado(s) ========`
+    );
 
-  // Quando selecionar novos arquivos
-  fileInput?.addEventListener('change', (e) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files || files.length === 0) return;
+    // Limpar input
+    input.value = '';
 
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-    const remainingSlots = MAX_IMAGES - totalImages;
+    // Verificar limite
+    const totalImages = state.existingImages.length + state.newImages.length;
+    const remaining = MAX_IMAGES - totalImages;
 
-    if (files.length > remainingSlots) {
+    if (remaining === 0) {
+      window.showToast('Máximo de 5 imagens atingido', 'warning');
+      return;
+    }
+
+    // Pegar apenas os que cabem
+    const filesToUpload = Array.from(files).slice(0, remaining);
+
+    if (filesToUpload.length < files.length) {
       window.showToast(
-        `Você pode adicionar apenas ${remainingSlots} imagem${remainingSlots !== 1 ? 'ns' : ''} (máximo ${MAX_IMAGES})`,
+        `Enviando apenas ${filesToUpload.length} de ${files.length} imagens`,
         'warning'
       );
     }
 
-    const filesToAdd = Array.from(files).slice(0, remainingSlots);
-
-    // Validar cada arquivo
-    for (const file of filesToAdd) {
-      if (file.size > 10 * 1024 * 1024) {
-        window.showToast(
-          `Arquivo ${file.name} muito grande (máx 10MB)`,
-          'error'
-        );
-        continue;
-      }
-
+    // Validar todos os arquivos primeiro
+    for (const file of filesToUpload) {
       if (!file.type.startsWith('image/')) {
-        window.showToast(`Arquivo ${file.name} não é uma imagem`, 'error');
-        continue;
+        window.showToast(`${file.name} não é uma imagem`, 'error');
+        return;
       }
-
-      newImageFiles.push(file);
+      if (file.size > MAX_FILE_SIZE) {
+        window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
+        return;
+      }
     }
 
-    renderPreviews();
+    state.uploading = true;
+    updateSubmitButton();
 
-    if (filesToAdd.length > 0) {
+    let successCount = 0;
+
+    // Upload sequencial com delay
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+
+      console.log(
+        `\n[EDIT UPLOAD ${i + 1}/${filesToUpload.length}] ${file.name}`
+      );
+
+      try {
+        // Delay entre uploads (exceto o primeiro)
+        if (i > 0) {
+          console.log(`[EDIT UPLOAD ${i + 1}] ⏱️  Aguardando 500ms...`);
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        const url = await uploadSingleFile(file, i);
+
+        if (url) {
+          // Verificar duplicata
+          const allImages = [...state.existingImages, ...state.newImages];
+          if (allImages.includes(url)) {
+            console.warn(`[EDIT UPLOAD ${i + 1}] ⚠️  URL duplicada, ignorando`);
+            continue;
+          }
+
+          state.newImages.push(url);
+          successCount++;
+          renderUploadArea();
+          console.log(`[EDIT UPLOAD ${i + 1}] ✅ Sucesso`);
+        }
+      } catch (error) {
+        console.error(`[EDIT UPLOAD ${i + 1}] ❌ Erro:`, error);
+        window.showToast(`Erro ao enviar ${file.name}`, 'error');
+      }
+    }
+
+    state.uploading = false;
+    updateSubmitButton();
+
+    if (successCount > 0) {
       window.showToast(
-        `${filesToAdd.length} imagem${filesToAdd.length !== 1 ? 'ns' : ''} selecionada${filesToAdd.length !== 1 ? 's' : ''}!`,
+        `${successCount} nova(s) imagem(ns) adicionada(s)!`,
         'success'
       );
     }
 
-    fileInput.value = '';
-  });
-
-  // Detectar Safari iOS
-  const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-                      !('MSStream' in window) &&
-                      /Safari/.test(navigator.userAgent);
-
-  console.log(`🔍 [BROWSER] Safari iOS: ${isSafariIOS}, UA: ${navigator.userAgent.substring(0, 100)}`);
-
-  // ============================================================================
-  // FIX BUG 2.2 + FIX 413: Compressão que RESPEITA EXIF (mesmo do novo.astro)
-  // Biblioteca browser-image-compression respeita orientação EXIF e comprime eficientemente
-  // ============================================================================
-
-  // Importar biblioteca que respeita EXIF
-  const imageCompression = (await import('browser-image-compression')).default;
-
-  /**
-   * Comprime imagem respeitando orientação EXIF (fotos mobile)
-   * Resolve erro 413 (Vercel 4.5MB limit) sem perder orientação correta
-   */
-  async function compressImage(file: File): Promise<File> {
-    console.log(`   📸 Original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-
-    const options = {
-      maxSizeMB: 3,              // Máximo 3MB após compressão (seguro para Vercel)
-      maxWidthOrHeight: 1920,    // Redimensionar se maior que 1920px
-      useWebWorker: true,        // Usar Web Worker para não bloquear UI
-      fileType: 'image/jpeg',    // Converter para JPEG
-      initialQuality: 0.85,      // Qualidade 85% (ótimo balanço)
-      alwaysKeepResolution: false,
-      exifOrientation: undefined, // AUTO - respeita EXIF automaticamente!
-    };
-
-    try {
-      const compressedFile = await imageCompression(file, options);
-      console.log(`   ✅ Comprimido: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (${Math.round(compressedFile.size / file.size * 100)}%)`);
-
-      // Validar que não ficou muito grande (Vercel limit)
-      if (compressedFile.size > 4 * 1024 * 1024) {
-        console.warn(`   ⚠️ Arquivo ainda muito grande após compressão, tentando compressão mais agressiva...`);
-        // Tentar compressão mais agressiva
-        const aggressiveOptions = { ...options, maxSizeMB: 2, initialQuality: 0.75 };
-        const recompressed = await imageCompression(compressedFile, aggressiveOptions);
-        console.log(`   ✅ Re-comprimido: ${(recompressed.size / 1024 / 1024).toFixed(2)}MB`);
-        return recompressed;
-      }
-
-      return compressedFile;
-    } catch (error: any) {
-      console.error(`   ❌ Erro ao comprimir:`, error);
-      throw new Error(`Falha ao comprimir imagem: ${error.message}`);
-    }
+    console.log('[EDIT UPLOAD] ======== FIM ========\n');
   }
 
-  // Helper para parsear JSON de forma segura (Safari retorna erro genérico)
-  async function safeJsonParse(response: Response): Promise<any> {
-    let text = '';
-    try {
-      text = await response.text();
-    } catch (readError: any) {
-      console.error('❌ Erro ao ler resposta:', readError.message);
-      throw new Error(`Erro ao ler resposta: ${readError.message}`);
-    }
-
-    console.log(`📥 [RESPONSE] Status: ${response.status}, Tamanho: ${text.length} chars`);
-
-    // Se a resposta estiver vazia, retornar erro claro
-    if (!text || text.trim() === '') {
-      console.error('❌ Resposta vazia do servidor. Status:', response.status);
-      throw new Error(`Erro ${response.status}: resposta vazia`);
-    }
-
-    // Verificar se parece HTML (erro de servidor)
-    if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
-      console.error('❌ Servidor retornou HTML em vez de JSON:', text.substring(0, 300));
-      const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
-      const errorMsg = titleMatch ? titleMatch[1] : 'Erro no servidor';
-      throw new Error(`${response.status}: ${errorMsg}`);
-    }
+  async function uploadSingleFile(
+    file: File,
+    index: number
+  ): Promise<string | null> {
+    // Mostrar loading
+    const loadingId = `loading-${Date.now()}-${index}`;
+    addLoadingCard(loadingId);
 
     try {
-      return JSON.parse(text);
-    } catch (e) {
-      console.error('❌ Erro ao parsear JSON:', text.substring(0, 500));
-      const preview = text.substring(0, 100).replace(/\s+/g, ' ');
-      throw new Error(`Erro ${response.status}: ${preview}...`);
-    }
-  }
+      // Comprimir se necessário
+      let fileToUpload = file;
 
-  // Função para fazer upload de TODAS as imagens em UMA requisição
-  // Safari iOS compatible version
-  async function uploadAllImages(files: File[]): Promise<string[]> {
-    const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📤 [BATCH UPLOAD] ID: ${batchId}`);
-    console.log(`📤 [BATCH UPLOAD] ${files.length} arquivos para enviar`);
-    console.log(`📤 [BATCH UPLOAD] Safari iOS: ${isSafariIOS}`);
-
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-
-      console.log(`   📁 Processando ${i + 1}/${files.length}: ${file.name}`);
-
-      try {
-        // FIX 413: Comprimir COM respeito a EXIF (biblioteca browser-image-compression)
-        const compressedFile = await compressImage(file);
-        formData.append(`file${i}`, compressedFile, fileName.replace(/\.[^.]+$/, '.jpg'));
-      } catch (compressError: any) {
-        console.error(`   ❌ Erro ao comprimir ${file.name}:`, compressError);
-        // Se compressão falhar, validar tamanho antes de enviar original
-        if (file.size > 4 * 1024 * 1024) {
-          throw new Error(`Imagem ${file.name} muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB.`);
-        }
-        formData.append(`file${i}`, file, fileName);
+      if (file.size > 2 * 1024 * 1024) {
+        console.log(`[EDIT UPLOAD] Comprimindo ${file.name}...`);
+        const imageCompression = (await import('browser-image-compression'))
+          .default;
+        fileToUpload = await imageCompression(file, {
+          maxSizeMB: 1.5,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          initialQuality: 0.8,
+        });
+        console.log(
+          `[EDIT UPLOAD] Comprimido: ${(file.size / 1024).toFixed(0)}KB → ${(fileToUpload.size / 1024).toFixed(0)}KB`
+        );
       }
-    }
 
-    const url = `/api/admin/upload?batch=${batchId}`;
-    console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
+      // Upload
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
+      console.log(`[EDIT UPLOAD] 📤 Enviando...`);
+
+      const response = await fetch('/api/admin/upload', {
         method: 'POST',
         body: formData,
-        credentials: 'include', // Importante para Safari iOS enviar cookies
       });
-      console.log(`📥 [BATCH UPLOAD] Resposta recebida: ${response.status} ${response.statusText}`);
-    } catch (fetchError: any) {
-      console.error('❌ [BATCH UPLOAD] Erro de rede:', fetchError.message);
-      throw new Error(`Erro de conexão: ${fetchError.message}`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro no upload');
+      }
+
+      const data = await response.json();
+
+      if (!data.url) {
+        throw new Error('URL não retornada');
+      }
+
+      console.log(`[EDIT UPLOAD] ✅ URL: ${data.url.substring(0, 60)}...`);
+
+      removeLoadingCard(loadingId);
+      return data.url;
+    } catch (error: any) {
+      console.error('[EDIT UPLOAD] Erro:', error);
+      removeLoadingCard(loadingId);
+      throw error;
     }
-
-    if (!response.ok) {
-      console.error(`❌ [BATCH UPLOAD] Resposta não OK: ${response.status}`);
-      const error = await safeJsonParse(response);
-      throw new Error(error.error || `Erro no upload (${response.status})`);
-    }
-
-    const result = await safeJsonParse(response);
-
-    console.log(`✅ [BATCH UPLOAD] Sucesso! ${result.count} imagens processadas`);
-    result.urls.forEach((url: string, i: number) => {
-      console.log(`   URL ${i + 1}: ${url}`);
-    });
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    return result.urls;
   }
 
-  // Submit do formulário
-  form?.addEventListener('submit', async (e) => {
+  // ============================================================================
+  // GERENCIAMENTO DE IMAGENS
+  // ============================================================================
+
+  function removeExisting(index: number) {
+    console.log(`[EDIT UPLOAD] Removendo imagem existente ${index}`);
+    state.existingImages.splice(index, 1);
+    renderUploadArea();
+    window.showToast('Imagem removida', 'success');
+  }
+
+  function removeNew(index: number) {
+    console.log(`[EDIT UPLOAD] Removendo nova imagem ${index}`);
+    state.newImages.splice(index, 1);
+    renderUploadArea();
+    window.showToast('Imagem removida', 'success');
+  }
+
+  function setAsMain(type: 'existing' | 'new', index: number) {
+    console.log(`[EDIT UPLOAD] Definindo como principal: ${type} ${index}`);
+
+    if (type === 'existing') {
+      if (index === 0 && state.newImages.length === 0) return; // Já é a principal
+      const [image] = state.existingImages.splice(index, 1);
+      state.existingImages.unshift(image);
+    } else {
+      const [image] = state.newImages.splice(index, 1);
+      state.existingImages.unshift(image);
+    }
+
+    renderUploadArea();
+    window.showToast('Imagem principal atualizada', 'success');
+  }
+
+  // ============================================================================
+  // RENDERIZAÇÃO
+  // ============================================================================
+
+  function handleUploadAreaClick(e: Event) {
+    const target = e.target as HTMLElement;
+
+    // Não abrir se clicar em botão ou imagem
+    if (target.closest('button') || target.closest('.image-card')) {
+      return;
+    }
+
+    const total = state.existingImages.length + state.newImages.length;
+    if (total < MAX_IMAGES) {
+      fileInput.click();
+    }
+  }
+
+  function renderUploadArea() {
+    if (!uploadArea) return;
+
+    const totalImages = state.existingImages.length + state.newImages.length;
+    const canAddMore = totalImages < MAX_IMAGES;
+
+    if (totalImages === 0) {
+      uploadArea.innerHTML = `
+      <div class="upload-placeholder">
+        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <p>Clique para adicionar fotos</p>
+        <small>Selecione até 5 fotos de uma vez • Máximo 10MB cada</small>
+      </div>
+    `;
+      return;
+    }
+
+    // Renderizar imagens existentes
+    const existingHtml = state.existingImages
+      .map(
+        (url, i) => `
+    <div class="image-card ${i === 0 && state.newImages.length === 0 ? 'is-main' : ''}" onclick="window.setAsMain('existing', ${i})">
+      <img src="${url}" alt="Foto ${i + 1}" loading="lazy" />
+      <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeExisting(${i})">×</button>
+      ${i === 0 && state.newImages.length === 0 ? '<span class="main-badge">Principal</span>' : ''}
+    </div>
+  `
+      )
+      .join('');
+
+    // Renderizar novas imagens
+    const newHtml = state.newImages
+      .map(
+        (url, i) => `
+    <div class="image-card is-new ${state.existingImages.length === 0 && i === 0 ? 'is-main' : ''}" onclick="window.setAsMain('new', ${i})">
+      <img src="${url}" alt="Nova foto ${i + 1}" loading="lazy" />
+      <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeNew(${i})">×</button>
+      <span class="new-badge">Nova</span>
+      ${state.existingImages.length === 0 && i === 0 ? '<span class="main-badge">Principal</span>' : ''}
+    </div>
+  `
+      )
+      .join('');
+
+    const addButtonHtml = canAddMore
+      ? `
+    <div class="add-image-btn" onclick="window.openFileDialog()">
+      <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>Adicionar</span>
+    </div>
+  `
+      : '';
+
+    uploadArea.innerHTML = `
+    <div class="images-grid">
+      ${existingHtml}
+      ${newHtml}
+      ${addButtonHtml}
+    </div>
+  `;
+  }
+
+  function addLoadingCard(id: string) {
+    const grid = uploadArea.querySelector('.images-grid');
+    if (!grid) {
+      uploadArea.innerHTML = '<div class="images-grid"></div>';
+      return addLoadingCard(id);
+    }
+
+    const loading = document.createElement('div');
+    loading.id = id;
+    loading.className = 'loading-card';
+    loading.innerHTML = '<div class="spinner"></div>';
+
+    grid.appendChild(loading);
+  }
+
+  function removeLoadingCard(id: string) {
+    document.getElementById(id)?.remove();
+  }
+
+  function updateSubmitButton() {
+    if (!submitBtn || !submitText) return;
+    submitBtn.disabled = state.uploading;
+    submitText.textContent = state.uploading
+      ? 'Aguarde...'
+      : 'Salvar Alterações';
+  }
+
+  // ============================================================================
+  // SUBMIT DO FORMULÁRIO
+  // ============================================================================
+
+  async function handleSubmit(e: Event) {
     e.preventDefault();
 
-    isSubmitting = true;
+    const totalImages = state.existingImages.length + state.newImages.length;
+
+    if (totalImages === 0) {
+      window.showToast('Adicione pelo menos uma foto', 'warning');
+      return;
+    }
+
+    if (state.uploading) {
+      window.showToast('Aguarde o upload finalizar', 'warning');
+      return;
+    }
+
     submitBtn.disabled = true;
     submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
-      // Upload das novas imagens em UMA requisição
-      let newImageUrls: string[] = [];
-      if (newImageFiles.length > 0) {
-        console.log(`📸 [SUBMIT] ${newImageFiles.length} imagens para enviar`);
-        submitText.innerHTML = '<div class="form-spinner"></div> Enviando imagens...';
-
-        newImageUrls = await uploadAllImages(newImageFiles);
-        console.log(`✅ [SUBMIT] ${newImageUrls.length} imagens enviadas`);
-      }
-
-      // 2. Combinar imagens: existentes + novas
-      const allImageUrls = [...existingImageUrls, ...newImageUrls];
-
-      // 3. Preparar dados do produto
       const formData = new FormData(form);
 
-      // Converter vírgula para ponto no preço (compatibilidade com locale BR)
-      const precoStr = (formData.get('preco') as string || '').replace(',', '.');
-      const bateriaStr = formData.get('bateria') as string;
+      // Combinar imagens: existentes primeiro, depois novas
+      const allImages = [...state.existingImages, ...state.newImages];
 
-      const produto = {
+      const payload = {
         nome: formData.get('nome'),
-        codigo: formData.get('codigo'),
-        preco: parseFloat(precoStr) || 0,
-        bateria: bateriaStr ? parseInt(bateriaStr, 10) : null,
+        codigo: formData.get('codigo') || null,
+        preco:
+          parseFloat((formData.get('preco') as string).replace(',', '.')) || 0,
+        bateria: formData.get('bateria')
+          ? parseInt(formData.get('bateria') as string)
+          : null,
         condicao: formData.get('condicao'),
         categoria_id: formData.get('categoria_id'),
         descricao: formData.get('descricao') || null,
-        imagens: allImageUrls,
+        imagens: allImages,
       };
 
-      // 4. Salvar produto
-      const produtoId = produtoIdInput.value;
+      console.log('[EDIT SUBMIT] Payload:', payload);
+
       const response = await fetch(`/api/admin/produtos/${produtoId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(produto),
-        credentials: 'include', // Importante para Safari iOS enviar cookies
+        body: JSON.stringify(payload),
       });
 
-      const data = await safeJsonParse(response);
-
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao atualizar produto');
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao salvar');
       }
 
       window.showToast('Produto atualizado com sucesso!', 'success');
-
-      // Limpar cache do service worker
-      if ('caches' in window) {
-        caches.keys().then((names) => {
-          names.forEach((name) => caches.delete(name));
-        });
-      }
-
-      // Redirecionar para lista de produtos com cache-busting
-      setTimeout(() => {
-        const timestamp = new Date().getTime();
-        window.location.href = `/admin/produtos?_t=${timestamp}`;
-      }, 1000);
+      setTimeout(() => (window.location.href = '/admin/produtos'), 500);
     } catch (error: any) {
-      console.error('❌ Erro ao salvar produto:', error);
-      window.showToast(error.message || 'Erro ao salvar produto', 'error');
-      // Resetar isSubmitting em caso de erro (permite avisar se usuário tentar sair)
-      isSubmitting = false;
+      console.error('[EDIT SUBMIT] Erro:', error);
+      window.showToast(error.message, 'error');
       submitBtn.disabled = false;
       submitText.textContent = 'Salvar Alterações';
     }
-  });
-
-  // ============================================================================
-  // PROTEÇÃO CONTRA RELOAD ACIDENTAL
-  // ============================================================================
-
-  // Marcar formulário como "sujo" quando usuário faz mudanças
-  form?.addEventListener('input', () => {
-    formDirty = true;
-  });
-
-  // Avisar antes de sair se houver mudanças não salvas
-  window.addEventListener('beforeunload', (e) => {
-    // Só avisar se:
-    // 1. Formulário foi modificado OU tem novas imagens OU removeu imagens existentes
-    // 2. NÃO está no processo de submit
-    const hasChanges = formDirty || newImageFiles.length > 0;
-    if (hasChanges && !isSubmitting) {
-      e.preventDefault();
-      e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
-      return e.returnValue;
-    }
-  });
-
-  // Prevenir navegação acidental via service worker ou outros eventos
-  let controllerChangeCount = 0;
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      controllerChangeCount++;
-      console.log(`[SW] Controller mudou (${controllerChangeCount}x)`);
-
-      // Se mudou mais de uma vez E o usuário está preenchendo o form, avisar
-      const hasChanges = formDirty || newImageFiles.length > 0;
-      if (controllerChangeCount > 1 && hasChanges && !isSubmitting) {
-        console.warn(
-          '[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)'
-        );
-      }
-    });
   }
 
-  // Limpar blob URLs quando sair da página
-  window.addEventListener('pagehide', cleanupBlobUrls);
+  // ============================================================================
+  // INIT
+  // ============================================================================
 
-  // Renderizar estado inicial
-  renderPreviews();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 </script>
-
-<style is:global>
-  /* Forçar display block no container quando há grid */
-  #upload-area:has(.images-preview-grid),
-  .form-image-upload:has(.images-preview-grid) {
-    display: block !important;
-    min-height: auto !important;
-    padding: 0 !important;
-  }
-
-  .images-preview-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  @media (min-width: 768px) {
-    .images-preview-grid {
-      grid-template-columns: repeat(5, 1fr) !important;
-    }
-  }
-</style>

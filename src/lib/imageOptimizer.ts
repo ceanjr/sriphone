@@ -10,6 +10,35 @@ export interface ImageOptions {
 }
 
 /**
+ * Obtém a URL da variante apropriada baseado no width (Baseado no UPLOAD.md)
+ */
+export function getVariantUrl(url: string, width?: number): string {
+  if (!url || !url.includes('supabase')) return url;
+
+  // Se já tem sufixo de variante, não mexe para não quebrar
+  if (/-(?:thumb|small|medium|large|original)\.webp/.test(url)) {
+    // Detectar qual variante usar baseado no width se necessário, 
+    // mas geralmente trocamos o '-original' pelo desejado.
+    let variant = 'original';
+    if (width) {
+      if (width <= 150) variant = 'thumb';
+      else if (width <= 400) variant = 'small';
+      else if (width <= 800) variant = 'medium';
+      else if (width <= 1200) variant = 'large';
+    }
+
+    // Se for para trocar, trocamos
+    if (url.includes('-original.webp')) {
+      return url.replace('-original.webp', `-${variant}.webp`);
+    }
+    return url;
+  }
+
+  // Fallback para otimização via query params se não for o padrão de variantes
+  return optimizeSupabaseImage(url, { width });
+}
+
+/**
  * Otimiza URL de imagem do Supabase Storage com parâmetros de transformação
  * Supabase Storage suporta transformações via URL params
  */

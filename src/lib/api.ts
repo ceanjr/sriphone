@@ -346,10 +346,13 @@ export async function uploadImagem(file: File): Promise<ApiResponse<{ url: strin
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('/api/admin/upload', {
+    const response = await fetch(`/api/admin/upload?t=${Date.now()}`, {
       method: 'POST',
       body: formData,
       cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store'
+      }
     });
 
     const text = await response.text();
