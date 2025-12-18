@@ -551,7 +551,7 @@ const { data: categorias } = await supabaseAdmin
     }
   }
 
-  async function uploadAllImages(files: File[]): Promise<string[]> {
+  let uploadAllImages = async function (files: File[]): Promise<string[]> {
     const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -625,7 +625,7 @@ const { data: categorias } = await supabaseAdmin
     }
 
     return result.urls;
-  }
+  };
 
   // ============================================================================
   // SUBMIT DO FORMULÁRIO
@@ -650,7 +650,7 @@ const { data: categorias } = await supabaseAdmin
       console.log(`📸 [SUBMIT] ${selectedFiles.length} imagens para enviar`);
 
       // Upload de TODAS as imagens em UMA requisição
-      const uploadedUrls = await uploadAllImages(selectedFiles);
+      let uploadedUrls = await uploadAllImages(selectedFiles);
 
       if (uploadedUrls.length === 0) {
         throw new Error('Nenhuma imagem foi enviada com sucesso');
@@ -708,6 +708,7 @@ const { data: categorias } = await supabaseAdmin
 
       // Chamar função de reset completo
       resetCompleteState();
+      uploadedUrls = [];
 
       window.showToast('Produto adicionado com sucesso!', 'success');
 
@@ -715,27 +716,6 @@ const { data: categorias } = await supabaseAdmin
       setTimeout(() => {
         window.location.href = `/admin/produtos?_t=${Date.now()}`;
       }, 500); // Aumentado de 100ms para 500ms
-
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-      window.showToast('Produto adicionado com sucesso!', 'success');
-
-      // FIX BUG 3.1: Limpar estado ANTES de redirecionar
-      console.log('🧹 [SUBMIT] Limpando estado de imagens...');
-      selectedFiles = [];
-      cleanupBlobUrls();
-      blobUrls = [];
-
-      // Limpar preview do DOM
-      const previewContainer = document.getElementById('imagens-preview');
-      if (previewContainer) {
-        previewContainer.innerHTML = '';
-      }
-
-      // Pequeno delay para garantir que limpeza foi feita
-      setTimeout(() => {
-        window.location.href = `/admin/produtos?_t=${Date.now()}`;
-      }, 100);
     } catch (error: any) {
       console.error('❌ [SUBMIT] Erro:', error);
       const errorMsg = error.message || 'Erro ao salvar produto';
@@ -784,14 +764,42 @@ const { data: categorias } = await supabaseAdmin
     }
   });
 
-  // Limpar ao sair (pagehide é mais confiável que unload)
-  window.addEventListener('pagehide', () => {
-    console.log('🧹 [CLEANUP] pagehide - Limpando estado');
-    resetCompleteState();
-  });
+  // Limpeza automática de imagens órfãs do Supabase ao sair da página
+  let uploadedUrls: string[] = [];
+  // Intercepta o resultado do upload para capturar as URLs
+  const originalUploadAllImages = uploadAllImages;
+  uploadAllImages = async function (files) {
+    const urls = await originalUploadAllImages(files);
+    uploadedUrls = urls;
+    return urls;
+  };
 
-  // Limpar blob URLs ao sair (pagehide é mais confiável que unload)
-  window.addEventListener('pagehide', () => {
+  async function cleanupSupabaseImages() {
+    if (uploadedUrls && uploadedUrls.length > 0) {
+      try {
+        await fetch('/api/admin/cleanup-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urls: uploadedUrls, bucket: 'produtos' }),
+        });
+        console.log(
+          '🧹 [CLEANUP] Imagens órfãs removidas do Supabase:',
+          uploadedUrls
+        );
+      } catch (err) {
+        console.warn(
+          '⚠️ [CLEANUP] Falha ao remover imagens órfãs do Supabase:',
+          err
+        );
+      }
+      uploadedUrls = [];
+    }
+  }
+
+  // Limpar ao sair (pagehide é mais confiável que unload)
+  window.addEventListener('pagehide', async () => {
+    await cleanupSupabaseImages();
+    resetCompleteState();
     cleanupBlobUrls();
     selectedFiles = [];
     blobUrls = [];

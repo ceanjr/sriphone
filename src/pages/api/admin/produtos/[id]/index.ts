@@ -8,9 +8,10 @@ export const prerender = false;
 // Helper para obter informações do request
 function getRequestInfo(request: Request) {
   const userAgent = request.headers.get('user-agent') || 'unknown';
-  const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-                    request.headers.get('x-real-ip') ||
-                    'unknown';
+  const ipAddress =
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
   return { userAgent, ipAddress };
 }
 
@@ -33,11 +34,11 @@ async function getUserEmail(cookies: any) {
 export const PUT: APIRoute = async ({ params, request, cookies }) => {
   const { userAgent, ipAddress } = getRequestInfo(request);
   const userEmail = await getUserEmail(cookies);
+  const { id } = params;
 
   try {
-    const { id } = params;
     console.log('📝 PUT /api/admin/produtos/' + id);
-    
+
     if (!id) {
       return new Response(
         JSON.stringify({ success: false, error: 'ID é obrigatório' }),
@@ -51,13 +52,21 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
     // Preparar dados
     const produtoData: any = {};
     if (produto.nome !== undefined) produtoData.nome = produto.nome.trim();
-    if (produto.codigo !== undefined) produtoData.codigo = produto.codigo?.trim() || null;
-    if (produto.preco !== undefined) produtoData.preco = parseFloat(produto.preco);
-    if (produto.bateria !== undefined) produtoData.bateria = produto.bateria ? parseInt(produto.bateria) : null;
+    if (produto.codigo !== undefined)
+      produtoData.codigo = produto.codigo?.trim() || null;
+    if (produto.preco !== undefined)
+      produtoData.preco = parseFloat(produto.preco);
+    if (produto.bateria !== undefined)
+      produtoData.bateria = produto.bateria ? parseInt(produto.bateria) : null;
     if (produto.condicao !== undefined) produtoData.condicao = produto.condicao;
-    if (produto.categoria_id !== undefined) produtoData.categoria_id = produto.categoria_id;
-    if (produto.descricao !== undefined) produtoData.descricao = produto.descricao?.trim() || null;
-    if (produto.imagens !== undefined) produtoData.imagens = Array.isArray(produto.imagens) ? produto.imagens : [];
+    if (produto.categoria_id !== undefined)
+      produtoData.categoria_id = produto.categoria_id;
+    if (produto.descricao !== undefined)
+      produtoData.descricao = produto.descricao?.trim() || null;
+    if (produto.imagens !== undefined)
+      produtoData.imagens = Array.isArray(produto.imagens)
+        ? produto.imagens
+        : [];
 
     console.log('💾 Atualizando no Supabase:', produtoData);
 
@@ -108,16 +117,16 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
         success: true,
         data,
         message: 'Produto atualizado com sucesso!',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }),
       {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       }
     );
   } catch (error: any) {
@@ -160,7 +169,7 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       );
     }
 
-    // Primeiro, buscar o produto para verificar se existe e obter o nome
+    // Primeiro, buscar o produto para verificar se existe e obter o nome e imagens
     const { data: produto, error: fetchError } = await supabaseAdmin
       .from('produtos')
       .select('id, nome, imagens')
@@ -184,7 +193,10 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       .delete()
       .eq('id', id);
 
-    console.log('🗑️ Resultado do delete:', JSON.stringify(deleteResult, null, 2));
+    console.log(
+      '🗑️ Resultado do delete:',
+      JSON.stringify(deleteResult, null, 2)
+    );
 
     if (deleteResult.error) {
       console.error('❌ Erro Supabase ao deletar:', deleteResult.error);
@@ -207,6 +219,31 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
       );
     }
 
+    // Remover imagens do storage se existirem
+    if (
+      produto.imagens &&
+      Array.isArray(produto.imagens) &&
+      produto.imagens.length > 0
+    ) {
+      // Extrai o caminho relativo do arquivo a partir da URL
+      const paths = produto.imagens
+        .map((url: string) => {
+          const match = url.match(/storage\/v1\/object\/public\/(.+)/);
+          return match ? match[1] : null;
+        })
+        .filter(Boolean);
+      if (paths.length > 0) {
+        const { data: delData, error: delError } = await supabaseAdmin.storage
+          .from('produtos')
+          .remove(paths);
+        if (delError) {
+          console.warn('⚠️ Erro ao remover imagens do storage:', delError);
+        } else {
+          console.log('🧹 Imagens removidas do storage:', delData);
+        }
+      }
+    }
+
     // Verificar se o produto ainda existe (para confirmar deleção)
     const { data: checkProduct } = await supabaseAdmin
       .from('produtos')
@@ -217,7 +254,10 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
     if (checkProduct) {
       console.error('❌ Produto ainda existe após tentativa de deleção');
       return new Response(
-        JSON.stringify({ success: false, error: 'Falha ao deletar produto - produto ainda existe' }),
+        JSON.stringify({
+          success: false,
+          error: 'Falha ao deletar produto - produto ainda existe',
+        }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -237,21 +277,29 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
 
     // Revalidar cache
     try {
-      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/catalogo`);
+      await fetch(
+        `${
+          new URL(request.url).origin
+        }/api/revalidate?secret=seu_secret_aqui&path=/catalogo`
+      );
     } catch (e) {
       console.warn('⚠️ Erro ao revalidar cache:', e);
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: `Produto "${produto.nome}" deletado com sucesso` }),
+      JSON.stringify({
+        success: true,
+        message: `Produto "${produto.nome}" deletado com sucesso`,
+      }),
       {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+          'Cache-Control':
+            'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       }
     );
   } catch (error: any) {
@@ -280,7 +328,7 @@ export const DELETE: APIRoute = async ({ params, request, cookies }) => {
 export const POST: APIRoute = async ({ request }) => {
   try {
     console.log('📥 POST /api/admin/produtos - Iniciando...');
-    
+
     const produto = await request.json();
     console.log('📦 Dados recebidos:', produto);
 
@@ -288,13 +336,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (!produto.nome || !produto.preco || !produto.categoria_id) {
       console.error('❌ Validação falhou:', { produto });
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Campos obrigatórios faltando: nome, preco, categoria_id' 
+        JSON.stringify({
+          success: false,
+          error: 'Campos obrigatórios faltando: nome, preco, categoria_id',
         }),
-        { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
         }
       );
     }
@@ -323,13 +371,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (error) {
       console.error('❌ Erro Supabase:', error);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: error.message || 'Erro ao criar produto' 
+        JSON.stringify({
+          success: false,
+          error: error.message || 'Erro ao criar produto',
         }),
-        { 
-          status: 400, 
-          headers: { 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
         }
       );
     }
@@ -338,32 +386,36 @@ export const POST: APIRoute = async ({ request }) => {
 
     // CRITICAL: Revalidar cache ISR
     try {
-      await fetch(`${new URL(request.url).origin}/api/revalidate?secret=seu_secret_aqui&path=/catalogo`);
+      await fetch(
+        `${
+          new URL(request.url).origin
+        }/api/revalidate?secret=seu_secret_aqui&path=/catalogo`
+      );
     } catch (e) {
       console.warn('⚠️ Erro ao revalidar cache:', e);
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         data,
-        message: 'Produto criado com sucesso!' 
+        message: 'Produto criado com sucesso!',
       }),
-      { 
-        status: 201, 
-        headers: { 'Content-Type': 'application/json' } 
+      {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   } catch (error: any) {
     console.error('❌ Erro crítico em POST /api/admin/produtos:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Erro interno do servidor' 
+      JSON.stringify({
+        success: false,
+        error: error.message || 'Erro interno do servidor',
       }),
-      { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
       }
     );
   }
