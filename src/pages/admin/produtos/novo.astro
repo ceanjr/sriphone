@@ -19,13 +19,13 @@ const { data: categorias } = await supabaseAdmin
     <div class="form-container">
       <div class="form-header">
         <a href="/admin/produtos" class="form-back-btn">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            ><path
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M15 19l-7-7 7-7"></path></svg
-          >
+              d="M15 19l-7-7 7-7"></path>
+          </svg>
           Voltar
         </a>
         <h1 class="form-title">Novo Produto</h1>
@@ -34,30 +34,26 @@ const { data: categorias } = await supabaseAdmin
 
       <div class="form-card">
         <form id="product-form">
-          <input
-            type="hidden"
-            id="final-images-json"
-            name="imagens_json"
-            value="[]"
-          />
-
+          <!-- Imagens -->
           <div class="form-group">
             <label class="form-label">Imagens do Produto (até 5)</label>
             <input
-              id="foto-upload"
+              id="file-input"
               type="file"
               accept="image/*"
+              multiple
               style="display: none;"
             />
-            <div class="form-image-upload" id="upload-area">
+            <div id="upload-area" class="upload-area">
               <!-- Conteúdo dinâmico -->
             </div>
           </div>
 
+          <!-- Nome -->
           <div class="form-group">
-            <label class="form-label" for="nome"
-              >Nome <span class="form-label-required">*</span></label
-            >
+            <label class="form-label" for="nome">
+              Nome <span class="form-label-required">*</span>
+            </label>
             <input
               id="nome"
               name="nome"
@@ -67,15 +63,16 @@ const { data: categorias } = await supabaseAdmin
             />
           </div>
 
+          <!-- Código e Preço -->
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="codigo">Código</label>
               <input id="codigo" name="codigo" type="text" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="preco"
-                >Preço <span class="form-label-required">*</span></label
-              >
+              <label class="form-label" for="preco">
+                Preço <span class="form-label-required">*</span>
+              </label>
               <input
                 id="preco"
                 name="preco"
@@ -87,11 +84,12 @@ const { data: categorias } = await supabaseAdmin
             </div>
           </div>
 
+          <!-- Categoria e Condição -->
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="categoria_id"
-                >Categoria <span class="form-label-required">*</span></label
-              >
+              <label class="form-label" for="categoria_id">
+                Categoria <span class="form-label-required">*</span>
+              </label>
               <select
                 id="categoria_id"
                 name="categoria_id"
@@ -111,6 +109,7 @@ const { data: categorias } = await supabaseAdmin
             </div>
           </div>
 
+          <!-- Bateria -->
           <div class="form-group">
             <label class="form-label" for="bateria">Bateria (%)</label>
             <input
@@ -122,12 +121,14 @@ const { data: categorias } = await supabaseAdmin
             />
           </div>
 
+          <!-- Descrição -->
           <div class="form-group">
             <label class="form-label" for="descricao">Descrição</label>
             <textarea id="descricao" name="descricao" class="form-textarea"
             ></textarea>
           </div>
 
+          <!-- Actions -->
           <div class="form-actions">
             <a href="/admin/produtos" class="form-btn form-btn-cancel"
               >Cancelar</a
@@ -147,65 +148,80 @@ const { data: categorias } = await supabaseAdmin
 </AdminLayout>
 
 <style>
-  .images-preview-grid {
+  .upload-area {
+    min-height: 200px;
+    border: 2px dashed #444;
+    border-radius: 8px;
+    background: #0a0a0a;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .upload-area:hover {
+    border-color: #666;
+    background: #111;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .upload-placeholder svg {
+    color: #666;
+    margin-bottom: 12px;
+  }
+
+  .upload-placeholder p {
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .upload-placeholder small {
+    color: #555;
+    font-size: 12px;
+  }
+
+  .images-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 12px;
-    padding: 12px;
-    background: #0a0a0a;
-    border-radius: 8px;
-    border: 1px solid #222;
   }
 
-  .preview-card {
+  .image-card {
     position: relative;
-    width: 100%;
     aspect-ratio: 1;
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
     border: 2px solid #333;
+    background: #000;
     cursor: pointer;
     transition: all 0.2s;
-    background: #000;
   }
-  .preview-card.is-main {
-    border-color: #3b82f6;
-  }
-  .preview-card:hover {
+
+  .image-card:hover {
     border-color: #555;
     transform: translateY(-2px);
   }
 
-  .preview-card img {
+  .image-card.is-main {
+    border-color: #3b82f6;
+  }
+
+  .image-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
   }
 
-  .preview-card.loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #1a1a1a;
-  }
-
-  .preview-card .loading-spinner {
-    width: 24px;
-    height: 24px;
-    border: 2px solid #444;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .remove-btn {
+  .image-card .remove-btn {
     position: absolute;
     top: 6px;
     right: 6px;
@@ -221,18 +237,20 @@ const { data: categorias } = await supabaseAdmin
     font-size: 18px;
     cursor: pointer;
     z-index: 10;
-    transition: all 0.2s;
     opacity: 0;
+    transition: all 0.2s;
   }
-  .preview-card:hover .remove-btn {
+
+  .image-card:hover .remove-btn {
     opacity: 1;
   }
-  .remove-btn:hover {
+
+  .image-card .remove-btn:hover {
     background: #dc2626;
     transform: scale(1.1);
   }
 
-  .main-badge {
+  .image-card .main-badge {
     position: absolute;
     bottom: 6px;
     left: 6px;
@@ -243,12 +261,11 @@ const { data: categorias } = await supabaseAdmin
     border-radius: 4px;
     font-weight: 600;
     text-transform: uppercase;
-    z-index: 5;
   }
 
-  .add-more-btn {
+  .add-image-btn {
     aspect-ratio: 1;
-    border-radius: 6px;
+    border-radius: 8px;
     border: 2px dashed #444;
     display: flex;
     flex-direction: column;
@@ -259,432 +276,311 @@ const { data: categorias } = await supabaseAdmin
     color: #888;
     transition: all 0.2s;
   }
-  .add-more-btn:hover {
+
+  .add-image-btn:hover {
     border-color: #666;
     background: #222;
     color: #fff;
   }
-  .add-more-btn svg {
+
+  .add-image-btn svg {
     margin-bottom: 4px;
   }
-  .add-more-btn span {
+
+  .add-image-btn span {
     font-size: 11px;
     font-weight: 500;
   }
 
-  .upload-placeholder {
+  .loading-card {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid #333;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    background: #0a0a0a;
-    border-radius: 8px;
-    border: 2px dashed #333;
-    transition: all 0.2s;
-  }
-  .upload-placeholder:hover {
-    border-color: #555;
-    background: #111;
-  }
-  .upload-placeholder svg {
-    color: #666;
-    margin-bottom: 16px;
-  }
-  .upload-placeholder p {
-    font-size: 14px;
-    font-weight: 500;
-    color: #888;
-    margin-bottom: 4px;
-  }
-  .upload-placeholder small {
-    font-size: 12px;
-    color: #555;
+    background: #1a1a1a;
   }
 
-  .upload-hint {
-    font-size: 12px;
-    color: #666;
-    margin-top: 12px;
-    text-align: center;
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #444;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
 
 <script>
   // ============================================================================
-  // CORREÇÃO DEFINITIVA: Upload múltiplo com validação de unicidade
+  // SISTEMA DE UPLOAD SIMPLIFICADO E ROBUSTO
   // ============================================================================
 
-  const state = {
-    images: [] as Array<{ url: string; id: string }>,
-    uploading: false,
-    uploadedPaths: new Set<string>(), // ✅ Track paths para evitar duplicatas
-  };
-
-  let elements: {
-    form: HTMLFormElement;
-    fileInput: HTMLInputElement;
-    uploadArea: HTMLElement;
-    submitBtn: HTMLButtonElement;
-    submitText: HTMLSpanElement;
-    finalImagesInput: HTMLInputElement;
-  };
-
-  const CONFIG = {
-    maxImages: 5,
-    maxFileSize: 10 * 1024 * 1024,
-    delayBetweenUploads: 300, // ✅ AUMENTADO: 300ms entre uploads
-  };
-
-  function initElements() {
-    elements = {
-      form: document.getElementById('product-form') as HTMLFormElement,
-      fileInput: document.getElementById('foto-upload') as HTMLInputElement,
-      uploadArea: document.getElementById('upload-area') as HTMLElement,
-      submitBtn: document.getElementById('submit-btn') as HTMLButtonElement,
-      submitText: document.getElementById('submit-text') as HTMLSpanElement,
-      finalImagesInput: document.getElementById(
-        'final-images-json'
-      ) as HTMLInputElement,
-    };
+  interface UploadState {
+    images: string[];
+    uploading: boolean;
   }
 
-  function init() {
-    console.log('[UPLOAD] ========================================');
-    console.log('[UPLOAD] Inicializando sistema de upload...');
-    initElements();
+  const state: UploadState = {
+    images: [],
+    uploading: false,
+  };
 
-    if (!elements.form) {
-      console.error('[UPLOAD] ❌ Formulário não encontrado!');
+  const MAX_IMAGES = 5;
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+  let fileInput: HTMLInputElement;
+  let uploadArea: HTMLElement;
+  let form: HTMLFormElement;
+  let submitBtn: HTMLButtonElement;
+  let submitText: HTMLSpanElement;
+
+  // ============================================================================
+  // INICIALIZAÇÃO
+  // ============================================================================
+
+  function init() {
+    console.log('[UPLOAD] Inicializando...');
+
+    fileInput = document.getElementById('file-input') as HTMLInputElement;
+    uploadArea = document.getElementById('upload-area') as HTMLElement;
+    form = document.getElementById('product-form') as HTMLFormElement;
+    submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+    submitText = document.getElementById('submit-text') as HTMLSpanElement;
+
+    if (!fileInput || !uploadArea || !form) {
+      console.error('[UPLOAD] Elementos não encontrados!');
       return;
     }
 
-    state.images = [];
-    state.uploading = false;
-    state.uploadedPaths.clear();
+    // Event listeners
+    fileInput.addEventListener('change', handleFileSelect);
+    uploadArea.addEventListener('click', handleUploadAreaClick);
+    form.addEventListener('submit', handleSubmit);
+
+    // Funções globais
+    (window as any).removeImage = removeImage;
+    (window as any).setAsMain = setAsMain;
+    (window as any).openFileDialog = () => fileInput.click();
 
     renderUploadArea();
-
-    // ✅ Processar arquivos
-    elements.fileInput.addEventListener('change', handleFileSelect);
-    elements.form.addEventListener('submit', handleSubmit);
-
-    (window as any).removeImage = removeImage;
-    (window as any).setMainImage = setMainImage;
-    (window as any).triggerFileInput = () => elements.fileInput?.click();
-
-    console.log('[UPLOAD] ✅ Inicializado com sucesso');
-    console.log('[UPLOAD] ========================================');
+    console.log('[UPLOAD] ✅ Inicializado');
   }
 
-  async function handleFileSelect(e: Event) {
-    console.log('\n[UPLOAD] ======== NOVO UPLOAD ========');
+  // ============================================================================
+  // UPLOAD DE ARQUIVOS
+  // ============================================================================
 
+  async function handleFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
     const files = input.files;
 
     if (!files || files.length === 0) {
-      console.warn('[UPLOAD] Nenhum arquivo selecionado');
       return;
     }
 
-    const filesArray = Array.from(files);
-    console.log(`[UPLOAD] ${filesArray.length} arquivo(s) selecionado(s)`);
+    console.log(
+      `\n[UPLOAD] ======== ${files.length} arquivo(s) selecionado(s) ========`
+    );
 
-    // Limpar input IMEDIATAMENTE
+    // Limpar input
     input.value = '';
 
-    const remainingSlots = CONFIG.maxImages - state.images.length;
-    if (remainingSlots === 0) {
-      window.showToast?.('Máximo de 5 imagens atingido', 'warning');
+    // Verificar limite
+    const remaining = MAX_IMAGES - state.images.length;
+    if (remaining === 0) {
+      window.showToast('Máximo de 5 imagens atingido', 'warning');
       return;
     }
 
-    // ✅ CORREÇÃO: Processar apenas os arquivos que cabem
-    const filesToProcess = filesArray.slice(0, remainingSlots);
+    // Pegar apenas os que cabem
+    const filesToUpload = Array.from(files).slice(0, remaining);
 
-    if (filesToProcess.length < filesArray.length) {
-      window.showToast?.(
-        `Processando apenas ${filesToProcess.length} de ${filesArray.length} arquivos`,
+    if (filesToUpload.length < files.length) {
+      window.showToast(
+        `Enviando apenas ${filesToUpload.length} de ${files.length} imagens`,
         'warning'
       );
     }
 
     // Validar todos os arquivos primeiro
-    for (let i = 0; i < filesToProcess.length; i++) {
-      const file = filesToProcess[i];
+    for (const file of filesToUpload) {
       if (!file.type.startsWith('image/')) {
-        window.showToast?.(`${file.name} não é uma imagem`, 'error');
+        window.showToast(`${file.name} não é uma imagem`, 'error');
         return;
       }
-      if (file.size > CONFIG.maxFileSize) {
-        window.showToast?.(`${file.name} é muito grande (máx 10MB)`, 'error');
+      if (file.size > MAX_FILE_SIZE) {
+        window.showToast(`${file.name} é muito grande (máx 10MB)`, 'error');
         return;
       }
     }
 
     state.uploading = true;
-    updateUploadUI();
+    updateSubmitButton();
 
-    // ✅ Processar SEQUENCIALMENTE com DELAY
     let successCount = 0;
 
-    for (let i = 0; i < filesToProcess.length; i++) {
-      const file = filesToProcess[i];
+    // Upload sequencial com delay
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
 
-      console.log(
-        `\n[UPLOAD ${i + 1}/${filesToProcess.length}] ========================================`
-      );
+      console.log(`\n[UPLOAD ${i + 1}/${filesToUpload.length}] ${file.name}`);
 
       try {
-        // ✅ AGUARDAR entre uploads (exceto o primeiro)
+        // Delay entre uploads (exceto o primeiro)
         if (i > 0) {
-          console.log(
-            `[UPLOAD ${i + 1}] ⏱️ Aguardando ${CONFIG.delayBetweenUploads}ms...`
-          );
-          await new Promise((resolve) =>
-            setTimeout(resolve, CONFIG.delayBetweenUploads)
-          );
+          console.log(`[UPLOAD ${i + 1}] ⏱️  Aguardando 500ms...`);
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
-        const result = await processSingleUpload(file, i);
+        const url = await uploadSingleFile(file, i);
 
-        if (result) {
+        if (url) {
+          // Verificar duplicata
+          if (state.images.includes(url)) {
+            console.warn(`[UPLOAD ${i + 1}] ⚠️  URL duplicada, ignorando`);
+            continue;
+          }
+
+          state.images.push(url);
           successCount++;
-          console.log(
-            `[UPLOAD ${i + 1}/${filesToProcess.length}] ✅ Upload OK`
-          );
+          renderUploadArea();
+          console.log(`[UPLOAD ${i + 1}] ✅ Sucesso`);
         }
-      } catch (error: any) {
-        console.error(
-          `[UPLOAD ${i + 1}/${filesToProcess.length}] ❌ Erro:`,
-          error
-        );
-        window.showToast?.(`Erro ao enviar ${file.name}`, 'error');
+      } catch (error) {
+        console.error(`[UPLOAD ${i + 1}] ❌ Erro:`, error);
+        window.showToast(`Erro ao enviar ${file.name}`, 'error');
       }
     }
 
     state.uploading = false;
-    updateUploadUI();
+    updateSubmitButton();
 
     if (successCount > 0) {
-      window.showToast?.(`${successCount} imagem(ns) enviada(s)!`, 'success');
+      window.showToast(`${successCount} imagem(ns) enviada(s)!`, 'success');
     }
 
     console.log('[UPLOAD] ======== FIM ========\n');
   }
 
-  async function processSingleUpload(
+  async function uploadSingleFile(
     file: File,
-    uploadIndex: number
-  ): Promise<boolean> {
-    const tempId = `temp-${Date.now()}-${uploadIndex}-${Math.random().toString(36).substr(2, 9)}`;
-
-    console.log(`[UPLOAD ${uploadIndex}] Arquivo: ${file.name}`);
-    console.log(
-      `[UPLOAD ${uploadIndex}] Comprimido: ${(file.size / 1024).toFixed(2)}KB`
-    );
+    index: number
+  ): Promise<string | null> {
+    // Mostrar loading
+    const loadingId = `loading-${Date.now()}-${index}`;
+    addLoadingCard(loadingId);
 
     try {
-      renderLoadingPlaceholder(tempId);
+      // Comprimir se necessário
+      let fileToUpload = file;
 
-      const compressedFile = await compressImage(file);
-
-      // ✅ Upload com índice e timestamp únicos
-      const result = await uploadToServer(
-        compressedFile,
-        file.name,
-        uploadIndex
-      );
-
-      if (!result || !result.url) {
-        throw new Error('URL não retornada pelo servidor');
+      if (file.size > 2 * 1024 * 1024) {
+        console.log(`[UPLOAD] Comprimindo ${file.name}...`);
+        const imageCompression = (await import('browser-image-compression'))
+          .default;
+        fileToUpload = await imageCompression(file, {
+          maxSizeMB: 1.5,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+          initialQuality: 0.8,
+        });
+        console.log(
+          `[UPLOAD] Comprimido: ${(file.size / 1024).toFixed(0)}KB → ${(fileToUpload.size / 1024).toFixed(0)}KB`
+        );
       }
 
-      // ✅ CRÍTICO: Verificar se URL já foi usada
-      const baseUrl = result.url.split('?')[0];
+      // Upload
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
 
-      if (state.uploadedPaths.has(baseUrl)) {
-        console.error(`[UPLOAD ${uploadIndex}] ❌ URL DUPLICADA detectada!`);
-        throw new Error('URL duplicada - upload falhou');
-      }
+      console.log(`[UPLOAD] 📤 Enviando...`);
 
-      // ✅ Verificar se URL já está na lista de imagens
-      const isDuplicate = state.images.some(
-        (img) => img.url.split('?')[0] === baseUrl
-      );
-
-      if (isDuplicate) {
-        console.error(`[UPLOAD ${uploadIndex}] ❌ Imagem DUPLICADA na lista!`);
-        throw new Error('Imagem duplicada detectada');
-      }
-
-      removeLoadingPlaceholder(tempId);
-
-      const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-
-      // ✅ Adicionar à lista e ao set de tracking
-      state.images.push({
-        url: result.url,
-        id: imageId,
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
       });
 
-      state.uploadedPaths.add(baseUrl);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro no upload');
+      }
 
-      console.log(`[UPLOAD ${uploadIndex}] ✅ Adicionado com ID: ${imageId}`);
-      console.log(
-        `[UPLOAD ${uploadIndex}] Total de imagens: ${state.images.length}`
-      );
+      const data = await response.json();
 
-      syncState();
-      renderUploadArea();
+      if (!data.url) {
+        throw new Error('URL não retornada');
+      }
 
-      return true;
+      console.log(`[UPLOAD] ✅ URL: ${data.url.substring(0, 60)}...`);
+
+      removeLoadingCard(loadingId);
+      return data.url;
     } catch (error: any) {
-      console.error(`[UPLOAD ${uploadIndex}] ❌ ERRO:`, error);
-      removeLoadingPlaceholder(tempId);
+      console.error('[UPLOAD] Erro:', error);
+      removeLoadingCard(loadingId);
       throw error;
     }
   }
 
-  async function compressImage(file: File): Promise<File> {
-    if (file.size <= 2 * 1024 * 1024) return file;
-
-    try {
-      const imageCompression = (await import('browser-image-compression'))
-        .default;
-      return await imageCompression(file, {
-        maxSizeMB: 1.5,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-        initialQuality: 0.8,
-      });
-    } catch (error) {
-      console.warn('[UPLOAD] Erro na compressão:', error);
-      return file;
-    }
-  }
-
-  async function uploadToServer(
-    file: File,
-    originalName: string,
-    uploadIndex: number
-  ): Promise<{ url: string; path?: string } | null> {
-    const formData = new FormData();
-
-    // ✅ CRÍTICO: Nome único com timestamp + índice + random
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 11);
-    const ext = file.name.split('.').pop();
-    const uniqueFileName = `${timestamp}-${uploadIndex}-${random}.${ext}`;
-
-    formData.append('file', file, uniqueFileName);
-
-    const uploadUrl = `/api/admin/upload?t=${timestamp}&idx=${uploadIndex}&r=${random}`;
-
-    console.log(
-      `[UPLOAD ${uploadIndex}] 📤 Enviando (ID: ${timestamp}-${uploadIndex}-${random})`
-    );
-    console.log(`[UPLOAD ${uploadIndex}]    URL: ${uploadUrl}`);
-
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-Upload-Index': uploadIndex.toString(),
-        'X-Upload-Timestamp': timestamp.toString(),
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: 'Erro desconhecido' }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    console.log(
-      `[UPLOAD ${uploadIndex}] ✅ Resposta recebida (ID: ${timestamp}-${uploadIndex}-${random})`
-    );
-    console.log(
-      `[UPLOAD ${uploadIndex}]    URL: ${data.url?.substring(0, 80)}...`
-    );
-
-    if (data.cached) {
-      console.warn(
-        `[UPLOAD ${uploadIndex}] ⚠️ Servidor retornou arquivo em cache!`
-      );
-    }
-
-    return data;
-  }
-
-  function renderLoadingPlaceholder(id: string) {
-    const placeholder = document.createElement('div');
-    placeholder.id = id;
-    placeholder.className = 'preview-card loading';
-    placeholder.innerHTML = '<div class="loading-spinner"></div>';
-
-    const grid = elements.uploadArea.querySelector('.images-preview-grid');
-    if (grid) {
-      grid.appendChild(placeholder);
-    } else {
-      elements.uploadArea.innerHTML = '<div class="images-preview-grid"></div>';
-      elements.uploadArea
-        .querySelector('.images-preview-grid')!
-        .appendChild(placeholder);
-    }
-  }
-
-  function removeLoadingPlaceholder(id: string) {
-    document.getElementById(id)?.remove();
-  }
+  // ============================================================================
+  // GERENCIAMENTO DE IMAGENS
+  // ============================================================================
 
   function removeImage(index: number) {
     console.log(`[UPLOAD] Removendo imagem ${index}`);
-
-    // ✅ Remover do set de tracking
-    const removedImage = state.images[index];
-    if (removedImage) {
-      const baseUrl = removedImage.url.split('?')[0];
-      state.uploadedPaths.delete(baseUrl);
-    }
-
     state.images.splice(index, 1);
-    syncState();
     renderUploadArea();
-    window.showToast?.('Imagem removida', 'success');
+    window.showToast('Imagem removida', 'success');
   }
 
-  function setMainImage(index: number) {
+  function setAsMain(index: number) {
     if (index === 0) return;
-
     console.log(`[UPLOAD] Definindo imagem ${index} como principal`);
     const [image] = state.images.splice(index, 1);
     state.images.unshift(image);
-    syncState();
     renderUploadArea();
-    window.showToast?.('Imagem principal atualizada', 'success');
+    window.showToast('Imagem principal atualizada', 'success');
+  }
+
+  // ============================================================================
+  // RENDERIZAÇÃO
+  // ============================================================================
+
+  function handleUploadAreaClick(e: Event) {
+    const target = e.target as HTMLElement;
+
+    // Não abrir se clicar em botão ou imagem
+    if (target.closest('button') || target.closest('.image-card')) {
+      return;
+    }
+
+    if (state.images.length < MAX_IMAGES) {
+      fileInput.click();
+    }
   }
 
   function renderUploadArea() {
-    if (!elements.uploadArea) return;
+    if (!uploadArea) return;
 
     const hasImages = state.images.length > 0;
-    const canAddMore = state.images.length < CONFIG.maxImages;
+    const canAddMore = state.images.length < MAX_IMAGES;
 
-    if (!hasImages && !state.uploading) {
-      elements.uploadArea.innerHTML = `
-      <div class="upload-placeholder" onclick="window.triggerFileInput()">
+    if (!hasImages) {
+      uploadArea.innerHTML = `
+      <div class="upload-placeholder">
         <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
         </svg>
-        <p>Adicione fotos do produto</p>
-        <small>Clique para selecionar (máximo 5 fotos)</small>
+        <p>Clique para adicionar fotos</p>
+        <small>Selecione até 5 fotos de uma vez • Máximo 10MB cada</small>
       </div>
     `;
       return;
@@ -692,11 +588,11 @@ const { data: categorias } = await supabaseAdmin
 
     const imagesHtml = state.images
       .map(
-        (image, index) => `
-    <div class="preview-card ${index === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${index})" title="Clique para tornar principal">
-      <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" />
-      <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${index})">×</button>
-      ${index === 0 ? '<span class="main-badge">Principal</span>' : ''}
+        (url, i) => `
+    <div class="image-card ${i === 0 ? 'is-main' : ''}" onclick="window.setAsMain(${i})">
+      <img src="${url}" alt="Foto ${i + 1}" loading="lazy" />
+      <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${i})">×</button>
+      ${i === 0 ? '<span class="main-badge">Principal</span>' : ''}
     </div>
   `
       )
@@ -704,7 +600,7 @@ const { data: categorias } = await supabaseAdmin
 
     const addButtonHtml = canAddMore
       ? `
-    <div class="add-more-btn" onclick="window.triggerFileInput()">
+    <div class="add-image-btn" onclick="window.openFileDialog()">
       <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
@@ -713,56 +609,63 @@ const { data: categorias } = await supabaseAdmin
   `
       : '';
 
-    elements.uploadArea.innerHTML = `
-    <div class="images-preview-grid">
+    uploadArea.innerHTML = `
+    <div class="images-grid">
       ${imagesHtml}
       ${addButtonHtml}
     </div>
-    <p class="upload-hint">💡 Selecione múltiplas fotos de uma vez • Clique para definir principal</p>
   `;
   }
 
-  function updateUploadUI() {
-    if (!elements.submitBtn || !elements.submitText) return;
+  function addLoadingCard(id: string) {
+    const grid = uploadArea.querySelector('.images-grid');
+    if (!grid) {
+      uploadArea.innerHTML = '<div class="images-grid"></div>';
+      return addLoadingCard(id);
+    }
 
-    elements.submitBtn.disabled = state.uploading;
-    elements.submitText.textContent = state.uploading
-      ? 'Aguarde o upload...'
+    const loading = document.createElement('div');
+    loading.id = id;
+    loading.className = 'loading-card';
+    loading.innerHTML = '<div class="spinner"></div>';
+
+    grid.appendChild(loading);
+  }
+
+  function removeLoadingCard(id: string) {
+    document.getElementById(id)?.remove();
+  }
+
+  function updateSubmitButton() {
+    if (!submitBtn || !submitText) return;
+    submitBtn.disabled = state.uploading;
+    submitText.textContent = state.uploading
+      ? 'Aguarde...'
       : 'Adicionar Produto';
   }
 
-  function syncState() {
-    if (!elements.finalImagesInput) return;
-
-    // ✅ Remover cache-busting antes de salvar
-    const urls = state.images.map((img) => img.url.split('?')[0]);
-    elements.finalImagesInput.value = JSON.stringify(urls);
-
-    console.log('[UPLOAD] Estado sincronizado:', urls.length, 'imagens');
-  }
+  // ============================================================================
+  // SUBMIT DO FORMULÁRIO
+  // ============================================================================
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
 
     if (state.images.length === 0) {
-      window.showToast?.('Adicione pelo menos uma foto', 'warning');
+      window.showToast('Adicione pelo menos uma foto', 'warning');
       return;
     }
 
     if (state.uploading) {
-      window.showToast?.('Aguarde o upload finalizar', 'warning');
+      window.showToast('Aguarde o upload finalizar', 'warning');
       return;
     }
 
-    elements.submitBtn.disabled = true;
-    elements.submitText.innerHTML =
-      '<div class="form-spinner"></div> Salvando...';
+    submitBtn.disabled = true;
+    submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
-      const formData = new FormData(elements.form);
-
-      // ✅ URLs limpas (sem query params)
-      const urls = state.images.map((img) => img.url.split('?')[0]);
+      const formData = new FormData(form);
 
       const payload = {
         nome: formData.get('nome'),
@@ -775,38 +678,36 @@ const { data: categorias } = await supabaseAdmin
         condicao: formData.get('condicao'),
         categoria_id: formData.get('categoria_id'),
         descricao: formData.get('descricao') || null,
-        imagens: urls,
+        imagens: state.images,
       };
 
-      console.log('[SUBMIT] Enviando payload:', payload);
+      console.log('[SUBMIT] Payload:', payload);
 
       const response = await fetch('/api/admin/produtos', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao salvar produto');
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao salvar');
       }
 
-      window.showToast?.('Produto criado com sucesso!', 'success');
-
-      setTimeout(() => {
-        window.location.href = '/admin/produtos';
-      }, 500);
+      window.showToast('Produto criado com sucesso!', 'success');
+      setTimeout(() => (window.location.href = '/admin/produtos'), 500);
     } catch (error: any) {
       console.error('[SUBMIT] Erro:', error);
-      window.showToast?.(error.message, 'error');
-      elements.submitBtn.disabled = false;
-      elements.submitText.textContent = 'Adicionar Produto';
+      window.showToast(error.message, 'error');
+      submitBtn.disabled = false;
+      submitText.textContent = 'Adicionar Produto';
     }
   }
 
-  // ✅ Inicializar quando DOM estiver pronto
+  // ============================================================================
+  // INIT
+  // ============================================================================
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
