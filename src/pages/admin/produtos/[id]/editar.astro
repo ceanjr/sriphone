@@ -209,576 +209,531 @@ const { data: categorias } = await supabaseAdmin
 </AdminLayout>
 
 <script>
-  const form = document.getElementById('product-form') as HTMLFormElement;
-  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const submitText = document.getElementById('submit-text') as HTMLSpanElement;
-  const produtoIdInput = document.getElementById(
-    'produto_id'
-  ) as HTMLInputElement;
-  const fileInput = document.getElementById('foto-upload') as HTMLInputElement;
-  const uploadArea = document.getElementById('upload-area');
-  const existingImagesInput = document.getElementById(
-    'existing-images-json'
-  ) as HTMLInputElement;
-
-  const MAX_IMAGES = 5;
-
-  // Estado das imagens:
-  // - existingImageUrls: URLs das imagens já salvas no produto (strings)
-  // - newImageFiles: Novos arquivos selecionados mas ainda não enviados (File objects)
-  let existingImageUrls: string[] = [];
-  let newImageFiles: File[] = [];
-
-  // Estado do formulário para prevenir reload acidental
-  let formDirty = false;
-  let isSubmitting = false;
-
   // ============================================================================
-  // GESTÃO DE MEMÓRIA - Blob URLs
+  // GERENCIADOR DE EDIÇÃO (FIX GHOSTING & RELIABILITY)
   // ============================================================================
 
-  // Armazenar URLs criadas para limpar depois
-  const blobUrls: string[] = [];
+  class ProductEditManager {
+    private form: HTMLFormElement;
+    private submitBtn: HTMLButtonElement;
+    private submitText: HTMLSpanElement;
+    private fileInput: HTMLInputElement;
+    private uploadArea: HTMLElement;
+    private existingImagesInput: HTMLInputElement;
+    private productIdInput: HTMLInputElement;
+    
+    // State
+    private existingImageUrls: string[] = [];
+    private newImageFiles: File[] = []; // Files to be uploaded
+    private blobUrls: string[] = [];
+    private isSubmitting = false;
+    private formDirty = false;
 
-  // Função para limpar URLs antigas
-  function cleanupBlobUrls() {
-    blobUrls.forEach((url) => {
-      URL.revokeObjectURL(url);
-    });
-    blobUrls.length = 0;
-    console.log('🧹 [MEMORY] Blob URLs limpas');
-  }
+    private readonly MAX_IMAGES = 5;
+    private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private readonly UPLOAD_CONCURRENCY = 3;
 
-  // Carregar imagens existentes do produto
-  try {
-    existingImageUrls = JSON.parse(existingImagesInput.value || '[]');
-    console.log('📸 Imagens existentes carregadas:', existingImageUrls.length);
-  } catch (e) {
-    console.error('❌ Erro ao parsear imagens existentes:', e);
-  }
+    constructor() {
+      this.form = document.getElementById('product-form') as HTMLFormElement;
+      this.submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+      this.submitText = document.getElementById('submit-text') as HTMLSpanElement;
+      this.fileInput = document.getElementById('foto-upload') as HTMLInputElement;
+      this.uploadArea = document.getElementById('upload-area') as HTMLElement;
+      this.existingImagesInput = document.getElementById('existing-images-json') as HTMLInputElement;
+      this.productIdInput = document.getElementById('produto_id') as HTMLInputElement;
 
-  // Click na área de upload abre o file input
-  uploadArea?.addEventListener('click', (e) => {
-    // Não abrir file input se clicar em botão de remover
-    if ((e.target as HTMLElement).closest('button')) return;
-
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-    if (totalImages < MAX_IMAGES) {
-      fileInput?.click();
-    } else {
-      window.showToast(`Máximo de ${MAX_IMAGES} imagens permitido`, 'warning');
-    }
-  });
-
-  // Renderizar preview das imagens
-  function renderPreviews() {
-    if (!uploadArea) return;
-
-    // Limpar blob URLs antigas antes de criar novas
-    cleanupBlobUrls();
-
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-
-    if (totalImages === 0) {
-      // Placeholder quando não há imagens
-      uploadArea.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 24px;">
-          <svg
-            style="width: 48px; height: 48px; color: #9ca3af; margin-bottom: 16px;"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            ></path>
-          </svg>
-          <p style="font-size: 14px; font-weight: 500; color: #6b7280; margin-bottom: 4px;">
-            Clique para adicionar imagens
-          </p>
-          <small style="font-size: 12px; color: #9ca3af;">JPG, PNG até 10MB cada (máximo 5 imagens)</small>
-        </div>
-      `;
-      return;
+      this.init();
     }
 
-    // Grid de imagens: primeiro as existentes, depois as novas - Layout responsivo
-    const existingImagesHtml = existingImageUrls
-      .map((url, index) => {
-        const isPrincipal = index === 0 && newImageFiles.length === 0;
-        return `
-        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; cursor: ${isPrincipal ? 'default' : 'pointer'}; transition: all 0.2s;"
-          onclick="${isPrincipal ? '' : `event.stopPropagation(); window.setMainExistingImage(${index})`}"
-          onmouseover="${isPrincipal ? '' : `this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)'`}"
-          onmouseout="${isPrincipal ? '' : `this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'`}"
-          title="${isPrincipal ? 'Imagem principal' : 'Clique para tornar principal'}"
-        >
-          <img
-            src="${url}"
-            alt="Imagem ${index + 1}"
-            style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="event.stopPropagation(); event.preventDefault(); window.removeExistingImage(${index})"
-            style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
-            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.15)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-            title="Remover imagem"
-          >
-            ×
-          </button>
-          ${isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
-        </div>
-      `;
-      })
-      .join('');
+    private init() {
+      if (!this.form) return;
 
-    const newImagesHtml = newImageFiles
-      .map((file, index) => {
-        const url = URL.createObjectURL(file); // Blob URL local
-        blobUrls.push(url); // Rastrear para limpeza posterior
-        const globalIndex = existingImageUrls.length + index;
-        const isPrincipal = globalIndex === 0;
-        return `
-        <div style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; border: 2px solid ${isPrincipal ? '#3b82f6' : '#e5e7eb'}; background: #f9fafb; cursor: ${isPrincipal ? 'default' : 'pointer'}; transition: all 0.2s;"
-          onclick="${isPrincipal ? '' : `event.stopPropagation(); window.setMainNewImage(${index})`}"
-          onmouseover="${isPrincipal ? '' : `this.style.borderColor='#3b82f6'; this.style.transform='scale(1.02)'`}"
-          onmouseout="${isPrincipal ? '' : `this.style.borderColor='#e5e7eb'; this.style.transform='scale(1)'`}"
-          title="${isPrincipal ? 'Imagem principal' : 'Clique para tornar principal'}"
-        >
-          <img
-            src="${url}"
-            alt="${file.name}"
-            style="width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
-            loading="eager"
-          />
-          <button
-            type="button"
-            onclick="event.stopPropagation(); event.preventDefault(); window.removeNewImage(${index})"
-            style="position: absolute; top: 6px; right: 6px; background: rgba(239, 68, 68, 0.9); color: white; border: none; border-radius: 50%; min-width: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; font-weight: bold; line-height: 1; padding: 0; transition: all 0.2s; z-index: 10;"
-            onmouseover="this.style.background='rgba(220, 38, 38, 1)'; this.style.transform='scale(1.15)'"
-            onmouseout="this.style.background='rgba(239, 68, 68, 0.9)'; this.style.transform='scale(1)'"
-            title="Remover imagem"
-          >
-            ×
-          </button>
-          ${isPrincipal ? '<span style="position: absolute; bottom: 6px; left: 6px; background: rgba(59, 130, 246, 0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 5;">Principal</span>' : ''}
-          <span style="position: absolute; top: 6px; left: 6px; background: rgba(34, 197, 94, 0.95); color: white; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 600; z-index: 5;">Nova</span>
-        </div>
-      `;
-      })
-      .join('');
+      // Event Listeners
+      this.fileInput?.addEventListener('change', (e) => this.handleFileSelect(e));
+      this.uploadArea?.addEventListener('click', (e) => this.handleAreaClick(e));
+      this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+      this.form.addEventListener('input', () => { this.formDirty = true; });
 
-    const addButtonHtml =
-      totalImages < MAX_IMAGES
-        ? `
-          <div style="aspect-ratio: 1 / 1; border-radius: 8px; border: 2px dashed #d1d5db; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #0A0A0A; transition: all 0.2s;"
-            onmouseover="this.style.borderColor='#f9fafb'; this.style.background='#121212'"
-            onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#0A0A0A'"
-          >
-            <svg style="width: 32px; height: 32px; color: #f9fafb; margin-bottom: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            <span style="font-size: 12px; color: #f9fafb; font-weight: 500;">Adicionar</span>
-          </div>
-      `
-        : '';
+      // Global Handlers
+      (window as any).removeExistingImage = (index: number) => this.removeExistingImage(index);
+      (window as any).removeNewImage = (index: number) => this.removeNewImage(index);
+      (window as any).setMainExistingImage = (index: number) => this.setMainExistingImage(index);
+      (window as any).setMainNewImage = (index: number) => this.setMainNewImage(index);
 
-    uploadArea.innerHTML = `
-      <div class="images-preview-grid">
-        ${existingImagesHtml}
-        ${newImagesHtml}
-        ${addButtonHtml}
-      </div>
-    `;
-  }
-
-  // Funções globais para remover imagens
-  (window as any).removeExistingImage = (index: number) => {
-    existingImageUrls.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
-  };
-
-  (window as any).removeNewImage = (index: number) => {
-    newImageFiles.splice(index, 1);
-    renderPreviews();
-    window.showToast('Imagem removida', 'success');
-  };
-
-  // Funções para tornar imagem principal
-  (window as any).setMainExistingImage = (index: number) => {
-    if (index === 0 && newImageFiles.length === 0) return; // Já é a principal
-    console.log(`⭐ [PREVIEW] Tornando imagem existente ${index + 1} como principal`);
-    // Mover a imagem clicada para a primeira posição
-    const [selectedImage] = existingImageUrls.splice(index, 1);
-    existingImageUrls.unshift(selectedImage);
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
-  };
-
-  (window as any).setMainNewImage = (index: number) => {
-    console.log(`⭐ [PREVIEW] Tornando nova imagem ${index + 1} como principal`);
-    // Mover a nova imagem para o início de existingImageUrls
-    const [selectedImage] = newImageFiles.splice(index, 1);
-    existingImageUrls.unshift(selectedImage.name); // Adicionar placeholder
-    // Re-adicionar na primeira posição de newImageFiles
-    newImageFiles.unshift(selectedImage);
-    // Remover o placeholder
-    existingImageUrls.shift();
-    renderPreviews();
-    window.showToast('Imagem principal alterada', 'success');
-  };
-
-  // Quando selecionar novos arquivos
-  fileInput?.addEventListener('change', (e) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files || files.length === 0) return;
-
-    const totalImages = existingImageUrls.length + newImageFiles.length;
-    const remainingSlots = MAX_IMAGES - totalImages;
-
-    if (files.length > remainingSlots) {
-      window.showToast(
-        `Você pode adicionar apenas ${remainingSlots} imagem${remainingSlots !== 1 ? 'ns' : ''} (máximo ${MAX_IMAGES})`,
-        'warning'
-      );
-    }
-
-    const filesToAdd = Array.from(files).slice(0, remainingSlots);
-
-    // Validar cada arquivo
-    for (const file of filesToAdd) {
-      if (file.size > 10 * 1024 * 1024) {
-        window.showToast(
-          `Arquivo ${file.name} muito grande (máx 10MB)`,
-          'error'
-        );
-        continue;
-      }
-
-      if (!file.type.startsWith('image/')) {
-        window.showToast(`Arquivo ${file.name} não é uma imagem`, 'error');
-        continue;
-      }
-
-      newImageFiles.push(file);
-    }
-
-    renderPreviews();
-
-    if (filesToAdd.length > 0) {
-      window.showToast(
-        `${filesToAdd.length} imagem${filesToAdd.length !== 1 ? 'ns' : ''} selecionada${filesToAdd.length !== 1 ? 's' : ''}!`,
-        'success'
-      );
-    }
-
-    fileInput.value = '';
-  });
-
-  // Detectar Safari iOS
-  const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-                      !('MSStream' in window) &&
-                      /Safari/.test(navigator.userAgent);
-
-  console.log(`🔍 [BROWSER] Safari iOS: ${isSafariIOS}, UA: ${navigator.userAgent.substring(0, 100)}`);
-
-  // ============================================================================
-  // FIX BUG 2.2 + FIX 413: Compressão que RESPEITA EXIF (mesmo do novo.astro)
-  // Biblioteca browser-image-compression respeita orientação EXIF e comprime eficientemente
-  // ============================================================================
-
-  // Importar biblioteca que respeita EXIF
-  const imageCompression = (await import('browser-image-compression')).default;
-
-  /**
-   * Comprime imagem respeitando orientação EXIF (fotos mobile)
-   * Resolve erro 413 (Vercel 4.5MB limit) sem perder orientação correta
-   */
-  async function compressImage(file: File): Promise<File> {
-    console.log(`   📸 Original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-
-    const options = {
-      maxSizeMB: 3,              // Máximo 3MB após compressão (seguro para Vercel)
-      maxWidthOrHeight: 1920,    // Redimensionar se maior que 1920px
-      useWebWorker: true,        // Usar Web Worker para não bloquear UI
-      fileType: 'image/jpeg',    // Converter para JPEG
-      initialQuality: 0.85,      // Qualidade 85% (ótimo balanço)
-      alwaysKeepResolution: false,
-      exifOrientation: undefined, // AUTO - respeita EXIF automaticamente!
-    };
-
-    try {
-      const compressedFile = await imageCompression(file, options);
-      console.log(`   ✅ Comprimido: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB (${Math.round(compressedFile.size / file.size * 100)}%)`);
-
-      // Validar que não ficou muito grande (Vercel limit)
-      if (compressedFile.size > 4 * 1024 * 1024) {
-        console.warn(`   ⚠️ Arquivo ainda muito grande após compressão, tentando compressão mais agressiva...`);
-        // Tentar compressão mais agressiva
-        const aggressiveOptions = { ...options, maxSizeMB: 2, initialQuality: 0.75 };
-        const recompressed = await imageCompression(compressedFile, aggressiveOptions);
-        console.log(`   ✅ Re-comprimido: ${(recompressed.size / 1024 / 1024).toFixed(2)}MB`);
-        return recompressed;
-      }
-
-      return compressedFile;
-    } catch (error: any) {
-      console.error(`   ❌ Erro ao comprimir:`, error);
-      throw new Error(`Falha ao comprimir imagem: ${error.message}`);
-    }
-  }
-
-  // Helper para parsear JSON de forma segura (Safari retorna erro genérico)
-  async function safeJsonParse(response: Response): Promise<any> {
-    let text = '';
-    try {
-      text = await response.text();
-    } catch (readError: any) {
-      console.error('❌ Erro ao ler resposta:', readError.message);
-      throw new Error(`Erro ao ler resposta: ${readError.message}`);
-    }
-
-    console.log(`📥 [RESPONSE] Status: ${response.status}, Tamanho: ${text.length} chars`);
-
-    // Se a resposta estiver vazia, retornar erro claro
-    if (!text || text.trim() === '') {
-      console.error('❌ Resposta vazia do servidor. Status:', response.status);
-      throw new Error(`Erro ${response.status}: resposta vazia`);
-    }
-
-    // Verificar se parece HTML (erro de servidor)
-    if (text.trim().startsWith('<!') || text.trim().startsWith('<html')) {
-      console.error('❌ Servidor retornou HTML em vez de JSON:', text.substring(0, 300));
-      const titleMatch = text.match(/<title>([^<]+)<\/title>/i);
-      const errorMsg = titleMatch ? titleMatch[1] : 'Erro no servidor';
-      throw new Error(`${response.status}: ${errorMsg}`);
-    }
-
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      console.error('❌ Erro ao parsear JSON:', text.substring(0, 500));
-      const preview = text.substring(0, 100).replace(/\s+/g, ' ');
-      throw new Error(`Erro ${response.status}: ${preview}...`);
-    }
-  }
-
-  // Função para fazer upload de TODAS as imagens em UMA requisição
-  // Safari iOS compatible version
-  async function uploadAllImages(files: File[]): Promise<string[]> {
-    const batchId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`📤 [BATCH UPLOAD] ID: ${batchId}`);
-    console.log(`📤 [BATCH UPLOAD] ${files.length} arquivos para enviar`);
-    console.log(`📤 [BATCH UPLOAD] Safari iOS: ${isSafariIOS}`);
-
-    const formData = new FormData();
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-
-      console.log(`   📁 Processando ${i + 1}/${files.length}: ${file.name}`);
-
-      try {
-        // FIX 413: Comprimir COM respeito a EXIF (biblioteca browser-image-compression)
-        const compressedFile = await compressImage(file);
-        formData.append(`file${i}`, compressedFile, fileName.replace(/\.[^.]+$/, '.jpg'));
-      } catch (compressError: any) {
-        console.error(`   ❌ Erro ao comprimir ${file.name}:`, compressError);
-        // Se compressão falhar, validar tamanho antes de enviar original
-        if (file.size > 4 * 1024 * 1024) {
-          throw new Error(`Imagem ${file.name} muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 4MB.`);
-        }
-        formData.append(`file${i}`, file, fileName);
-      }
-    }
-
-    const url = `/api/admin/upload?batch=${batchId}`;
-    console.log(`📤 [BATCH UPLOAD] Enviando para: ${url}`);
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Importante para Safari iOS enviar cookies
+      // Lifecycle
+      window.addEventListener('beforeunload', (e) => this.handleBeforeUnload(e));
+      window.addEventListener('pagehide', () => this.cleanup());
+      
+      // CRITICAL: Force reset/reload of state on pageshow
+      window.addEventListener('pageshow', () => {
+        console.log('🔄 [PAGESHOW] Refreshing state');
+        this.resetFromDOM(); // In edit mode, we want to reset to what's in the DOM/Server state, not clear everything
       });
-      console.log(`📥 [BATCH UPLOAD] Resposta recebida: ${response.status} ${response.statusText}`);
-    } catch (fetchError: any) {
-      console.error('❌ [BATCH UPLOAD] Erro de rede:', fetchError.message);
-      throw new Error(`Erro de conexão: ${fetchError.message}`);
+
+      // Initial Load
+      this.resetFromDOM();
     }
 
-    if (!response.ok) {
-      console.error(`❌ [BATCH UPLOAD] Resposta não OK: ${response.status}`);
-      const error = await safeJsonParse(response);
-      throw new Error(error.error || `Erro no upload (${response.status})`);
-    }
+    // ========================================================================
+    // STATE MANAGEMENT
+    // ========================================================================
 
-    const result = await safeJsonParse(response);
-
-    console.log(`✅ [BATCH UPLOAD] Sucesso! ${result.count} imagens processadas`);
-    result.urls.forEach((url: string, i: number) => {
-      console.log(`   URL ${i + 1}: ${url}`);
-    });
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    return result.urls;
-  }
-
-  // Submit do formulário
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    isSubmitting = true;
-    submitBtn.disabled = true;
-    submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
-
-    try {
-      // Upload das novas imagens em UMA requisição
-      let newImageUrls: string[] = [];
-      if (newImageFiles.length > 0) {
-        console.log(`📸 [SUBMIT] ${newImageFiles.length} imagens para enviar`);
-        submitText.innerHTML = '<div class="form-spinner"></div> Enviando imagens...';
-
-        newImageUrls = await uploadAllImages(newImageFiles);
-        console.log(`✅ [SUBMIT] ${newImageUrls.length} imagens enviadas`);
+    private resetFromDOM() {
+      this.cleanupBlobUrls();
+      this.newImageFiles = [];
+      this.blobUrls = [];
+      this.isSubmitting = false;
+      this.formDirty = false;
+      
+      try {
+        const json = this.existingImagesInput?.value;
+        this.existingImageUrls = json ? JSON.parse(json) : [];
+      } catch (e) {
+        console.error('Error parsing existing images', e);
+        this.existingImageUrls = [];
       }
 
-      // 2. Combinar imagens: existentes + novas
-      const allImageUrls = [...existingImageUrls, ...newImageUrls];
+      if (this.fileInput) this.fileInput.value = '';
+      this.enableSubmit();
+      this.renderPreviews();
+    }
 
-      // 3. Preparar dados do produto
-      const formData = new FormData(form);
+    private cleanup() {
+      this.cleanupBlobUrls();
+    }
 
-      // Converter vírgula para ponto no preço (compatibilidade com locale BR)
-      const precoStr = (formData.get('preco') as string || '').replace(',', '.');
-      const bateriaStr = formData.get('bateria') as string;
+    private cleanupBlobUrls() {
+      this.blobUrls.forEach(url => URL.revokeObjectURL(url));
+      this.blobUrls = [];
+    }
 
-      const produto = {
-        nome: formData.get('nome'),
-        codigo: formData.get('codigo'),
-        preco: parseFloat(precoStr) || 0,
-        bateria: bateriaStr ? parseInt(bateriaStr, 10) : null,
-        condicao: formData.get('condicao'),
-        categoria_id: formData.get('categoria_id'),
-        descricao: formData.get('descricao') || null,
-        imagens: allImageUrls,
+    private enableSubmit() {
+      if (this.submitBtn) {
+        this.submitBtn.disabled = false;
+        if (this.submitText) this.submitText.innerHTML = 'Salvar Alterações';
+      }
+    }
+
+    private disableSubmit(message: string) {
+      if (this.submitBtn) {
+        this.submitBtn.disabled = true;
+        if (this.submitText) this.submitText.innerHTML = `<div class="form-spinner"></div> ${message}`;
+      }
+    }
+
+    // ========================================================================
+    // LOGIC
+    // ========================================================================
+
+    private handleAreaClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (target.closest('button')) return;
+
+      const total = this.existingImageUrls.length + this.newImageFiles.length;
+      if (total < this.MAX_IMAGES) {
+        this.fileInput?.click();
+      } else {
+        window.showToast(`Máximo de ${this.MAX_IMAGES} imagens`, 'warning');
+      }
+    }
+
+    private handleFileSelect(e: Event) {
+      const input = e.target as HTMLInputElement;
+      const files = input.files;
+      if (!files || files.length === 0) return;
+
+      const currentTotal = this.existingImageUrls.length + this.newImageFiles.length;
+      const remainingSlots = this.MAX_IMAGES - currentTotal;
+      const filesToAdd = Array.from(files).slice(0, remainingSlots);
+
+      let added = 0;
+      for (const file of filesToAdd) {
+        if (file.size > this.MAX_FILE_SIZE) {
+          window.showToast(`${file.name} muito grande (máx 10MB)`, 'error');
+          continue;
+        }
+        if (!file.type.startsWith('image/')) {
+          window.showToast(`${file.name} não é uma imagem`, 'error');
+          continue;
+        }
+        this.newImageFiles.push(file);
+        added++;
+      }
+
+      input.value = '';
+      this.renderPreviews();
+      if (added > 0) window.showToast(`${added} imagem(ns) selecionada(s)`, 'success');
+    }
+
+    // Removing Images
+    private removeExistingImage(index: number) {
+      this.existingImageUrls.splice(index, 1);
+      this.renderPreviews();
+      this.formDirty = true;
+    }
+
+    private removeNewImage(index: number) {
+      this.newImageFiles.splice(index, 1);
+      this.renderPreviews();
+    }
+
+    // Setting Main Image (Reordering)
+    private setMainExistingImage(index: number) {
+      if (index === 0 && this.newImageFiles.length === 0) return; // Already main (if no new files before it, but logic here is simple array manip)
+      
+      const [img] = this.existingImageUrls.splice(index, 1);
+      this.existingImageUrls.unshift(img);
+      this.renderPreviews();
+      this.formDirty = true;
+      window.showToast('Imagem principal definida', 'success');
+    }
+
+    private setMainNewImage(index: number) {
+      const [file] = this.newImageFiles.splice(index, 1);
+      this.newImageFiles.unshift(file);
+      this.renderPreviews();
+      window.showToast('Imagem principal definida (entre as novas)', 'success');
+    }
+
+    // ========================================================================
+    // RENDER
+    // ========================================================================
+
+    private renderPreviews() {
+      if (!this.uploadArea) return;
+      this.cleanupBlobUrls();
+
+      const total = this.existingImageUrls.length + this.newImageFiles.length;
+
+      if (total === 0) {
+        this.uploadArea.innerHTML = `
+          <div class="upload-placeholder">
+            <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <p>Clique para adicionar imagens</p>
+            <small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>
+          </div>
+        `;
+        return;
+      }
+
+      // Existing Images
+      const existingHtml = this.existingImageUrls.map((url, index) => {
+        const isMain = index === 0; // Relative to existing group.
+        return `
+          <div class="preview-card ${isMain ? 'is-main' : ''}"
+               onclick="window.setMainExistingImage(${index})"
+               title="Clique para tornar principal">
+            <img src="${url}" alt="Imagem ${index+1}" />
+            <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeExistingImage(${index})">×</button>
+            ${isMain ? '<span class="main-badge">Principal</span>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      // New Images
+      const newHtml = this.newImageFiles.map((file, index) => {
+        const url = URL.createObjectURL(file);
+        this.blobUrls.push(url);
+        // It is "Main" only if there are no existing images and it's the first new one
+        const isMain = this.existingImageUrls.length === 0 && index === 0;
+        
+        return `
+          <div class="preview-card ${isMain ? 'is-main' : ''} is-new"
+               onclick="window.setMainNewImage(${index})"
+               title="Clique para tornar principal">
+            <img src="${url}" alt="${file.name}" />
+            <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeNewImage(${index})">×</button>
+            <span class="new-badge">Nova</span>
+            ${isMain ? '<span class="main-badge">Principal</span>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      const addButtonHtml = total < this.MAX_IMAGES ? `
+        <div class="add-more-btn" onclick="document.getElementById('foto-upload').click()">
+          <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Adicionar</span>
+        </div>
+      ` : '';
+
+      this.uploadArea.innerHTML = `
+        <div class="images-preview-grid">
+          ${existingHtml}
+          ${newHtml}
+          ${addButtonHtml}
+        </div>
+      `;
+    }
+
+    // ========================================================================
+    // UPLOAD
+    // ========================================================================
+
+    private async compressImage(file: File): Promise<File> {
+      const imageCompression = (await import('browser-image-compression')).default;
+      const options = {
+        maxSizeMB: 2,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: 'image/jpeg',
+        initialQuality: 0.85,
+        exifOrientation: undefined,
       };
 
-      // 4. Salvar produto
-      const produtoId = produtoIdInput.value;
-      const response = await fetch(`/api/admin/produtos/${produtoId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(produto),
-        credentials: 'include', // Importante para Safari iOS enviar cookies
+      try {
+        const compressed = await imageCompression(file, options);
+        if (compressed.size > 3.5 * 1024 * 1024) {
+             return await imageCompression(compressed, { ...options, maxSizeMB: 1, initialQuality: 0.7 });
+        }
+        return compressed;
+      } catch (err) {
+        console.warn('Compression failed', err);
+        return file;
+      }
+    }
+
+    private async uploadSingleImage(file: File): Promise<string> {
+      const formData = new FormData();
+      const compressed = await this.compressImage(file);
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      formData.append('file0', compressed, safeName);
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
       });
 
-      const data = await safeJsonParse(response);
-
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao atualizar produto');
+        const text = await response.text();
+        throw new Error(`Erro upload (${response.status}): ${text.substring(0, 50)}`);
       }
 
-      window.showToast('Produto atualizado com sucesso!', 'success');
-
-      // Limpar cache do service worker
-      if ('caches' in window) {
-        caches.keys().then((names) => {
-          names.forEach((name) => caches.delete(name));
-        });
+      const result = await response.json();
+      if (result.urls && result.urls.length > 0) {
+        return result.urls[0];
       }
-
-      // Redirecionar para lista de produtos com cache-busting
-      setTimeout(() => {
-        const timestamp = new Date().getTime();
-        window.location.href = `/admin/produtos?_t=${timestamp}`;
-      }, 1000);
-    } catch (error: any) {
-      console.error('❌ Erro ao salvar produto:', error);
-      window.showToast(error.message || 'Erro ao salvar produto', 'error');
-      // Resetar isSubmitting em caso de erro (permite avisar se usuário tentar sair)
-      isSubmitting = false;
-      submitBtn.disabled = false;
-      submitText.textContent = 'Salvar Alterações';
+      throw new Error('Nenhuma URL retornada');
     }
-  });
 
-  // ============================================================================
-  // PROTEÇÃO CONTRA RELOAD ACIDENTAL
-  // ============================================================================
+    private async uploadNewImages(): Promise<string[]> {
+      if (this.newImageFiles.length === 0) return [];
 
-  // Marcar formulário como "sujo" quando usuário faz mudanças
-  form?.addEventListener('input', () => {
-    formDirty = true;
-  });
+      const urls: string[] = new Array(this.newImageFiles.length);
+      const errors: string[] = [];
+      let currentIndex = 0;
 
-  // Avisar antes de sair se houver mudanças não salvas
-  window.addEventListener('beforeunload', (e) => {
-    // Só avisar se:
-    // 1. Formulário foi modificado OU tem novas imagens OU removeu imagens existentes
-    // 2. NÃO está no processo de submit
-    const hasChanges = formDirty || newImageFiles.length > 0;
-    if (hasChanges && !isSubmitting) {
+      const processNext = async () => {
+        while (currentIndex < this.newImageFiles.length) {
+          const i = currentIndex++;
+          try {
+            console.log(`📤 Uploading new image ${i+1}/${this.newImageFiles.length}...`);
+            urls[i] = await this.uploadSingleImage(this.newImageFiles[i]);
+          } catch (err: any) {
+            console.error(`❌ Error uploading image ${i}:`, err);
+            errors.push(err.message);
+          }
+        }
+      };
+
+      const workers = Array(Math.min(this.newImageFiles.length, this.UPLOAD_CONCURRENCY))
+        .fill(null)
+        .map(() => processNext());
+
+      await Promise.all(workers);
+
+      if (errors.length > 0) throw new Error(errors.join('\n'));
+      return urls;
+    }
+
+    // ========================================================================
+    // SUBMIT
+    // ========================================================================
+
+    private async handleSubmit(e: Event) {
       e.preventDefault();
-      e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
-      return e.returnValue;
-    }
-  });
+      
+      this.isSubmitting = true;
+      this.disableSubmit('Salvando...');
 
-  // Prevenir navegação acidental via service worker ou outros eventos
-  let controllerChangeCount = 0;
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      controllerChangeCount++;
-      console.log(`[SW] Controller mudou (${controllerChangeCount}x)`);
+      try {
+        // 1. Upload New Images
+        let newUrls: string[] = [];
+        if (this.newImageFiles.length > 0) {
+          this.disableSubmit('Enviando imagens...');
+          newUrls = await this.uploadNewImages();
+        }
 
-      // Se mudou mais de uma vez E o usuário está preenchendo o form, avisar
-      const hasChanges = formDirty || newImageFiles.length > 0;
-      if (controllerChangeCount > 1 && hasChanges && !isSubmitting) {
-        console.warn(
-          '[SW] Service Worker atualizou mas NÃO vamos recarregar (formulário em uso)'
-        );
+        // 2. Combine URLs (Existing + New)
+        // Note: New images are appended to the end.
+        const finalImages = [...this.existingImageUrls, ...newUrls];
+
+        // 3. Prepare Payload
+        const formData = new FormData(this.form);
+        const produto = {
+          nome: formData.get('nome'),
+          codigo: formData.get('codigo'),
+          preco: parseFloat((formData.get('preco') as string).replace(',', '.')) || 0,
+          bateria: formData.get('bateria') ? parseInt(formData.get('bateria') as string) : null,
+          condicao: formData.get('condicao'),
+          categoria_id: formData.get('categoria_id'),
+          descricao: formData.get('descricao') || null,
+          imagens: finalImages,
+        };
+
+        // 4. Send Update
+        const response = await fetch(`/api/admin/produtos/${this.productIdInput.value}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(produto),
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Erro ao atualizar');
+        }
+
+        window.showToast('Produto atualizado com sucesso!', 'success');
+
+        // Cache Busting & Redirect
+        setTimeout(() => {
+          window.location.href = `/admin/produtos?_t=${Date.now()}`;
+        }, 500);
+
+      } catch (error: any) {
+        console.error('❌ Submit Error:', error);
+        window.showToast(error.message || 'Erro ao salvar', 'error');
+        this.enableSubmit();
+        this.isSubmitting = false;
       }
-    });
+    }
+
+    private handleBeforeUnload(e: BeforeUnloadEvent) {
+      if ((this.formDirty || this.newImageFiles.length > 0) && !this.isSubmitting) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    }
   }
 
-  // Limpar blob URLs quando sair da página
-  window.addEventListener('pagehide', cleanupBlobUrls);
-
-  // Renderizar estado inicial
-  renderPreviews();
+  // Initialize
+  new ProductEditManager();
 </script>
 
+<style>
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #0A0A0A;
+    border-radius: 8px;
+    border: 2px dashed #333;
+    transition: all 0.2s;
+  }
+  .upload-placeholder:hover { border-color: #555; background: #111; }
+  .upload-placeholder svg { color: #666; margin-bottom: 16px; }
+  .upload-placeholder p { font-size: 14px; font-weight: 500; color: #888; margin-bottom: 4px; }
+  .upload-placeholder small { font-size: 12px; color: #555; }
+</style>
+
 <style is:global>
-  /* Forçar display block no container quando há grid */
-  #upload-area:has(.images-preview-grid),
-  .form-image-upload:has(.images-preview-grid) {
-    display: block !important;
-    min-height: auto !important;
-    padding: 0 !important;
-  }
-
   .images-preview-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 12px;
-    padding: 16px;
+    padding: 12px;
+    background: #111;
+    border-radius: 8px;
+    border: 1px solid #333;
   }
 
-  @media (min-width: 768px) {
-    .images-preview-grid {
-      grid-template-columns: repeat(5, 1fr) !important;
-    }
+  .preview-card {
+    position: relative;
+    aspect-ratio: 1/1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #000;
+    border: 2px solid #333;
+    cursor: pointer;
+    transition: all 0.2s;
   }
+  
+  .preview-card.is-main { border-color: #3b82f6; }
+  .preview-card.is-new { border-color: #22c55e; }
+  .preview-card:hover { border-color: #555; }
+  .preview-card.is-main:hover { border-color: #2563eb; }
+
+  .preview-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+  }
+  
+  .main-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  
+  .new-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(34, 197, 94, 0.9);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .add-more-btn {
+    aspect-ratio: 1/1;
+    border-radius: 6px;
+    border: 2px dashed #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #151515;
+    color: #888;
+    transition: all 0.2s;
+  }
+  .add-more-btn:hover { border-color: #666; background: #222; color: #fff; }
+  .add-more-btn span { font-size: 12px; margin-top: 4px; }
 </style>
