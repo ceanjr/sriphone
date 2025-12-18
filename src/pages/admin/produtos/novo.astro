@@ -182,31 +182,16 @@ const { data: categorias } = await supabaseAdmin
     height: 100%;
     object-fit: cover;
     display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
   }
 
   .preview-card.loading {
-    background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-  }
-
-  @keyframes loading {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
   }
 
   .preview-card .loading-spinner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     width: 24px;
     height: 24px;
     border: 2px solid #444;
@@ -217,7 +202,7 @@ const { data: categorias } = await supabaseAdmin
 
   @keyframes spin {
     to {
-      transform: translate(-50%, -50%) rotate(360deg);
+      transform: rotate(360deg);
     }
   }
 
@@ -262,26 +247,62 @@ const { data: categorias } = await supabaseAdmin
     z-index: 5;
   }
 
-  .upload-progress {
-    position: relative;
-    height: 6px;
+  .add-more-btn {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    border: 2px dashed #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #151515;
+    color: #888;
+    transition: all 0.2s;
+  }
+  .add-more-btn:hover {
+    border-color: #666;
     background: #222;
-    border-radius: 3px;
+    color: #fff;
+  }
+  .add-more-btn svg {
+    margin-bottom: 4px;
+  }
+  .add-more-btn span {
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #0a0a0a;
+    border-radius: 8px;
+    border: 2px dashed #333;
+    transition: all 0.2s;
+  }
+  .upload-placeholder:hover {
+    border-color: #555;
+    background: #111;
+  }
+  .upload-placeholder svg {
+    color: #666;
     margin-bottom: 16px;
-    overflow: hidden;
   }
-  .upload-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #2563eb);
-    transition: width 0.3s;
+  .upload-placeholder p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #888;
+    margin-bottom: 4px;
   }
-  .upload-progress-text {
-    position: absolute;
-    right: 8px;
-    top: -24px;
+  .upload-placeholder small {
     font-size: 12px;
-    font-weight: 600;
-    color: #3b82f6;
+    color: #555;
   }
 
   .upload-hint {
@@ -294,11 +315,11 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // 🔥 VERSÃO FINAL - COM CORREÇÃO DE IMAGENS REPETIDAS
+  // 🎯 VERSÃO FINAL CORRIGIDA - Preview Funcionando
   // ============================================================================
 
   const state = {
-    images: [] as Array<{ url: string; id: string; timestamp: number }>,
+    images: [] as Array<{ url: string; id: string }>,
     uploading: false,
     uploadProgress: 0,
   };
@@ -337,8 +358,7 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function init() {
-    console.log('[UPLOAD] ========================================');
-    console.log('[UPLOAD] Inicializando sistema FINAL...');
+    console.log('[UPLOAD] Inicializando...');
 
     initElements();
 
@@ -361,7 +381,6 @@ const { data: categorias } = await supabaseAdmin
     (window as any).triggerFileInput = () => elements.fileInput?.click();
 
     console.log('[UPLOAD] ✅ Sistema inicializado');
-    console.log('[UPLOAD] ========================================');
   }
 
   async function handleFileSelect(e: Event) {
@@ -448,15 +467,14 @@ const { data: categorias } = await supabaseAdmin
         const result = await uploadToServer(compressedFile, file.name, i);
         console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ Upload OK`);
 
-        // 🔥 SOLUÇÃO: Adicionar timestamp único para cada imagem
         const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-        const timestamp = Date.now() + i; // Garantir unicidade
 
         removeLoadingPlaceholder(tempId);
+
+        // 🔥 CRÍTICO: Salvar URL SEM modificações
         state.images.push({
-          url: result.url,
+          url: result.url, // URL exata retornada pela API
           id: imageId,
-          timestamp: timestamp, // ← Timestamp único para cache-busting
         });
         successCount++;
 
@@ -598,20 +616,17 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
-    // 🔥 SOLUÇÃO: Adicionar timestamp único a cada URL para forçar reload
+    // 🔥 RENDERIZAR IMAGENS SEM MODIFICAR URL
     const imagesHtml = state.images
-      .map((image, index) => {
-        // Adicionar cache-busting único baseado no timestamp da imagem
-        const urlWithCacheBust = `${image.url}&preview=${image.timestamp}&idx=${index}`;
-
-        return `
+      .map(
+        (image, index) => `
       <div class="preview-card ${index === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${index})">
-        <img src="${urlWithCacheBust}" alt="Foto ${index + 1}" loading="eager" data-id="${image.id}" />
+        <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" crossorigin="anonymous" />
         <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${index})">×</button>
         ${index === 0 ? '<span class="main-badge">Principal</span>' : ''}
       </div>
-    `;
-      })
+    `
+      )
       .join('');
 
     const addButtonHtml = canAddMore
@@ -625,17 +640,7 @@ const { data: categorias } = await supabaseAdmin
     `
       : '';
 
-    const progressHtml = state.uploading
-      ? `
-      <div class="upload-progress">
-        <div class="upload-progress-bar" style="width: ${state.uploadProgress}%"></div>
-        <span class="upload-progress-text">${state.uploadProgress}%</span>
-      </div>
-    `
-      : '';
-
     elements.uploadArea.innerHTML = `
-      ${progressHtml}
       <div class="images-preview-grid">
         ${imagesHtml}
         ${addButtonHtml}
@@ -656,11 +661,7 @@ const { data: categorias } = await supabaseAdmin
   function syncState() {
     if (!elements.finalImagesInput) return;
 
-    // Extrair apenas as URLs limpas (sem cache-busting)
-    const urls = state.images.map((img) => {
-      // Remover todos os parâmetros de query
-      return img.url.split('?')[0];
-    });
+    const urls = state.images.map((img) => img.url.split('?')[0]);
     elements.finalImagesInput.value = JSON.stringify(urls);
 
     console.log('[UPLOAD] Estado sincronizado:', urls.length, 'imagens');
