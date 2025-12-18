@@ -46,8 +46,7 @@ const { data: categorias } = await supabaseAdmin
             <input
               id="foto-upload"
               type="file"
-              accept="image/*,image/heic,image/heif"
-              multiple
+              accept="image/*"
               style="display: none;"
             />
             <div class="form-image-upload" id="upload-area">
@@ -315,13 +314,12 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // 🔥 SOLUÇÃO DEFINITIVA - FormData único por requisição
+  // 🔥 SOLUÇÃO REAL - Upload um por vez, aguardando CONFIRMAÇÃO do servidor
   // ============================================================================
 
   const state = {
     images: [] as Array<{ url: string; id: string }>,
     uploading: false,
-    uploadProgress: 0,
   };
 
   let elements: {
@@ -336,12 +334,6 @@ const { data: categorias } = await supabaseAdmin
   const CONFIG = {
     maxImages: 5,
     maxFileSize: 10 * 1024 * 1024,
-    compressionOptions: {
-      maxSizeMB: 1.5,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-      initialQuality: 0.8,
-    },
   };
 
   function initElements() {
@@ -359,20 +351,19 @@ const { data: categorias } = await supabaseAdmin
 
   function init() {
     console.log('[UPLOAD] Inicializando...');
-
     initElements();
 
-    if (!elements.form || !elements.fileInput || !elements.uploadArea) {
-      console.error('[UPLOAD] Elementos não encontrados!');
+    if (!elements.form) {
+      console.error('[UPLOAD] Formulário não encontrado!');
       return;
     }
 
     state.images = [];
     state.uploading = false;
-    state.uploadProgress = 0;
 
     renderUploadArea();
 
+    // 🔥 MUDANÇA: Processar arquivos UM POR VEZ
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.form.addEventListener('submit', handleSubmit);
 
@@ -380,11 +371,11 @@ const { data: categorias } = await supabaseAdmin
     (window as any).setMainImage = setMainImage;
     (window as any).triggerFileInput = () => elements.fileInput?.click();
 
-    console.log('[UPLOAD] ✅ Sistema inicializado');
+    console.log('[UPLOAD] ✅ Inicializado');
   }
 
   async function handleFileSelect(e: Event) {
-    console.log('[UPLOAD] ======== NOVO UPLOAD ========');
+    console.log('[UPLOAD] ========================================');
 
     const input = e.target as HTMLInputElement;
     const files = input.files;
@@ -394,125 +385,96 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
-    console.log(`[UPLOAD] ${files.length} arquivo(s) selecionado(s)`);
+    // 🔥 MUDANÇA CRÍTICA: Processar apenas o PRIMEIRO arquivo
+    const file = files[0];
+
+    console.log(`[UPLOAD] Processando: ${file.name}`);
+
+    // Limpar input IMEDIATAMENTE
+    input.value = '';
 
     const remainingSlots = CONFIG.maxImages - state.images.length;
     if (remainingSlots === 0) {
-      window.showToast?.('Máximo de 5 imagens atingido', 'warning');
-      input.value = '';
+      window.showToast?.('Máximo de 5 imagens', 'warning');
       return;
     }
 
-    const filesArray = Array.from(files);
-    const filesToProcess = filesArray.slice(0, remainingSlots);
-
-    const validFiles: File[] = [];
-    for (const file of filesToProcess) {
-      if (!file.type.startsWith('image/')) {
-        window.showToast?.(`${file.name} não é uma imagem`, 'error');
-        continue;
-      }
-      if (file.size > CONFIG.maxFileSize) {
-        window.showToast?.(`${file.name} é muito grande`, 'error');
-        continue;
-      }
-      validFiles.push(file);
+    if (!file.type.startsWith('image/')) {
+      window.showToast?.('Apenas imagens', 'error');
+      return;
     }
 
-    if (validFiles.length === 0) {
-      input.value = '';
+    if (file.size > CONFIG.maxFileSize) {
+      window.showToast?.('Arquivo muito grande', 'error');
       return;
     }
 
     state.uploading = true;
-    state.uploadProgress = 0;
     updateUploadUI();
-    input.value = '';
 
-    await processUploads(validFiles);
+    await processSingleUpload(file);
 
     state.uploading = false;
-    state.uploadProgress = 0;
     updateUploadUI();
 
     console.log('[UPLOAD] ======== FIM ========');
   }
 
-  async function processUploads(files: File[]) {
-    const totalFiles = files.length;
-    let successCount = 0;
+  async function processSingleUpload(file: File) {
+    const tempId = `temp-${Date.now()}`;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    console.log(`[UPLOAD] Iniciando: ${file.name}`);
 
+    try {
+      renderLoadingPlaceholder(tempId);
+
+      const compressedFile = await compressImage(file);
       console.log(
-        `[UPLOAD ${i + 1}/${totalFiles}] ========================================`
+        `[UPLOAD] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
       );
-      console.log(`[UPLOAD ${i + 1}/${totalFiles}] Arquivo: ${file.name}`);
 
-      try {
-        renderLoadingPlaceholder(tempId);
+      // 🔥 Upload e AGUARDAR resposta completa
+      const result = await uploadToServer(compressedFile, file.name);
+      console.log(`[UPLOAD] ✅ URL recebida: ${result.url}`);
 
-        const compressedFile = await compressImage(file);
-        console.log(
-          `[UPLOAD ${i + 1}/${totalFiles}] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
-        );
+      // 🔥 Aguardar mais 200ms para garantir que o servidor processou
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-        if (i > 0) {
-          console.log(`[UPLOAD ${i + 1}/${totalFiles}] ⏱️ Aguardando 500ms...`);
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
+      const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
-        const result = await uploadToServer(compressedFile, file.name, i);
-        console.log(`[UPLOAD ${i + 1}/${totalFiles}] ✅ Upload OK`);
+      removeLoadingPlaceholder(tempId);
 
-        const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      state.images.push({
+        url: result.url,
+        id: imageId,
+      });
 
-        removeLoadingPlaceholder(tempId);
+      syncState();
+      renderUploadArea();
 
-        state.images.push({
-          url: result.url,
-          id: imageId,
-        });
-        successCount++;
+      console.log(`[UPLOAD] ✅ Adicionado: ${imageId}`);
+      console.log(`[UPLOAD] Total: ${state.images.length}`);
 
-        state.uploadProgress = Math.round(((i + 1) / totalFiles) * 100);
-        updateUploadUI();
-        renderUploadArea();
-
-        console.log(
-          `[UPLOAD ${i + 1}/${totalFiles}] ✅ Adicionado com ID: ${imageId}`
-        );
-        console.log(
-          `[UPLOAD ${i + 1}/${totalFiles}] Total de imagens: ${state.images.length}`
-        );
-      } catch (error: any) {
-        console.error(`[UPLOAD ${i + 1}/${totalFiles}] ❌ Erro:`, error);
-        removeLoadingPlaceholder(tempId);
-        window.showToast?.(`Erro: ${file.name}`, 'error');
-      }
-    }
-
-    syncState();
-
-    console.log('[UPLOAD COMPLETE] ========================================');
-    console.log('[UPLOAD COMPLETE] Total:', state.images.length);
-
-    if (successCount > 0) {
-      window.showToast?.(`${successCount} imagem(ns) enviada(s)!`, 'success');
+      window.showToast?.('Imagem adicionada!', 'success');
+    } catch (error: any) {
+      console.error(`[UPLOAD] ❌ Erro:`, error);
+      removeLoadingPlaceholder(tempId);
+      window.showToast?.(`Erro: ${error.message}`, 'error');
     }
   }
 
   async function compressImage(file: File): Promise<File> {
-    if (file.size <= 2 * 1024 * 1024) {
-      return file;
-    }
+    if (file.size <= 2 * 1024 * 1024) return file;
 
     try {
       const imageCompression = (await import('browser-image-compression'))
         .default;
-      return await imageCompression(file, CONFIG.compressionOptions);
+      return await imageCompression(file, {
+        maxSizeMB: 1.5,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        initialQuality: 0.8,
+      });
     } catch (error) {
       console.warn('[UPLOAD] Erro na compressão:', error);
       return file;
@@ -521,39 +483,19 @@ const { data: categorias } = await supabaseAdmin
 
   async function uploadToServer(
     file: File,
-    originalName: string,
-    uploadIndex: number
+    originalName: string
   ): Promise<{ url: string }> {
-    // 🔥 SOLUÇÃO: Criar FormData NOVO para cada requisição
     const formData = new FormData();
-
-    // 🔥 CRÍTICO: Adicionar campos únicos para evitar deduplicação
-    const uniqueId = `${Date.now()}-${uploadIndex}-${Math.random().toString(36).substring(2)}`;
     formData.append('file', file);
-    formData.append('uploadId', uniqueId); // Campo único
-    formData.append('timestamp', Date.now().toString()); // Timestamp único
-    formData.append('index', uploadIndex.toString()); // Índice
 
-    // URL única
-    const cacheBuster = `t=${Date.now()}&idx=${uploadIndex}&r=${Math.random()}`;
-    const uploadUrl = `/api/admin/upload?${cacheBuster}`;
+    const uploadUrl = `/api/admin/upload`;
 
-    console.log(`[UPLOAD ${uploadIndex}] 📤 Enviando (ID: ${uniqueId})`);
-    console.log(`[UPLOAD ${uploadIndex}]    URL: ${uploadUrl}`);
+    console.log(`[UPLOAD] POST ${uploadUrl}`);
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-        Pragma: 'no-cache',
-        Expires: '0',
-        // 🔥 Adicionar header único
-        'X-Upload-Id': uniqueId,
-      },
-      cache: 'no-store',
-      // 🔥 CRÍTICO: Desabilitar keep-alive para forçar nova conexão
-      keepalive: false,
+      // 🔥 SEM headers de cache-control para evitar conflito
     });
 
     if (!response.ok) {
@@ -566,15 +508,10 @@ const { data: categorias } = await supabaseAdmin
     const data = await response.json();
 
     if (!data.url) {
-      throw new Error('URL não retornada pelo servidor');
+      throw new Error('URL não retornada');
     }
 
-    console.log(
-      `[UPLOAD ${uploadIndex}] ✅ Resposta recebida (ID: ${uniqueId})`
-    );
-    console.log(
-      `[UPLOAD ${uploadIndex}]    URL: ${data.url.substring(0, 80)}...`
-    );
+    console.log(`[UPLOAD] Resposta: ${data.url.substring(0, 80)}...`);
 
     return { url: data.url };
   }
@@ -601,7 +538,7 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function removeImage(index: number) {
-    console.log(`[UPLOAD] Removendo imagem ${index}`);
+    console.log(`[UPLOAD] Removendo: ${index}`);
     state.images.splice(index, 1);
     syncState();
     renderUploadArea();
@@ -611,12 +548,12 @@ const { data: categorias } = await supabaseAdmin
   function setMainImage(index: number) {
     if (index === 0) return;
 
-    console.log(`[UPLOAD] Definindo imagem ${index} como principal`);
+    console.log(`[UPLOAD] Principal: ${index}`);
     const [image] = state.images.splice(index, 1);
     state.images.unshift(image);
     syncState();
     renderUploadArea();
-    window.showToast?.('Foto principal atualizada', 'success');
+    window.showToast?.('Principal atualizada', 'success');
   }
 
   function renderUploadArea() {
@@ -631,8 +568,8 @@ const { data: categorias } = await supabaseAdmin
           <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
           </svg>
-          <p>Clique para adicionar fotos</p>
-          <small>PNG, JPG, WEBP • Máximo 5 fotos • Até 10MB</small>
+          <p>Adicione uma foto por vez</p>
+          <small>Clique para selecionar (máximo 5 fotos)</small>
         </div>
       `;
       return;
@@ -642,7 +579,7 @@ const { data: categorias } = await supabaseAdmin
       .map(
         (image, index) => `
       <div class="preview-card ${index === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${index})">
-        <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" crossorigin="anonymous" />
+        <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" />
         <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${index})">×</button>
         ${index === 0 ? '<span class="main-badge">Principal</span>' : ''}
       </div>
@@ -666,7 +603,7 @@ const { data: categorias } = await supabaseAdmin
         ${imagesHtml}
         ${addButtonHtml}
       </div>
-      ${hasImages ? '<p class="upload-hint">💡 Clique em uma foto para torná-la principal</p>' : ''}
+      <p class="upload-hint">💡 Adicione uma foto por vez • Clique para definir principal</p>
     `;
   }
 
@@ -675,7 +612,7 @@ const { data: categorias } = await supabaseAdmin
 
     elements.submitBtn.disabled = state.uploading;
     elements.submitText.textContent = state.uploading
-      ? `Enviando... ${state.uploadProgress}%`
+      ? 'Aguarde...'
       : 'Adicionar Produto';
   }
 
@@ -685,19 +622,19 @@ const { data: categorias } = await supabaseAdmin
     const urls = state.images.map((img) => img.url.split('?')[0]);
     elements.finalImagesInput.value = JSON.stringify(urls);
 
-    console.log('[UPLOAD] Estado sincronizado:', urls.length, 'imagens');
+    console.log('[UPLOAD] Sincronizado:', urls.length);
   }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
 
     if (state.images.length === 0) {
-      window.showToast?.('Adicione pelo menos uma foto', 'warning');
+      window.showToast?.('Adicione uma foto', 'warning');
       return;
     }
 
     if (state.uploading) {
-      window.showToast?.('Aguarde o upload das imagens', 'warning');
+      window.showToast?.('Aguarde o upload', 'warning');
       return;
     }
 
@@ -728,17 +665,16 @@ const { data: categorias } = await supabaseAdmin
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
         },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao salvar produto');
+        throw new Error(errorData.error || 'Erro ao salvar');
       }
 
-      window.showToast?.('Produto criado com sucesso!', 'success');
+      window.showToast?.('Produto criado!', 'success');
 
       setTimeout(() => {
         window.location.href = '/admin/produtos';
