@@ -314,12 +314,13 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // 🔥 SOLUÇÃO REAL - Upload um por vez, aguardando CONFIRMAÇÃO do servidor
+  // CORREÇÃO DEFINITIVA: Upload múltiplo com validação de unicidade
   // ============================================================================
 
   const state = {
     images: [] as Array<{ url: string; id: string }>,
     uploading: false,
+    uploadedPaths: new Set<string>(), // ✅ Track paths para evitar duplicatas
   };
 
   let elements: {
@@ -334,6 +335,7 @@ const { data: categorias } = await supabaseAdmin
   const CONFIG = {
     maxImages: 5,
     maxFileSize: 10 * 1024 * 1024,
+    delayBetweenUploads: 300, // ✅ AUMENTADO: 300ms entre uploads
   };
 
   function initElements() {
@@ -350,20 +352,22 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function init() {
-    console.log('[UPLOAD] Inicializando...');
+    console.log('[UPLOAD] ========================================');
+    console.log('[UPLOAD] Inicializando sistema de upload...');
     initElements();
 
     if (!elements.form) {
-      console.error('[UPLOAD] Formulário não encontrado!');
+      console.error('[UPLOAD] ❌ Formulário não encontrado!');
       return;
     }
 
     state.images = [];
     state.uploading = false;
+    state.uploadedPaths.clear();
 
     renderUploadArea();
 
-    // 🔥 MUDANÇA: Processar arquivos UM POR VEZ
+    // ✅ Processar arquivos
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.form.addEventListener('submit', handleSubmit);
 
@@ -371,95 +375,177 @@ const { data: categorias } = await supabaseAdmin
     (window as any).setMainImage = setMainImage;
     (window as any).triggerFileInput = () => elements.fileInput?.click();
 
-    console.log('[UPLOAD] ✅ Inicializado');
+    console.log('[UPLOAD] ✅ Inicializado com sucesso');
+    console.log('[UPLOAD] ========================================');
   }
 
   async function handleFileSelect(e: Event) {
-    console.log('[UPLOAD] ========================================');
+    console.log('\n[UPLOAD] ======== NOVO UPLOAD ========');
 
     const input = e.target as HTMLInputElement;
     const files = input.files;
 
     if (!files || files.length === 0) {
-      console.warn('[UPLOAD] Nenhum arquivo');
+      console.warn('[UPLOAD] Nenhum arquivo selecionado');
       return;
     }
 
-    // 🔥 MUDANÇA CRÍTICA: Processar apenas o PRIMEIRO arquivo
-    const file = files[0];
-
-    console.log(`[UPLOAD] Processando: ${file.name}`);
+    const filesArray = Array.from(files);
+    console.log(`[UPLOAD] ${filesArray.length} arquivo(s) selecionado(s)`);
 
     // Limpar input IMEDIATAMENTE
     input.value = '';
 
     const remainingSlots = CONFIG.maxImages - state.images.length;
     if (remainingSlots === 0) {
-      window.showToast?.('Máximo de 5 imagens', 'warning');
+      window.showToast?.('Máximo de 5 imagens atingido', 'warning');
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      window.showToast?.('Apenas imagens', 'error');
-      return;
+    // ✅ CORREÇÃO: Processar apenas os arquivos que cabem
+    const filesToProcess = filesArray.slice(0, remainingSlots);
+
+    if (filesToProcess.length < filesArray.length) {
+      window.showToast?.(
+        `Processando apenas ${filesToProcess.length} de ${filesArray.length} arquivos`,
+        'warning'
+      );
     }
 
-    if (file.size > CONFIG.maxFileSize) {
-      window.showToast?.('Arquivo muito grande', 'error');
-      return;
+    // Validar todos os arquivos primeiro
+    for (let i = 0; i < filesToProcess.length; i++) {
+      const file = filesToProcess[i];
+      if (!file.type.startsWith('image/')) {
+        window.showToast?.(`${file.name} não é uma imagem`, 'error');
+        return;
+      }
+      if (file.size > CONFIG.maxFileSize) {
+        window.showToast?.(`${file.name} é muito grande (máx 10MB)`, 'error');
+        return;
+      }
     }
 
     state.uploading = true;
     updateUploadUI();
 
-    await processSingleUpload(file);
+    // ✅ Processar SEQUENCIALMENTE com DELAY
+    let successCount = 0;
+
+    for (let i = 0; i < filesToProcess.length; i++) {
+      const file = filesToProcess[i];
+
+      console.log(
+        `\n[UPLOAD ${i + 1}/${filesToProcess.length}] ========================================`
+      );
+
+      try {
+        // ✅ AGUARDAR entre uploads (exceto o primeiro)
+        if (i > 0) {
+          console.log(
+            `[UPLOAD ${i + 1}] ⏱️ Aguardando ${CONFIG.delayBetweenUploads}ms...`
+          );
+          await new Promise((resolve) =>
+            setTimeout(resolve, CONFIG.delayBetweenUploads)
+          );
+        }
+
+        const result = await processSingleUpload(file, i);
+
+        if (result) {
+          successCount++;
+          console.log(
+            `[UPLOAD ${i + 1}/${filesToProcess.length}] ✅ Upload OK`
+          );
+        }
+      } catch (error: any) {
+        console.error(
+          `[UPLOAD ${i + 1}/${filesToProcess.length}] ❌ Erro:`,
+          error
+        );
+        window.showToast?.(`Erro ao enviar ${file.name}`, 'error');
+      }
+    }
 
     state.uploading = false;
     updateUploadUI();
 
-    console.log('[UPLOAD] ======== FIM ========');
+    if (successCount > 0) {
+      window.showToast?.(`${successCount} imagem(ns) enviada(s)!`, 'success');
+    }
+
+    console.log('[UPLOAD] ======== FIM ========\n');
   }
 
-  async function processSingleUpload(file: File) {
-    const tempId = `temp-${Date.now()}`;
+  async function processSingleUpload(
+    file: File,
+    uploadIndex: number
+  ): Promise<boolean> {
+    const tempId = `temp-${Date.now()}-${uploadIndex}-${Math.random().toString(36).substr(2, 9)}`;
 
-    console.log(`[UPLOAD] Iniciando: ${file.name}`);
+    console.log(`[UPLOAD ${uploadIndex}] Arquivo: ${file.name}`);
+    console.log(
+      `[UPLOAD ${uploadIndex}] Comprimido: ${(file.size / 1024).toFixed(2)}KB`
+    );
 
     try {
       renderLoadingPlaceholder(tempId);
 
       const compressedFile = await compressImage(file);
-      console.log(
-        `[UPLOAD] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
+
+      // ✅ Upload com índice e timestamp únicos
+      const result = await uploadToServer(
+        compressedFile,
+        file.name,
+        uploadIndex
       );
 
-      // 🔥 Upload e AGUARDAR resposta completa
-      const result = await uploadToServer(compressedFile, file.name);
-      console.log(`[UPLOAD] ✅ URL recebida: ${result.url}`);
+      if (!result || !result.url) {
+        throw new Error('URL não retornada pelo servidor');
+      }
 
-      // 🔥 Aguardar mais 200ms para garantir que o servidor processou
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // ✅ CRÍTICO: Verificar se URL já foi usada
+      const baseUrl = result.url.split('?')[0];
 
-      const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      if (state.uploadedPaths.has(baseUrl)) {
+        console.error(`[UPLOAD ${uploadIndex}] ❌ URL DUPLICADA detectada!`);
+        throw new Error('URL duplicada - upload falhou');
+      }
+
+      // ✅ Verificar se URL já está na lista de imagens
+      const isDuplicate = state.images.some(
+        (img) => img.url.split('?')[0] === baseUrl
+      );
+
+      if (isDuplicate) {
+        console.error(`[UPLOAD ${uploadIndex}] ❌ Imagem DUPLICADA na lista!`);
+        throw new Error('Imagem duplicada detectada');
+      }
 
       removeLoadingPlaceholder(tempId);
 
+      const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+      // ✅ Adicionar à lista e ao set de tracking
       state.images.push({
         url: result.url,
         id: imageId,
       });
 
+      state.uploadedPaths.add(baseUrl);
+
+      console.log(`[UPLOAD ${uploadIndex}] ✅ Adicionado com ID: ${imageId}`);
+      console.log(
+        `[UPLOAD ${uploadIndex}] Total de imagens: ${state.images.length}`
+      );
+
       syncState();
       renderUploadArea();
 
-      console.log(`[UPLOAD] ✅ Adicionado: ${imageId}`);
-      console.log(`[UPLOAD] Total: ${state.images.length}`);
-
-      window.showToast?.('Imagem adicionada!', 'success');
+      return true;
     } catch (error: any) {
-      console.error(`[UPLOAD] ❌ Erro:`, error);
+      console.error(`[UPLOAD ${uploadIndex}] ❌ ERRO:`, error);
       removeLoadingPlaceholder(tempId);
-      window.showToast?.(`Erro: ${error.message}`, 'error');
+      throw error;
     }
   }
 
@@ -483,19 +569,33 @@ const { data: categorias } = await supabaseAdmin
 
   async function uploadToServer(
     file: File,
-    originalName: string
-  ): Promise<{ url: string }> {
+    originalName: string,
+    uploadIndex: number
+  ): Promise<{ url: string; path?: string } | null> {
     const formData = new FormData();
-    formData.append('file', file);
 
-    const uploadUrl = `/api/admin/upload`;
+    // ✅ CRÍTICO: Nome único com timestamp + índice + random
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 11);
+    const ext = file.name.split('.').pop();
+    const uniqueFileName = `${timestamp}-${uploadIndex}-${random}.${ext}`;
 
-    console.log(`[UPLOAD] POST ${uploadUrl}`);
+    formData.append('file', file, uniqueFileName);
+
+    const uploadUrl = `/api/admin/upload?t=${timestamp}&idx=${uploadIndex}&r=${random}`;
+
+    console.log(
+      `[UPLOAD ${uploadIndex}] 📤 Enviando (ID: ${timestamp}-${uploadIndex}-${random})`
+    );
+    console.log(`[UPLOAD ${uploadIndex}]    URL: ${uploadUrl}`);
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
-      // 🔥 SEM headers de cache-control para evitar conflito
+      headers: {
+        'X-Upload-Index': uploadIndex.toString(),
+        'X-Upload-Timestamp': timestamp.toString(),
+      },
     });
 
     if (!response.ok) {
@@ -507,13 +607,20 @@ const { data: categorias } = await supabaseAdmin
 
     const data = await response.json();
 
-    if (!data.url) {
-      throw new Error('URL não retornada');
+    console.log(
+      `[UPLOAD ${uploadIndex}] ✅ Resposta recebida (ID: ${timestamp}-${uploadIndex}-${random})`
+    );
+    console.log(
+      `[UPLOAD ${uploadIndex}]    URL: ${data.url?.substring(0, 80)}...`
+    );
+
+    if (data.cached) {
+      console.warn(
+        `[UPLOAD ${uploadIndex}] ⚠️ Servidor retornou arquivo em cache!`
+      );
     }
 
-    console.log(`[UPLOAD] Resposta: ${data.url.substring(0, 80)}...`);
-
-    return { url: data.url };
+    return data;
   }
 
   function renderLoadingPlaceholder(id: string) {
@@ -538,7 +645,15 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function removeImage(index: number) {
-    console.log(`[UPLOAD] Removendo: ${index}`);
+    console.log(`[UPLOAD] Removendo imagem ${index}`);
+
+    // ✅ Remover do set de tracking
+    const removedImage = state.images[index];
+    if (removedImage) {
+      const baseUrl = removedImage.url.split('?')[0];
+      state.uploadedPaths.delete(baseUrl);
+    }
+
     state.images.splice(index, 1);
     syncState();
     renderUploadArea();
@@ -548,12 +663,12 @@ const { data: categorias } = await supabaseAdmin
   function setMainImage(index: number) {
     if (index === 0) return;
 
-    console.log(`[UPLOAD] Principal: ${index}`);
+    console.log(`[UPLOAD] Definindo imagem ${index} como principal`);
     const [image] = state.images.splice(index, 1);
     state.images.unshift(image);
     syncState();
     renderUploadArea();
-    window.showToast?.('Principal atualizada', 'success');
+    window.showToast?.('Imagem principal atualizada', 'success');
   }
 
   function renderUploadArea() {
@@ -564,47 +679,47 @@ const { data: categorias } = await supabaseAdmin
 
     if (!hasImages && !state.uploading) {
       elements.uploadArea.innerHTML = `
-        <div class="upload-placeholder" onclick="window.triggerFileInput()">
-          <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <p>Adicione uma foto por vez</p>
-          <small>Clique para selecionar (máximo 5 fotos)</small>
-        </div>
-      `;
+      <div class="upload-placeholder" onclick="window.triggerFileInput()">
+        <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <p>Adicione fotos do produto</p>
+        <small>Clique para selecionar (máximo 5 fotos)</small>
+      </div>
+    `;
       return;
     }
 
     const imagesHtml = state.images
       .map(
         (image, index) => `
-      <div class="preview-card ${index === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${index})">
-        <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" />
-        <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${index})">×</button>
-        ${index === 0 ? '<span class="main-badge">Principal</span>' : ''}
-      </div>
-    `
+    <div class="preview-card ${index === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${index})" title="Clique para tornar principal">
+      <img src="${image.url}" alt="Foto ${index + 1}" loading="eager" />
+      <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${index})">×</button>
+      ${index === 0 ? '<span class="main-badge">Principal</span>' : ''}
+    </div>
+  `
       )
       .join('');
 
     const addButtonHtml = canAddMore
       ? `
-      <div class="add-more-btn" onclick="window.triggerFileInput()">
-        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        <span>Adicionar</span>
-      </div>
-    `
+    <div class="add-more-btn" onclick="window.triggerFileInput()">
+      <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      <span>Adicionar</span>
+    </div>
+  `
       : '';
 
     elements.uploadArea.innerHTML = `
-      <div class="images-preview-grid">
-        ${imagesHtml}
-        ${addButtonHtml}
-      </div>
-      <p class="upload-hint">💡 Adicione uma foto por vez • Clique para definir principal</p>
-    `;
+    <div class="images-preview-grid">
+      ${imagesHtml}
+      ${addButtonHtml}
+    </div>
+    <p class="upload-hint">💡 Selecione múltiplas fotos de uma vez • Clique para definir principal</p>
+  `;
   }
 
   function updateUploadUI() {
@@ -612,29 +727,30 @@ const { data: categorias } = await supabaseAdmin
 
     elements.submitBtn.disabled = state.uploading;
     elements.submitText.textContent = state.uploading
-      ? 'Aguarde...'
+      ? 'Aguarde o upload...'
       : 'Adicionar Produto';
   }
 
   function syncState() {
     if (!elements.finalImagesInput) return;
 
+    // ✅ Remover cache-busting antes de salvar
     const urls = state.images.map((img) => img.url.split('?')[0]);
     elements.finalImagesInput.value = JSON.stringify(urls);
 
-    console.log('[UPLOAD] Sincronizado:', urls.length);
+    console.log('[UPLOAD] Estado sincronizado:', urls.length, 'imagens');
   }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
 
     if (state.images.length === 0) {
-      window.showToast?.('Adicione uma foto', 'warning');
+      window.showToast?.('Adicione pelo menos uma foto', 'warning');
       return;
     }
 
     if (state.uploading) {
-      window.showToast?.('Aguarde o upload', 'warning');
+      window.showToast?.('Aguarde o upload finalizar', 'warning');
       return;
     }
 
@@ -645,6 +761,7 @@ const { data: categorias } = await supabaseAdmin
     try {
       const formData = new FormData(elements.form);
 
+      // ✅ URLs limpas (sem query params)
       const urls = state.images.map((img) => img.url.split('?')[0]);
 
       const payload = {
@@ -661,6 +778,8 @@ const { data: categorias } = await supabaseAdmin
         imagens: urls,
       };
 
+      console.log('[SUBMIT] Enviando payload:', payload);
+
       const response = await fetch('/api/admin/produtos', {
         method: 'POST',
         headers: {
@@ -671,10 +790,10 @@ const { data: categorias } = await supabaseAdmin
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao salvar');
+        throw new Error(errorData.error || 'Erro ao salvar produto');
       }
 
-      window.showToast?.('Produto criado!', 'success');
+      window.showToast?.('Produto criado com sucesso!', 'success');
 
       setTimeout(() => {
         window.location.href = '/admin/produtos';
@@ -687,6 +806,7 @@ const { data: categorias } = await supabaseAdmin
     }
   }
 
+  // ✅ Inicializar quando DOM estiver pronto
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

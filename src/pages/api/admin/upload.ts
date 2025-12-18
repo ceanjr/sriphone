@@ -15,26 +15,35 @@ const ALLOWED_TYPES = [
   'image/heif',
 ];
 
-// Cache para rastrear uploads recentes e evitar duplicatas
-const recentUploads = new Map<string, { url: string; timestamp: number }>();
+// ✅ CORREÇÃO 1: Cache mais específico - incluir timestamp da requisição
+const recentUploads = new Map<
+  string,
+  { url: string; timestamp: number; requestId: string }
+>();
+
+// Contador global para garantir unicidade absoluta
+let uploadCounter = 0;
 
 // Limpar cache antigo a cada minuto
 setInterval(() => {
   const now = Date.now();
   for (const [key, value] of recentUploads.entries()) {
-    if (now - value.timestamp > 60000) {
-      // 1 minuto
+    if (now - value.timestamp > 30000) {
+      // ✅ CORREÇÃO 2: Reduzir para 30s
       recentUploads.delete(key);
     }
   }
-}, 60000);
+}, 30000);
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   const requestId = crypto.randomUUID().substring(0, 8);
   const requestTimestamp = Date.now();
 
+  // ✅ CORREÇÃO 3: Incrementar contador para garantir unicidade absoluta
+  const currentCount = ++uploadCounter;
+
   console.log(`\n${'='.repeat(80)}`);
-  console.log(`[API UPLOAD ${requestId}] NOVA REQUISIÇÃO`);
+  console.log(`[API UPLOAD ${requestId}] NOVA REQUISIÇÃO #${currentCount}`);
   console.log(`[API UPLOAD ${requestId}] Timestamp: ${requestTimestamp}`);
   console.log(`${'='.repeat(80)}\n`);
 
@@ -88,22 +97,29 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
 
-    // 5. 🔥 Gerar hash do conteúdo para detectar arquivos idênticos
+    // 5. ✅ CORREÇÃO 4: Hash mais específico (incluir timestamp nos primeiros bytes)
+    const hashInput = new Uint8Array([
+      ...buffer.slice(0, 10000), // Primeiros 10KB
+      ...new TextEncoder().encode(requestTimestamp.toString()),
+      ...new TextEncoder().encode(currentCount.toString()),
+    ]);
+
     const contentHash = crypto
-      .createHash('md5')
-      .update(buffer)
+      .createHash('sha256')
+      .update(hashInput)
       .digest('hex')
-      .substring(0, 12);
+      .substring(0, 16);
 
     console.log(
       `[API UPLOAD ${requestId}] 🔐 Hash do conteúdo: ${contentHash}`
     );
 
-    // 6. 🔥 Verificar se já fizemos upload deste arquivo recentemente
-    const cacheKey = `${contentHash}-${file.size}`;
+    // 6. ✅ CORREÇÃO 5: Cache key mais específico
+    const cacheKey = `${contentHash}-${file.size}-${file.name}-${requestTimestamp}`;
     const cached = recentUploads.get(cacheKey);
 
-    if (cached && requestTimestamp - cached.timestamp < 10000) {
+    // ✅ CORREÇÃO 6: Janela de duplicação muito menor (2 segundos)
+    if (cached && requestTimestamp - cached.timestamp < 2000) {
       console.warn(`[API UPLOAD ${requestId}] ⚠️ ARQUIVO DUPLICADO detectado!`);
       console.warn(`[API UPLOAD ${requestId}]    Cache key: ${cacheKey}`);
       console.warn(
@@ -129,19 +145,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // 7. 🔥 Gerar nome ÚNICO com múltiplas camadas
+    // 7. ✅ CORREÇÃO 7: Nome ÚNICO com MÁXIMA unicidade garantida
     const now = Date.now();
     const nanotime = performance
       .now()
       .toString()
       .replace('.', '')
-      .substring(0, 10);
-    const random1 = Math.random().toString(36).substring(2, 10);
-    const random2 = crypto.randomBytes(4).toString('hex');
+      .substring(0, 12);
+    const random1 = Math.random().toString(36).substring(2, 12);
+    const random2 = crypto.randomBytes(6).toString('hex');
+    const random3 = crypto.randomUUID().substring(0, 8); // ✅ UUID adicional
     const fileExt = file.type.split('/')[1] || 'jpg';
 
-    // Formato: timestamp-nanotime-random1-random2-hash.ext
-    const fileName = `${now}-${nanotime}-${random1}-${random2}-${contentHash}.${fileExt}`;
+    // ✅ CORREÇÃO 8: Incluir contador no nome do arquivo
+    const fileName = `${now}-${nanotime}-${currentCount}-${random1}-${random2}-${random3}-${contentHash}.${fileExt}`;
     const filePath = `produtos/${fileName}`;
 
     console.log(`[API UPLOAD ${requestId}] 🎯 Nome gerado:`);
@@ -150,8 +167,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     console.log(`[API UPLOAD ${requestId}]    Componentes:`);
     console.log(`[API UPLOAD ${requestId}]      - Timestamp: ${now}`);
     console.log(`[API UPLOAD ${requestId}]      - Nanotime: ${nanotime}`);
+    console.log(`[API UPLOAD ${requestId}]      - Counter: ${currentCount}`);
     console.log(`[API UPLOAD ${requestId}]      - Random1: ${random1}`);
     console.log(`[API UPLOAD ${requestId}]      - Random2: ${random2}`);
+    console.log(`[API UPLOAD ${requestId}]      - Random3: ${random3}`);
     console.log(`[API UPLOAD ${requestId}]      - Hash: ${contentHash}`);
 
     // 8. Upload para Supabase
@@ -163,7 +182,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .from('imagens')
       .upload(filePath, buffer, {
         contentType: file.type,
-        upsert: false,
+        upsert: false, // ✅ CRÍTICO: Nunca sobrescrever
         cacheControl: '3600',
       });
 
@@ -172,6 +191,74 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         `[API UPLOAD ${requestId}] ❌ Erro no upload:`,
         uploadError
       );
+
+      // ✅ CORREÇÃO 9: Se o arquivo já existe, gerar novo nome e tentar novamente
+      if (
+        uploadError.message?.includes('already exists') ||
+        uploadError.message?.includes('duplicate')
+      ) {
+        console.warn(
+          `[API UPLOAD ${requestId}] ⚠️ Arquivo já existe, gerando novo nome...`
+        );
+
+        const retryFileName = `${now}-${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
+        const retryFilePath = `produtos/${retryFileName}`;
+
+        const { data: retryData, error: retryError } =
+          await supabaseAdmin.storage
+            .from('imagens')
+            .upload(retryFilePath, buffer, {
+              contentType: file.type,
+              upsert: false,
+              cacheControl: '3600',
+            });
+
+        if (retryError) {
+          return new Response(
+            JSON.stringify({
+              error: `Erro no upload (retry): ${retryError.message}`,
+            }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Usar dados do retry
+        console.log(`[API UPLOAD ${requestId}] ✅ Upload bem-sucedido (retry)`);
+
+        const { data: urlData } = supabaseAdmin.storage
+          .from('imagens')
+          .getPublicUrl(retryData.path);
+
+        const baseUrl = urlData.publicUrl;
+        const cacheBust = `t=${Date.now()}&r=${crypto
+          .randomBytes(4)
+          .toString('hex')}&c=${currentCount}`;
+        const finalUrl = `${baseUrl}?${cacheBust}`;
+
+        recentUploads.set(cacheKey, {
+          url: finalUrl,
+          timestamp: requestTimestamp,
+          requestId,
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            url: finalUrl,
+            path: retryData.path,
+            timestamp: now,
+            retried: true,
+          }),
+          {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+            },
+          }
+        );
+      }
+
       return new Response(
         JSON.stringify({ error: `Erro no upload: ${uploadError.message}` }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -192,16 +279,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // 10. Verificar se path retornado é diferente do enviado
-    if (uploadData.path !== filePath) {
-      console.warn(`[API UPLOAD ${requestId}] ⚠️ Path diferente!`);
-      console.warn(`[API UPLOAD ${requestId}]    Enviado: ${filePath}`);
-      console.warn(
-        `[API UPLOAD ${requestId}]    Retornado: ${uploadData.path}`
-      );
-    }
-
-    // 11. Obter URL pública
+    // 10. Obter URL pública
     const { data: urlData } = supabaseAdmin.storage
       .from('imagens')
       .getPublicUrl(uploadData.path);
@@ -216,17 +294,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     const baseUrl = urlData.publicUrl;
 
-    // 12. 🔥 Adicionar cache-busting ÚNICO na query string
-    const cacheBust = `t=${now}&r=${random1}&n=${nanotime}`;
+    // 11. ✅ CORREÇÃO 10: Cache-busting com contador
+    const cacheBust = `t=${now}&r=${random1}&n=${nanotime}&c=${currentCount}`;
     const finalUrl = `${baseUrl}?${cacheBust}`;
 
-    // 13. Salvar no cache
-    recentUploads.set(cacheKey, { url: finalUrl, timestamp: requestTimestamp });
+    // 12. Salvar no cache com requestId
+    recentUploads.set(cacheKey, {
+      url: finalUrl,
+      timestamp: requestTimestamp,
+      requestId,
+    });
 
     console.log(`[API UPLOAD ${requestId}] ✅ UPLOAD COMPLETO`);
     console.log(`[API UPLOAD ${requestId}]    URL base: ${baseUrl}`);
     console.log(`[API UPLOAD ${requestId}]    URL final: ${finalUrl}`);
     console.log(`[API UPLOAD ${requestId}]    Cache-bust: ${cacheBust}`);
+    console.log(`[API UPLOAD ${requestId}]    Counter: ${currentCount}`);
     console.log(`\n${'='.repeat(80)}\n`);
 
     return new Response(
@@ -235,6 +318,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         url: finalUrl,
         path: uploadData.path,
         timestamp: now,
+        uploadNumber: currentCount,
         debug: {
           fileName,
           baseUrl,
