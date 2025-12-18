@@ -429,7 +429,7 @@ const { data: categorias } = await supabaseAdmin
     const totalFiles = files.length;
     const uploadedUrls: string[] = [];
 
-    // CRÍTICO: Processar SEQUENCIALMENTE, não em paralelo
+    // CRÍTICO: Processar SEQUENCIALMENTE com DELAY entre uploads
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const tempId = `temp-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
@@ -451,9 +451,10 @@ const { data: categorias } = await supabaseAdmin
           `[UPLOAD ${i + 1}/${totalFiles}] Comprimido: ${(compressedFile.size / 1024).toFixed(2)}KB`
         );
 
-        // CRÍTICO: Aguardar um pouco entre uploads para evitar colisão
+        // ⭐ CRÍTICO: Aguardar entre uploads para garantir timestamp diferente
         if (i > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          console.log(`[UPLOAD ${i + 1}/${totalFiles}] ⏱️ Aguardando 200ms...`);
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
 
         // Upload com índice único
@@ -522,9 +523,16 @@ const { data: categorias } = await supabaseAdmin
     uploadIndex: number
   ): Promise<string> {
     const formData = new FormData();
-    formData.append('file', file, file.name);
 
-    console.log(`[UPLOAD ${uploadIndex}] Enviando: ${file.name}`);
+    // Adicionar timestamp ao nome do arquivo para garantir unicidade
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop();
+    const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+    const uniqueFileName = `${nameWithoutExt}_${timestamp}_${uploadIndex}.${ext}`;
+
+    formData.append('file', file, uniqueFileName);
+
+    console.log(`[UPLOAD ${uploadIndex}] Enviando: ${uniqueFileName}`);
 
     const response = await fetch('/api/admin/upload', {
       method: 'POST',

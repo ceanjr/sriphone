@@ -398,7 +398,7 @@ const { data: categorias } = await supabaseAdmin
 
     let successCount = 0;
 
-    // CRÍTICO: Processar SEQUENCIALMENTE
+    // CRÍTICO: Processar SEQUENCIALMENTE com DELAY
     for (let i = 0; i < filesToProcess.length; i++) {
       const file = filesToProcess[i];
       const tempId = `temp-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`;
@@ -418,9 +418,10 @@ const { data: categorias } = await supabaseAdmin
 
         const compressed = await compressImage(file);
 
-        // CRÍTICO: Delay entre uploads
+        // ⭐ CRÍTICO: Delay entre uploads
         if (i > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          console.log(`[EDIT UPLOAD ${i + 1}] ⏱️ Aguardando 200ms...`);
+          await new Promise((resolve) => setTimeout(resolve, 200));
         }
 
         const url = await uploadImage(compressed, file.name, i);
@@ -432,17 +433,15 @@ const { data: categorias } = await supabaseAdmin
           throw new Error('URL duplicada detectada');
         }
 
-        const urlWithCacheBust = `${url}`; // Já tem cache-bust do uploadImage
-
         console.log(
           `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] ✅ SUCCESS!`
         );
         console.log(
-          `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] URL: ${urlWithCacheBust}`
+          `[EDIT UPLOAD ${i + 1}/${filesToProcess.length}] URL: ${url}`
         );
 
         removeLoadingPlaceholder(tempId);
-        newUploadedUrls.push(urlWithCacheBust);
+        newUploadedUrls.push(url);
         successCount++;
         renderPreviews();
       } catch (error: any) {
@@ -456,6 +455,13 @@ const { data: categorias } = await supabaseAdmin
         );
         removeLoadingPlaceholder(tempId);
       }
+    }
+
+    isUploading = false;
+    updateSubmitButton();
+
+    if (successCount > 0) {
+      window.showToast(`${successCount} imagem(ns) enviada(s)!`, 'success');
     }
   }
 
@@ -481,11 +487,19 @@ const { data: categorias } = await supabaseAdmin
     uploadIndex: number = 0
   ): Promise<string> {
     const formData = new FormData();
-    formData.append('file', file, file.name);
 
-    console.log(`[EDIT UPLOAD ${uploadIndex}] Enviando: ${file.name}`);
+    // Adicionar timestamp ao nome do arquivo para garantir unicidade
+    const timestamp = Date.now();
+    const ext = file.name.split('.').pop();
+    const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+    const uniqueFileName = `${nameWithoutExt}_${timestamp}_${uploadIndex}.${ext}`;
+
+    formData.append('file', file, uniqueFileName);
+
+    console.log(`[EDIT UPLOAD ${uploadIndex}] Enviando: ${uniqueFileName}`);
 
     const uploadUrl = `/api/admin/upload`;
+    console.log(`[EDIT UPLOAD ${uploadIndex}] POST ${uploadUrl}`);
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
