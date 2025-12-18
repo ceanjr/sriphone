@@ -15,7 +15,7 @@ const ALLOWED_TYPES = [
   'image/heif',
 ];
 
-// Helper para gerar hash simples
+// Helper para gerar hash do conteúdo do arquivo
 function simpleHash(buffer: Uint8Array): string {
   let hash = 0;
   const sampleSize = Math.min(buffer.length, 1024);
@@ -29,7 +29,9 @@ function simpleHash(buffer: Uint8Array): string {
 export const POST: APIRoute = async ({ request, cookies }) => {
   const startTime = Date.now();
   const requestId = crypto.randomUUID();
-  console.log(`[API UPLOAD ${requestId}] ========================================`);
+  console.log(
+    `[API UPLOAD ${requestId}] ========================================`
+  );
   console.log(`[API UPLOAD ${requestId}] Nova requisição recebida`);
 
   try {
@@ -54,7 +56,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
       formData = await request.formData();
     } catch (error: any) {
-      console.error(`[API UPLOAD ${requestId}] ❌ Erro ao parsear FormData:`, error);
+      console.error(
+        `[API UPLOAD ${requestId}] ❌ Erro ao parsear FormData:`,
+        error
+      );
       return new Response(
         JSON.stringify({
           error: 'Erro ao processar formulário',
@@ -70,7 +75,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const file = formData.get('file') as File;
 
     if (!file) {
-      console.error(`[API UPLOAD ${requestId}] ❌ Nenhum arquivo enviado no FormData`);
+      console.error(
+        `[API UPLOAD ${requestId}] ❌ Nenhum arquivo enviado no FormData`
+      );
       return new Response(
         JSON.stringify({
           error: 'Nenhum arquivo foi enviado',
@@ -83,7 +90,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     console.log(`[API UPLOAD ${requestId}] ✅ Arquivo recebido:`, {
-      name: file.name, // Nome enviado pelo frontend (deve ser único)
+      name: file.name,
       size: (file.size / 1024).toFixed(2) + 'KB',
       type: file.type,
     });
@@ -105,7 +112,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // 4. Validar tamanho
     if (file.size > MAX_FILE_SIZE) {
-      console.error(`[API UPLOAD ${requestId}] ❌ Arquivo muito grande:`, file.size);
+      console.error(
+        `[API UPLOAD ${requestId}] ❌ Arquivo muito grande:`,
+        file.size
+      );
       return new Response(
         JSON.stringify({
           error: `Arquivo muito grande: ${(file.size / 1024 / 1024).toFixed(
@@ -119,18 +129,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // 5. Gerar nome REALMENTE único usando UUID
-    const timestamp = Date.now();
-    const uuid = crypto.randomUUID();
-    
-    // Converter para buffer para gerar hash
+    // 5. Converter para buffer
     let arrayBuffer: ArrayBuffer;
     let buffer: Uint8Array;
     try {
       arrayBuffer = await file.arrayBuffer();
       buffer = new Uint8Array(arrayBuffer);
     } catch (error: any) {
-      console.error(`[API UPLOAD ${requestId}] ❌ Erro ao converter arquivo:`, error);
+      console.error(
+        `[API UPLOAD ${requestId}] ❌ Erro ao converter arquivo:`,
+        error
+      );
       return new Response(
         JSON.stringify({
           error: 'Erro ao processar arquivo',
@@ -143,20 +152,30 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
+    // 6. Gerar nome REALMENTE único
+    const timestamp = Date.now();
+    const uuid = crypto.randomUUID();
     const hashStr = simpleHash(buffer);
+    const nanotime = performance.now().toString().replace('.', '');
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
 
-    // Nome final: timestamp-uuid-hash.ext
-    const uniqueFileName = `${timestamp}-${uuid}-${hashStr}.${fileExt}`;
+    // CRÍTICO: Nome deve ser IMPOSSÍVEL de colidir
+    // Formato: timestamp-uuid-hash-nanotime.ext
+    const uniqueFileName = `${timestamp}-${uuid}-${hashStr}-${nanotime}.${fileExt}`;
 
-    console.log(`[API UPLOAD ${requestId}] ✅ Nome único gerado:`, uniqueFileName);
+    console.log(
+      `[API UPLOAD ${requestId}] ✅ Nome único gerado:`,
+      uniqueFileName
+    );
 
-    // Bucket = 'imagens', Path = 'produtos/filename.jpg'
+    // 7. Path no storage: produtos/uniqueFileName
     const filePath = `produtos/${uniqueFileName}`;
 
     console.log(`[API UPLOAD ${requestId}] Iniciando upload para Supabase...`);
-    
-    // 6. Upload usando SUPABASE ADMIN
+    console.log(`[API UPLOAD ${requestId}]   - Bucket: imagens`);
+    console.log(`[API UPLOAD ${requestId}]   - Path: ${filePath}`);
+
+    // 8. Upload usando SUPABASE ADMIN
     let uploadData;
     let uploadError;
     try {
@@ -164,14 +183,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         .from('imagens')
         .upload(filePath, buffer, {
           contentType: file.type,
-          upsert: false,
+          upsert: false, // NUNCA sobrescrever
           cacheControl: '3600',
         });
 
       uploadData = result.data;
       uploadError = result.error;
     } catch (error: any) {
-      console.error(`[API UPLOAD ${requestId}] ❌ Exceção durante upload:`, error);
+      console.error(
+        `[API UPLOAD ${requestId}] ❌ Exceção durante upload:`,
+        error
+      );
       return new Response(
         JSON.stringify({
           error: 'Erro ao fazer upload para storage',
@@ -185,7 +207,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     if (uploadError) {
-      console.error(`[API UPLOAD ${requestId}] ❌ Erro no upload do Supabase:`, uploadError);
+      console.error(
+        `[API UPLOAD ${requestId}] ❌ Erro no upload do Supabase:`,
+        uploadError
+      );
       return new Response(
         JSON.stringify({
           error: `Erro ao fazer upload: ${uploadError.message}`,
@@ -199,8 +224,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     console.log(`[API UPLOAD ${requestId}] ✅ Upload bem-sucedido`);
+    console.log(
+      `[API UPLOAD ${requestId}]   - Path salvo: ${uploadData?.path}`
+    );
 
-    // 7. Obter URL pública
+    // 9. Obter URL pública usando o path correto
     const { data: urlData } = supabaseAdmin.storage
       .from('imagens')
       .getPublicUrl(filePath);
@@ -218,18 +246,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       );
     }
 
-    // 8. Adicionar cache-busting na URL retornada (para o frontend ver que é novo)
-    // Mas a URL base salva no banco deve ser limpa depois pelo frontend se quiser
-    const finalUrl = `${urlData.publicUrl}?t=${timestamp}`;
+    // 10. CRÍTICO: Adicionar cache-busting único POR ARQUIVO
+    // Usar múltiplos parâmetros para evitar qualquer cache
+    const cacheBust = `v=${timestamp}&u=${uuid.substring(
+      0,
+      8
+    )}&h=${hashStr}&n=${nanotime}`;
+    const finalUrl = `${urlData.publicUrl}?${cacheBust}`;
 
     const elapsed = Date.now() - startTime;
-    console.log(`[API UPLOAD ${requestId}] ✅ Upload concluído em ${elapsed}ms`);
-    console.log(`[API UPLOAD ${requestId}] URL: ${finalUrl}`);
+    console.log(
+      `[API UPLOAD ${requestId}] ✅ Upload concluído em ${elapsed}ms`
+    );
+    console.log(`[API UPLOAD ${requestId}] URL final: ${finalUrl}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        urls: [finalUrl],
         url: finalUrl,
         path: filePath,
         timestamp: timestamp,
@@ -247,11 +280,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     );
   } catch (error: any) {
     console.error(`[API UPLOAD ${requestId}] ❌ ERRO FATAL:`, error);
-    
+
     return new Response(
       JSON.stringify({
         error: 'Erro interno no servidor',
         message: error.message,
+        stack: import.meta.env.DEV ? error.stack : undefined,
       }),
       {
         status: 500,
@@ -265,7 +299,6 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
   console.log('[API DELETE] ========================================');
 
   try {
-    // Verificar autenticação
     const authToken = cookies.get('sb-access-token')?.value;
 
     if (!authToken) {
@@ -288,11 +321,9 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     }
 
     console.log('[API DELETE] Deletando:', path);
-    console.log('[API DELETE]   - Bucket: imagens');
 
-    // DELETE do bucket CORRETO
     const { error: deleteError } = await supabaseAdmin.storage
-      .from('imagens') // ← BUCKET CORRETO!
+      .from('imagens')
       .remove([path]);
 
     if (deleteError) {
@@ -310,7 +341,6 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     }
 
     console.log('[API DELETE] ✅ Arquivo deletado');
-    console.log('[API DELETE] ========================================');
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
@@ -321,7 +351,6 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     return new Response(
       JSON.stringify({
         error: error.message,
-        stack: error.stack,
       }),
       {
         status: 500,

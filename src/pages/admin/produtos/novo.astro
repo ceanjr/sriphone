@@ -519,39 +519,22 @@ const { data: categorias } = await supabaseAdmin
   async function uploadToServer(
     file: File,
     originalName: string,
-    uploadIndex: number // NOVO: índice do upload
+    uploadIndex: number
   ): Promise<string> {
     const formData = new FormData();
+    formData.append('file', file, file.name);
 
-    // CRÍTICO: Nome super único com múltiplos fatores de diferenciação
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
-    const randomId2 = Math.random().toString(36).substring(2, 15);
-    const microtime = performance.now().toString().replace('.', '');
+    console.log(`[UPLOAD ${uploadIndex}] Enviando: ${file.name}`);
 
-    // Extensão do arquivo
-    const ext = originalName.split('.').pop() || 'jpg';
-
-    // Nome final: timestamp_microtime_random1_random2_index.ext
-    const uniqueName = `${timestamp}_${microtime}_${randomId}_${randomId2}_${uploadIndex}.${ext}`;
-
-    console.log(`[UPLOAD ${uploadIndex}] Nome único gerado: ${uniqueName}`);
-
-    formData.append('file', file, uniqueName);
-
-    // Adicionar mais parâmetros únicos na URL
-    const response = await fetch(
-      `/api/admin/upload?t=${timestamp}&r=${randomId}&i=${uploadIndex}&m=${microtime}`,
-      {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
-        },
-      }
-    );
+    const response = await fetch('/api/admin/upload', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
+    });
 
     if (!response.ok) {
       const errorData = await response
@@ -562,16 +545,12 @@ const { data: categorias } = await supabaseAdmin
 
     const data = await response.json();
 
-    if (!data.urls || !data.urls[0]) {
+    if (!data.url) {
       throw new Error('URL não retornada pelo servidor');
     }
 
-    // CRÍTICO: Adicionar parâmetros únicos na URL final para evitar cache
-    const finalUrl = `${data.urls[0]}?v=${timestamp}&i=${uploadIndex}&r=${randomId}`;
-
-    console.log(`[UPLOAD ${uploadIndex}] URL final: ${finalUrl}`);
-
-    return finalUrl;
+    console.log(`[UPLOAD ${uploadIndex}] URL recebida: ${data.url}`);
+    return data.url;
   }
 
   function renderLoadingPlaceholder(id: string) {

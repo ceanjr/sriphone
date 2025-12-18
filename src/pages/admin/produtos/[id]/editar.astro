@@ -478,25 +478,14 @@ const { data: categorias } = await supabaseAdmin
   async function uploadImage(
     file: File,
     originalName: string,
-    uploadIndex: number = 0 // NOVO
+    uploadIndex: number = 0
   ): Promise<string> {
     const formData = new FormData();
+    formData.append('file', file, file.name);
 
-    // Nome super único
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
-    const randomId2 = Math.random().toString(36).substring(2, 15);
-    const microtime = performance.now().toString().replace('.', '');
-    const ext = originalName.split('.').pop() || 'jpg';
+    console.log(`[EDIT UPLOAD ${uploadIndex}] Enviando: ${file.name}`);
 
-    const uniqueName = `${timestamp}_${microtime}_${randomId}_${randomId2}_${uploadIndex}.${ext}`;
-
-    console.log(`[EDIT UPLOAD ${uploadIndex}] Nome único: ${uniqueName}`);
-
-    formData.append('file', file, uniqueName);
-
-    const uploadUrl = `/api/admin/upload?t=${timestamp}&r=${randomId}&i=${uploadIndex}&m=${microtime}`;
-    console.log(`[EDIT UPLOAD ${uploadIndex}] POST ${uploadUrl}`);
+    const uploadUrl = `/api/admin/upload`;
 
     const response = await fetch(uploadUrl, {
       method: 'POST',
@@ -516,14 +505,12 @@ const { data: categorias } = await supabaseAdmin
 
     const data = await response.json();
 
-    if (!data.urls || !data.urls[0]) {
+    if (!data.url) {
       throw new Error('Nenhuma URL retornada');
     }
 
-    const finalUrl = `${data.urls[0]}?v=${timestamp}&i=${uploadIndex}&r=${randomId}`;
-    console.log(`[EDIT UPLOAD ${uploadIndex}] URL final: ${finalUrl}`);
-
-    return finalUrl;
+    console.log(`[EDIT UPLOAD ${uploadIndex}] URL recebida: ${data.url}`);
+    return data.url;
   }
 
   // --- Rendering ---
