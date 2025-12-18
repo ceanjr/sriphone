@@ -19,7 +19,13 @@ const { data: categorias } = await supabaseAdmin
     <div class="form-container">
       <div class="form-header">
         <a href="/admin/produtos" class="form-back-btn">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"></path></svg
+          >
           Voltar
         </a>
         <h1 class="form-title">Novo Produto</h1>
@@ -28,17 +34,36 @@ const { data: categorias } = await supabaseAdmin
 
       <div class="form-card">
         <form id="product-form">
-          <input type="hidden" id="final-images-json" name="imagens_json" value="[]" />
+          <input
+            type="hidden"
+            id="final-images-json"
+            name="imagens_json"
+            value="[]"
+          />
 
           <div class="form-group">
             <label class="form-label">Imagens (até 5)</label>
-            <input id="foto-upload" type="file" accept="image/*" multiple style="display: none;" />
+            <input
+              id="foto-upload"
+              type="file"
+              accept="image/*"
+              multiple
+              style="display: none;"
+            />
             <div class="form-image-upload" id="upload-area"></div>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="nome">Nome <span class="form-label-required">*</span></label>
-            <input id="nome" name="nome" type="text" class="form-input" required />
+            <label class="form-label" for="nome"
+              >Nome <span class="form-label-required">*</span></label
+            >
+            <input
+              id="nome"
+              name="nome"
+              type="text"
+              class="form-input"
+              required
+            />
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -46,14 +71,30 @@ const { data: categorias } = await supabaseAdmin
               <input id="codigo" name="codigo" type="text" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="preco">Preço <span class="form-label-required">*</span></label>
-              <input id="preco" name="preco" type="text" inputmode="decimal" class="form-input" required />
+              <label class="form-label" for="preco"
+                >Preço <span class="form-label-required">*</span></label
+              >
+              <input
+                id="preco"
+                name="preco"
+                type="text"
+                inputmode="decimal"
+                class="form-input"
+                required
+              />
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="categoria_id">Categoria <span class="form-label-required">*</span></label>
-              <select id="categoria_id" name="categoria_id" class="form-select" required>
+              <label class="form-label" for="categoria_id"
+                >Categoria <span class="form-label-required">*</span></label
+              >
+              <select
+                id="categoria_id"
+                name="categoria_id"
+                class="form-select"
+                required
+              >
                 <option value="">Selecione</option>
                 {categorias?.map((c) => <option value={c.id}>{c.nome}</option>)}
               </select>
@@ -68,15 +109,28 @@ const { data: categorias } = await supabaseAdmin
           </div>
           <div class="form-group">
             <label class="form-label" for="bateria">Bateria (%)</label>
-            <input id="bateria" name="bateria" type="text" inputmode="numeric" class="form-input" />
+            <input
+              id="bateria"
+              name="bateria"
+              type="text"
+              inputmode="numeric"
+              class="form-input"
+            />
           </div>
           <div class="form-group">
             <label class="form-label" for="descricao">Descrição</label>
-            <textarea id="descricao" name="descricao" class="form-textarea"></textarea>
+            <textarea id="descricao" name="descricao" class="form-textarea"
+            ></textarea>
           </div>
           <div class="form-actions">
-            <a href="/admin/produtos" class="form-btn form-btn-cancel">Cancelar</a>
-            <button type="submit" id="submit-btn" class="form-btn form-btn-submit">
+            <a href="/admin/produtos" class="form-btn form-btn-cancel"
+              >Cancelar</a
+            >
+            <button
+              type="submit"
+              id="submit-btn"
+              class="form-btn form-btn-submit"
+            >
               <span id="submit-text">Adicionar Produto</span>
             </button>
           </div>
@@ -88,22 +142,24 @@ const { data: categorias } = await supabaseAdmin
 
 <script>
   // ============================================================================
-  // REFACTOR FINAL: Loop Clássico e Estado Atômico
+  // CORREÇÃO DEFINITIVA: Cache-busting + Preview correto
   // ============================================================================
 
   const state = { urls: [] as string[], isUploading: false };
   const elements = {
-    form: document.getElementById('product-form'),
-    fileInput: document.getElementById('foto-upload'),
-    uploadArea: document.getElementById('upload-area'),
-    submitBtn: document.getElementById('submit-btn'),
-    submitText: document.getElementById('submit-text'),
-    finalImagesInput: document.getElementById('final-images-json'),
+    form: document.getElementById('product-form') as HTMLFormElement,
+    fileInput: document.getElementById('foto-upload') as HTMLInputElement,
+    uploadArea: document.getElementById('upload-area') as HTMLElement,
+    submitBtn: document.getElementById('submit-btn') as HTMLButtonElement,
+    submitText: document.getElementById('submit-text') as HTMLSpanElement,
+    finalImagesInput: document.getElementById(
+      'final-images-json'
+    ) as HTMLInputElement,
   };
 
   function init() {
     if (!elements.form) return;
-    
+
     // Hard reset
     state.urls = [];
     state.isUploading = false;
@@ -111,16 +167,21 @@ const { data: categorias } = await supabaseAdmin
 
     elements.fileInput.addEventListener('change', handleFileSelect);
     elements.uploadArea.addEventListener('click', () => {
-      if (!state.isUploading && state.urls.length < 5) elements.fileInput.click();
+      if (!state.isUploading && state.urls.length < 5)
+        elements.fileInput.click();
     });
     elements.form.addEventListener('submit', handleSubmit);
 
-    (window as any).removeImage = (i: number) => { state.urls.splice(i, 1); syncState(); };
+    (window as any).removeImage = (i: number) => {
+      state.urls.splice(i, 1);
+      syncState();
+    };
     (window as any).setMainImage = (i: number) => {
       if (i > 0) {
         const [img] = state.urls.splice(i, 1);
         state.urls.unshift(img);
         syncState();
+        window.showToast('Imagem principal definida', 'success');
       }
     };
   }
@@ -128,51 +189,108 @@ const { data: categorias } = await supabaseAdmin
   async function handleFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
     const files = Array.from(input.files || []);
-    input.value = ''; // Limpar imediatamente
+
+    // CRÍTICO: Limpar input IMEDIATAMENTE para evitar cache do browser
+    input.value = '';
 
     const toUpload = files.slice(0, 5 - state.urls.length);
-    if (toUpload.length === 0) return;
+    if (toUpload.length === 0) {
+      window.showToast('Máximo de 5 imagens atingido', 'warning');
+      return;
+    }
 
     state.isUploading = true;
     updateSubmitUI();
 
-    // **A CORREÇÃO CRÍTICA:** Usar um loop 'for' clássico com índice.
-    // O loop 'for...of' estava causando um bug onde a referência ao 'file'
-    // não era atualizada corretamente entre as iterações do 'await'.
+    console.log(`[UPLOAD START] ${toUpload.length} arquivo(s)`);
+
+    // Usar índice explícito para evitar bug de referência
     for (let i = 0; i < toUpload.length; i++) {
-      const file = toUpload[i]; // Acesso explícito por índice
-      const tempId = `up-${Math.random()}`;
-      
+      const file = toUpload[i];
+      const tempId = `up-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      console.log(
+        `[UPLOAD ${i + 1}/${toUpload.length}] Arquivo: ${file.name}, Tamanho: ${(file.size / 1024).toFixed(2)}KB`
+      );
+
       try {
         renderPlaceholder(tempId);
         const url = await processAndUpload(file);
+
+        // CRÍTICO: Adicionar cache-busting na URL
+        const urlWithCacheBust = `${url}?v=${Date.now()}`;
+
+        console.log(`[UPLOAD SUCCESS] URL: ${urlWithCacheBust}`);
+
         document.getElementById(tempId)?.remove();
-        state.urls.push(url);
+        state.urls.push(urlWithCacheBust);
         syncState();
       } catch (err: any) {
+        console.error(`[UPLOAD ERROR] ${file.name}:`, err);
         document.getElementById(tempId)?.remove();
-        window.showToast(err.message, 'error');
+        window.showToast(
+          `Erro ao enviar ${file.name}: ${err.message}`,
+          'error'
+        );
       }
     }
 
     state.isUploading = false;
     updateSubmitUI();
+
+    if (state.urls.length > 0) {
+      window.showToast(
+        `${state.urls.length} imagem(ns) adicionada(s)`,
+        'success'
+      );
+    }
   }
-  
+
   async function processAndUpload(file: File): Promise<string> {
-    const imageCompression = (await import('browser-image-compression')).default;
-    const compressed = await imageCompression(file, { maxSizeMB: 1.5, maxWidthOrHeight: 1920 });
-
-    const formData = new FormData();
-    formData.append('file', compressed, file.name);
-    console.log(`[UPLOAD] Enviando: ${file.name} (${file.size} -> ${compressed.size})`);
-
-    const res = await fetch(`/api/admin/upload?t=${Date.now()}`, {
-      method: 'POST', body: formData, headers: { 'Cache-Control': 'no-cache' }
+    // Comprimir imagem
+    const imageCompression = (await import('browser-image-compression'))
+      .default;
+    const compressed = await imageCompression(file, {
+      maxSizeMB: 1.5,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      initialQuality: 0.8,
     });
 
-    if (!res.ok) throw new Error('Falha no upload');
+    console.log(
+      `[COMPRESS] ${file.name}: ${(file.size / 1024).toFixed(2)}KB -> ${(compressed.size / 1024).toFixed(2)}KB`
+    );
+
+    // Upload com nome único e cache-busting
+    const formData = new FormData();
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    formData.append('file', compressed, uniqueName);
+
+    const uploadUrl = `/api/admin/upload?t=${Date.now()}&r=${Math.random()}`;
+    console.log(`[FETCH] POST ${uploadUrl}`);
+
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+      },
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('[UPLOAD RESPONSE ERROR]:', errorText);
+      throw new Error('Falha no upload');
+    }
+
     const data = await res.json();
+    console.log('[UPLOAD RESPONSE]:', data);
+
+    if (!data.urls || !data.urls[0]) {
+      throw new Error('Nenhuma URL retornada');
+    }
+
     return data.urls[0];
   }
 
@@ -182,9 +300,11 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function updateSubmitUI() {
-    if(!elements.submitBtn) return;
+    if (!elements.submitBtn) return;
     elements.submitBtn.disabled = state.isUploading;
-    elements.submitText.innerHTML = state.isUploading ? 'Enviando...' : 'Adicionar Produto';
+    elements.submitText.innerHTML = state.isUploading
+      ? 'Enviando...'
+      : 'Adicionar Produto';
   }
 
   function renderPlaceholder(id: string) {
@@ -197,23 +317,35 @@ const { data: categorias } = await supabaseAdmin
     div.id = id;
     div.className = 'preview-card loading';
     div.innerHTML = '<div class="form-spinner"></div>';
-    grid.appendChild(div);
+    grid!.appendChild(div);
   }
 
   function renderPreviews() {
     const hasPlaceholders = elements.uploadArea.querySelector('.loading');
     if (state.urls.length === 0 && !hasPlaceholders) {
-      elements.uploadArea.innerHTML = `<div class="upload-placeholder" onclick="document.getElementById('foto-upload').click()"><p>Adicionar fotos</p></div>`;
+      elements.uploadArea.innerHTML = `
+        <div class="upload-placeholder" onclick="document.getElementById('foto-upload').click()">
+          <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          <p>Clique para adicionar imagens</p>
+          <small>JPG, PNG até 10MB cada (máximo 5 imagens)</small>
+        </div>
+      `;
       return;
     }
 
-    const html = state.urls.map((url, i) => `
+    const html = state.urls
+      .map(
+        (url, i) => `
       <div class="preview-card ${i === 0 ? 'is-main' : ''}" onclick="window.setMainImage(${i})">
-        <img src="${url}" />
+        <img src="${url}" alt="Imagem ${i + 1}" loading="eager" />
         <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeImage(${i})">×</button>
         ${i === 0 ? '<span class="main-badge">Principal</span>' : ''}
       </div>
-    `).join('');
+    `
+      )
+      .join('');
 
     let grid = elements.uploadArea.querySelector('.images-preview-grid');
     if (!grid) {
@@ -221,38 +353,84 @@ const { data: categorias } = await supabaseAdmin
       grid = elements.uploadArea.querySelector('.images-preview-grid');
     }
 
-    // Preserve placeholders
-    const placeholders = Array.from(grid.querySelectorAll('.loading'));
-    grid.innerHTML = html;
-    placeholders.forEach(p => grid.appendChild(p));
+    // Preservar placeholders de loading
+    const placeholders = Array.from(grid!.querySelectorAll('.loading'));
+    grid!.innerHTML = html;
+    placeholders.forEach((p) => grid!.appendChild(p));
 
     if (state.urls.length + placeholders.length < 5) {
       const addBtn = document.createElement('div');
       addBtn.className = 'add-more-btn';
-      addBtn.textContent = '+';
+      addBtn.innerHTML = `
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>Adicionar</span>
+      `;
       addBtn.onclick = () => elements.fileInput.click();
-      grid.appendChild(addBtn);
+      grid!.appendChild(addBtn);
     }
   }
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    if (state.urls.length === 0) return;
-    
-    updateSubmitUI();
+
+    if (state.urls.length === 0) {
+      window.showToast('Adicione pelo menos uma imagem', 'warning');
+      return;
+    }
+
+    if (state.isUploading) {
+      window.showToast('Aguarde o upload das imagens', 'warning');
+      return;
+    }
+
+    elements.submitBtn.disabled = true;
+    elements.submitText.innerHTML =
+      '<div class="form-spinner"></div> Salvando...';
 
     try {
-      const fd = new FormData(elements.form as HTMLFormElement);
+      const fd = new FormData(elements.form);
+
+      // Remover cache-busting das URLs antes de salvar no banco
+      const cleanUrls = state.urls.map((url) => url.split('?')[0]);
+
       const payload = {
         nome: fd.get('nome'),
-        imagens: state.urls,
-        // ... all other fields
+        codigo: fd.get('codigo') || null,
+        preco: parseFloat((fd.get('preco') as string).replace(',', '.')) || 0,
+        bateria: fd.get('bateria')
+          ? parseInt(fd.get('bateria') as string)
+          : null,
+        condicao: fd.get('condicao'),
+        categoria_id: fd.get('categoria_id'),
+        descricao: fd.get('descricao') || null,
+        imagens: cleanUrls,
       };
-      // ... fetch POST logic
-      window.showToast('Produto salvo!', 'success');
-      setTimeout(() => window.location.href = '/admin/produtos', 500);
-    } catch {
-      // ... error handling
+
+      console.log('[SUBMIT] Payload:', payload);
+
+      const response = await fetch('/api/admin/produtos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao salvar');
+      }
+
+      window.showToast('Produto adicionado com sucesso!', 'success');
+      setTimeout(() => (window.location.href = '/admin/produtos'), 500);
+    } catch (error: any) {
+      console.error('[SUBMIT ERROR]:', error);
+      window.showToast(error.message, 'error');
+      elements.submitBtn.disabled = false;
+      elements.submitText.textContent = 'Adicionar Produto';
     }
   }
 
@@ -260,13 +438,152 @@ const { data: categorias } = await supabaseAdmin
 </script>
 
 <style>
-  .upload-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; cursor: pointer; background: #0A0A0A; border-radius: 8px; border: 2px dashed #333; }
-  .images-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; padding: 10px; background: #111; border-radius: 8px; }
-  .preview-card { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; border: 2px solid #333; cursor: pointer; }
-  .preview-card.is-main { border-color: #3b82f6; }
-  .preview-card.loading { display: flex; align-items: center; justify-content: center; }
-  .preview-card img { width: 100%; height: 100%; object-fit: cover; }
-  .remove-btn { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: #ef4444; color: #fff; border: none; font-size: 12px; z-index: 10; }
-  .main-badge { position: absolute; bottom: 2px; left: 2px; background: #3b82f6; color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 3px; }
-  .add-more-btn { aspect-ratio: 1; border-radius: 6px; border: 2px dashed #444; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #151515; color: #888; font-size: 24px; }
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #0a0a0a;
+    border-radius: 8px;
+    border: 2px dashed #333;
+    transition: all 0.2s;
+  }
+  .upload-placeholder:hover {
+    border-color: #555;
+    background: #111;
+  }
+  .upload-placeholder svg {
+    color: #666;
+    margin-bottom: 16px;
+  }
+  .upload-placeholder p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .upload-placeholder small {
+    font-size: 12px;
+    color: #555;
+  }
+
+  .images-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    padding: 12px;
+    background: #111;
+    border-radius: 8px;
+    border: 1px solid #333;
+  }
+
+  .preview-card {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #333;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #000;
+  }
+
+  .preview-card.is-main {
+    border-color: #3b82f6;
+  }
+
+  .preview-card:hover {
+    border-color: #555;
+    transform: translateY(-2px);
+  }
+
+  .preview-card.is-main:hover {
+    border-color: #2563eb;
+  }
+
+  .preview-card.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+  }
+
+  .preview-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.95);
+    color: #fff;
+    border: none;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+
+  .main-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(59, 130, 246, 0.95);
+    color: #fff;
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .add-more-btn {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    border: 2px dashed #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: #151515;
+    color: #888;
+    transition: all 0.2s;
+  }
+
+  .add-more-btn:hover {
+    border-color: #666;
+    background: #222;
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  .add-more-btn svg {
+    margin-bottom: 4px;
+  }
+
+  .add-more-btn span {
+    font-size: 11px;
+    font-weight: 500;
+  }
 </style>

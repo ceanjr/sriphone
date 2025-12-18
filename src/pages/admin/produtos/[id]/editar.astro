@@ -1,9 +1,9 @@
---- 
+---
 import AdminLayout from '../../../../layouts/AdminLayout.astro';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import '../../../../styles/admin-form.css';
 
-export const prerender = false; // Força SSR sem cache para admin
+export const prerender = false;
 
 const { id } = Astro.params;
 
@@ -209,13 +209,13 @@ const { data: categorias } = await supabaseAdmin
 </AdminLayout>
 
 <script>
-  // ============================================================================ 
-  // EDIT SYSTEM REFACTOR - "Upload Immediate" Strategy
-  // ============================================================================ 
+  // ============================================================================
+  // CORREÇÃO DEFINITIVA: Cache-busting + Preview correto
+  // ============================================================================
 
   // State
-  let existingImageUrls: string[] = []; // URLs loaded from DB
-  let newUploadedUrls: string[] = [];   // URLs from new uploads
+  let existingImageUrls: string[] = [];
+  let newUploadedUrls: string[] = [];
   let isUploading = false;
 
   // Elements
@@ -224,8 +224,12 @@ const { data: categorias } = await supabaseAdmin
   const uploadArea = document.getElementById('upload-area') as HTMLElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
   const submitText = document.getElementById('submit-text') as HTMLSpanElement;
-  const existingImagesInput = document.getElementById('existing-images-json') as HTMLInputElement;
-  const productIdInput = document.getElementById('produto_id') as HTMLInputElement;
+  const existingImagesInput = document.getElementById(
+    'existing-images-json'
+  ) as HTMLInputElement;
+  const productIdInput = document.getElementById(
+    'produto_id'
+  ) as HTMLInputElement;
 
   // Constants
   const MAX_IMAGES = 5;
@@ -261,7 +265,9 @@ const { data: categorias } = await supabaseAdmin
   function updateSubmitButton() {
     if (!submitBtn) return;
     submitBtn.disabled = isUploading;
-    submitText.innerHTML = isUploading ? 'Aguarde o upload...' : 'Salvar Alterações';
+    submitText.innerHTML = isUploading
+      ? 'Aguarde o upload...'
+      : 'Salvar Alterações';
   }
 
   function handleAreaClick(e: MouseEvent) {
@@ -278,102 +284,136 @@ const { data: categorias } = await supabaseAdmin
 
   async function handleFileSelect(e: Event) {
     const input = e.target as HTMLInputElement;
-    const files = input.files;
-    if (!files || files.length === 0) return;
+    const files = Array.from(input.files || []);
+
+    // CRÍTICO: Limpar input IMEDIATAMENTE
+    input.value = '';
 
     const currentTotal = existingImageUrls.length + newUploadedUrls.length;
     const remainingSlots = MAX_IMAGES - currentTotal;
-    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    const filesToProcess = files.slice(0, remainingSlots);
 
     if (filesToProcess.length === 0) {
       window.showToast(`Limite de ${MAX_IMAGES} imagens atingido`, 'warning');
-      input.value = '';
       return;
     }
 
     isUploading = true;
     updateSubmitButton();
 
-    // Placeholders
-    const tempIds = filesToProcess.map(() => `temp-${Date.now()}-${Math.random()}`);
-    tempIds.forEach(id => renderLoadingPlaceholder(id));
+    console.log(`[UPLOAD START] ${filesToProcess.length} arquivo(s)`);
 
     let successCount = 0;
 
     for (let i = 0; i < filesToProcess.length; i++) {
       const file = filesToProcess[i];
-      const tempId = tempIds[i];
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      console.log(
+        `[UPLOAD ${i + 1}/${filesToProcess.length}] Arquivo: ${file.name}, Tamanho: ${(file.size / 1024).toFixed(2)}KB`
+      );
 
       try {
         if (file.size > MAX_FILE_SIZE) throw new Error('Arquivo muito grande');
         if (!file.type.startsWith('image/')) throw new Error('Apenas imagens');
 
+        renderLoadingPlaceholder(tempId);
+
         const compressed = await compressImage(file);
-        const url = await uploadImage(compressed);
-        
-        newUploadedUrls.push(url);
+        const url = await uploadImage(compressed, file.name);
+
+        // CRÍTICO: Adicionar cache-busting
+        const urlWithCacheBust = `${url}?v=${Date.now()}`;
+
+        console.log(`[UPLOAD SUCCESS] URL: ${urlWithCacheBust}`);
+
+        removeLoadingPlaceholder(tempId);
+        newUploadedUrls.push(urlWithCacheBust);
         successCount++;
         renderPreviews();
-
       } catch (error: any) {
-        console.error('Upload error:', error);
-        window.showToast(`Erro ao enviar ${file.name}: ${error.message}`, 'error');
+        console.error(`[UPLOAD ERROR] ${file.name}:`, error);
+        window.showToast(
+          `Erro ao enviar ${file.name}: ${error.message}`,
+          'error'
+        );
         removeLoadingPlaceholder(tempId);
       }
     }
 
-    input.value = '';
     isUploading = false;
     updateSubmitButton();
 
-    if (successCount > 0) window.showToast(`${successCount} imagem(ns) adicionada(s)`, 'success');
+    if (successCount > 0) {
+      window.showToast(`${successCount} imagem(ns) adicionada(s)`, 'success');
+    }
   }
 
   // --- Image Processing ---
   async function compressImage(file: File): Promise<File> {
     try {
-      const imageCompression = (await import('browser-image-compression')).default;
+      const imageCompression = (await import('browser-image-compression'))
+        .default;
       return await imageCompression(file, {
         maxSizeMB: 1.5,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
-        initialQuality: 0.8
+        initialQuality: 0.8,
       });
     } catch {
       return file;
     }
   }
 
-  async function uploadImage(file: File): Promise<string> {
+  async function uploadImage(
+    file: File,
+    originalName: string
+  ): Promise<string> {
     const formData = new FormData();
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    formData.append('file0', file, safeName);
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${originalName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    formData.append('file', file, uniqueName);
 
-    const response = await fetch(`/api/admin/upload?t=${Date.now()}`, {
+    const uploadUrl = `/api/admin/upload?t=${Date.now()}&r=${Math.random()}`;
+    console.log(`[FETCH] POST ${uploadUrl}`);
+
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
-      headers: { 'Cache-Control': 'no-cache' }
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+      },
     });
 
-    if (!response.ok) throw new Error('Falha no upload');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[UPLOAD RESPONSE ERROR]:', errorText);
+      throw new Error('Falha no upload');
+    }
+
     const data = await response.json();
-    if (data.urls && data.urls.length > 0) return data.urls[0];
-    throw new Error('Nenhuma URL retornada');
+    console.log('[UPLOAD RESPONSE]:', data);
+
+    if (!data.urls || !data.urls[0]) {
+      throw new Error('Nenhuma URL retornada');
+    }
+
+    return data.urls[0];
   }
 
   // --- Rendering ---
   function renderLoadingPlaceholder(id: string) {
     const grid = document.querySelector('.images-preview-grid');
     if (!grid) {
-       uploadArea.innerHTML = '<div class="images-preview-grid"></div>';
-       renderLoadingPlaceholder(id);
-       return;
+      uploadArea.innerHTML = '<div class="images-preview-grid"></div>';
+      renderLoadingPlaceholder(id);
+      return;
     }
     const placeholder = document.createElement('div');
     placeholder.id = id;
     placeholder.className = 'preview-card loading';
     placeholder.innerHTML = '<div class="form-spinner"></div>';
-    
+
     const addBtn = grid.querySelector('.add-more-btn');
     if (addBtn) grid.insertBefore(placeholder, addBtn);
     else grid.appendChild(placeholder);
@@ -402,43 +442,48 @@ const { data: categorias } = await supabaseAdmin
       return;
     }
 
-    // Combine for rendering logic, but keep distinct actions
-    const existingHtml = existingImageUrls.map((url, index) => {
-      const isMain = index === 0;
-      return `
+    const existingHtml = existingImageUrls
+      .map((url, index) => {
+        const isMain = index === 0;
+        return `
         <div class="preview-card ${isMain ? 'is-main' : ''}"
              onclick="window.setMainExistingImage(${index})"
              title="Clique para tornar principal">
-          <img src="${url}" alt="Imagem ${index + 1}" />
+          <img src="${url}" alt="Imagem ${index + 1}" loading="eager" />
           <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeExistingImage(${index})">×</button>
           ${isMain ? '<span class="main-badge">Principal</span>' : ''}
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
-    const newHtml = newUploadedUrls.map((url, index) => {
-      // It's main only if there are no existing images and it's the first new one
-      const isMain = existingImageUrls.length === 0 && index === 0;
-      return `
+    const newHtml = newUploadedUrls
+      .map((url, index) => {
+        const isMain = existingImageUrls.length === 0 && index === 0;
+        return `
         <div class="preview-card ${isMain ? 'is-main' : ''} is-new"
              onclick="window.setMainNewImage(${index})"
              title="Clique para tornar principal">
-          <img src="${url}" alt="Nova Imagem ${index + 1}" />
+          <img src="${url}" alt="Nova Imagem ${index + 1}" loading="eager" />
           <button type="button" class="remove-btn" onclick="event.stopPropagation(); window.removeNewImage(${index})">×</button>
           <span class="new-badge">Nova</span>
           ${isMain ? '<span class="main-badge">Principal</span>' : ''}
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
-    const addButtonHtml = total < MAX_IMAGES ? `
+    const addButtonHtml =
+      total < MAX_IMAGES
+        ? `
       <div class="add-more-btn" onclick="document.getElementById('foto-upload').click()">
-        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         <span>Adicionar</span>
       </div>
-    ` : '';
+    `
+        : '';
 
     uploadArea.innerHTML = `
       <div class="images-preview-grid">
@@ -469,12 +514,6 @@ const { data: categorias } = await supabaseAdmin
   }
 
   function setMainNewImage(index: number) {
-    // If we have existing images, we can't easily make a "new" image the ABSOLUTE main 
-    // without merging arrays, but sticking to separate arrays simplifies logic.
-    // Instead, if user clicks a new image to be main, we move it to existing array? 
-    // Simpler: Just swap within its own array for now, OR promote to existing.
-    // Let's promote to existing array at index 0 for simplicity of "Main" concept.
-    
     const item = newUploadedUrls.splice(index, 1)[0];
     existingImageUrls.unshift(item);
     renderPreviews();
@@ -486,29 +525,45 @@ const { data: categorias } = await supabaseAdmin
     if (isUploading) return window.showToast('Aguarde o upload', 'warning');
 
     const finalImages = [...existingImageUrls, ...newUploadedUrls];
-    if (finalImages.length === 0) return window.showToast('Adicione uma imagem', 'warning');
+    if (finalImages.length === 0)
+      return window.showToast('Adicione uma imagem', 'warning');
 
     submitBtn.disabled = true;
     submitText.innerHTML = '<div class="form-spinner"></div> Salvando...';
 
     try {
       const formData = new FormData(form);
+
+      // Remover cache-busting antes de salvar
+      const cleanUrls = finalImages.map((url) => url.split('?')[0]);
+
       const produto = {
         nome: formData.get('nome'),
         codigo: formData.get('codigo'),
-        preco: parseFloat((formData.get('preco') as string).replace(',', '.')) || 0,
-        bateria: formData.get('bateria') ? parseInt(formData.get('bateria') as string) : null,
+        preco:
+          parseFloat((formData.get('preco') as string).replace(',', '.')) || 0,
+        bateria: formData.get('bateria')
+          ? parseInt(formData.get('bateria') as string)
+          : null,
         condicao: formData.get('condicao'),
         categoria_id: formData.get('categoria_id'),
         descricao: formData.get('descricao') || null,
-        imagens: finalImages,
+        imagens: cleanUrls,
       };
 
-      const response = await fetch(`/api/admin/produtos/${productIdInput.value}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(produto)
-      });
+      console.log('[SUBMIT] Payload:', produto);
+
+      const response = await fetch(
+        `/api/admin/produtos/${productIdInput.value}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+          },
+          body: JSON.stringify(produto),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -516,8 +571,7 @@ const { data: categorias } = await supabaseAdmin
       }
 
       window.showToast('Produto atualizado!', 'success');
-      setTimeout(() => window.location.href = '/admin/produtos', 500);
-
+      setTimeout(() => (window.location.href = '/admin/produtos'), 500);
     } catch (error: any) {
       console.error('Submit error:', error);
       window.showToast(error.message, 'error');
@@ -538,21 +592,35 @@ const { data: categorias } = await supabaseAdmin
     padding: 48px 24px;
     text-align: center;
     cursor: pointer;
-    background: #0A0A0A;
+    background: #0a0a0a;
     border-radius: 8px;
     border: 2px dashed #333;
     transition: all 0.2s;
   }
-  .upload-placeholder:hover { border-color: #555; background: #111; }
-  .upload-placeholder svg { color: #666; margin-bottom: 16px; }
-  .upload-placeholder p { font-size: 14px; font-weight: 500; color: #888; margin-bottom: 4px; }
-  .upload-placeholder small { font-size: 12px; color: #555; }
+  .upload-placeholder:hover {
+    border-color: #555;
+    background: #111;
+  }
+  .upload-placeholder svg {
+    color: #666;
+    margin-bottom: 16px;
+  }
+  .upload-placeholder p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .upload-placeholder small {
+    font-size: 12px;
+    color: #555;
+  }
 </style>
 
 <style is:global>
   .images-preview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 12px;
     padding: 12px;
     background: #111;
@@ -570,59 +638,86 @@ const { data: categorias } = await supabaseAdmin
     cursor: pointer;
     transition: all 0.2s;
   }
-  
-  .preview-card.is-main { border-color: #3b82f6; }
-  .preview-card.is-new { border-color: #22c55e; }
-  .preview-card:hover { border-color: #555; }
-  .preview-card.is-main:hover { border-color: #2563eb; }
+
+  .preview-card.is-main {
+    border-color: #3b82f6;
+  }
+  .preview-card.is-new {
+    border-color: #22c55e;
+  }
+  .preview-card:hover {
+    border-color: #555;
+    transform: translateY(-2px);
+  }
+  .preview-card.is-main:hover {
+    border-color: #2563eb;
+  }
+
+  .preview-card.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+  }
 
   .preview-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
   }
 
   .remove-btn {
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: rgba(220, 38, 38, 0.9);
+    background: rgba(239, 68, 68, 0.95);
     color: white;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
     z-index: 10;
+    transition: all 0.2s;
   }
-  
+
+  .remove-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+  }
+
   .main-badge {
     position: absolute;
     bottom: 4px;
     left: 4px;
-    background: rgba(59, 130, 246, 0.9);
+    background: rgba(59, 130, 246, 0.95);
     color: white;
     font-size: 10px;
-    padding: 2px 6px;
+    padding: 3px 6px;
     border-radius: 4px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
-  
+
   .new-badge {
     position: absolute;
     top: 4px;
     left: 4px;
-    background: rgba(34, 197, 94, 0.9);
+    background: rgba(34, 197, 94, 0.95);
     color: white;
     font-size: 10px;
-    padding: 2px 6px;
+    padding: 3px 6px;
     border-radius: 4px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .add-more-btn {
@@ -638,6 +733,17 @@ const { data: categorias } = await supabaseAdmin
     color: #888;
     transition: all 0.2s;
   }
-  .add-more-btn:hover { border-color: #666; background: #222; color: #fff; }
-  .add-more-btn span { font-size: 12px; margin-top: 4px; }
+  .add-more-btn:hover {
+    border-color: #666;
+    background: #222;
+    color: #fff;
+    transform: translateY(-2px);
+  }
+  .add-more-btn svg {
+    margin-bottom: 4px;
+  }
+  .add-more-btn span {
+    font-size: 11px;
+    font-weight: 500;
+  }
 </style>
